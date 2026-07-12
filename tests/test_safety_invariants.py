@@ -1,5 +1,4 @@
 import os
-import shlex
 import sys
 from unittest.mock import patch
 
@@ -66,7 +65,13 @@ def test_cli_build_agent_wires_secret_env_names_from_parser(tmp_path):
     (tmp_path / "README.md").write_text("demo\n", encoding="utf-8")
     with patch.dict(
         os.environ,
-        {"PICO_PROVIDER": "ollama", "GITHUB_PAT": "ghp-1", "GH_PAT": "ghp-2"},
+        {
+            "PICO_PROVIDER": "ollama",
+            "PICO_MODEL": "qwen3.5:4b",
+            "PICO_BASE_URL": "http://127.0.0.1:11434",
+            "GITHUB_PAT": "ghp-1",
+            "GH_PAT": "ghp-2",
+        },
         clear=True,
     ), patch(
         "pico.cli.OllamaModelClient",
@@ -100,7 +105,12 @@ def test_cli_build_agent_uses_default_configured_secret_names(tmp_path):
     (tmp_path / "README.md").write_text("demo\n", encoding="utf-8")
     with patch.dict(
         os.environ,
-        {"PICO_PROVIDER": "ollama", "GH_PAT": "ghp-default-1"},
+        {
+            "PICO_PROVIDER": "ollama",
+            "PICO_MODEL": "qwen3.5:4b",
+            "PICO_BASE_URL": "http://127.0.0.1:11434",
+            "GH_PAT": "ghp-default-1",
+        },
         clear=True,
     ), patch(
         "pico.cli.OllamaModelClient",
@@ -121,7 +131,12 @@ def test_cli_build_agent_loads_project_env_secrets_before_redaction_setup(tmp_pa
             raise AssertionError("model should not be invoked")
 
     (tmp_path / "README.md").write_text("demo\n", encoding="utf-8")
-    (tmp_path / ".env").write_text("PICO_API_KEY=sk-project-secret\n", encoding="utf-8")
+    (tmp_path / ".env").write_text(
+        "PICO_MODEL=deepseek-v4-pro\n"
+        "PICO_BASE_URL=https://api.deepseek.com/anthropic\n"
+        "PICO_API_KEY=sk-project-secret\n",
+        encoding="utf-8",
+    )
     with patch.dict(os.environ, {}, clear=True), patch("pico.cli.AnthropicCompatibleModelClient", DummyModelClient):
         args = pico_cli.build_arg_parser().parse_args(["--cwd", str(tmp_path), "--provider", "deepseek"])
         agent = pico_cli.build_agent(args)
@@ -142,6 +157,8 @@ def test_cli_build_agent_reads_secret_names_from_environment_config(tmp_path):
         os.environ,
         {
             "PICO_PROVIDER": "ollama",
+            "PICO_MODEL": "qwen3.5:4b",
+            "PICO_BASE_URL": "http://127.0.0.1:11434",
             "PICO_CUSTOM_SECRET": "custom-secret-value",
             "PICO_SECRET_ENV_NAMES": "PICO_CUSTOM_SECRET",
         },
@@ -152,14 +169,16 @@ def test_cli_build_agent_reads_secret_names_from_environment_config(tmp_path):
         assert agent.secret_env_summary()["secret_env_names"] == ["PICO_CUSTOM_SECRET"]
 
 
-def test_run_shell_uses_allowlisted_environment_only(tmp_path):
+def test_run_process_uses_allowlisted_environment_only(tmp_path):
     secret = "shh-allowlist-secret"
     agent = build_agent(tmp_path, [], approval_policy="auto")
     script = 'import os; print(os.getenv("PICO_ALLOWLIST_SECRET", "missing"))'
-    command = f"{shlex.quote(sys.executable)} -c {shlex.quote(script)}"
 
     with patch.dict(os.environ, {"PICO_ALLOWLIST_SECRET": secret}, clear=False):
-        result = agent.run_tool("run_shell", {"command": command, "timeout": 20})
+        result = agent.run_tool(
+            "run_process",
+            {"program": sys.executable, "args": ["-c", script], "timeout": 20},
+        )
 
     assert secret not in result
     assert "missing" in result

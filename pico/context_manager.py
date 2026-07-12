@@ -415,8 +415,13 @@ class ContextManager:
         return str(summary.get("summary", "")).strip()
 
     def _summarize_old_tool_item(self, item):
-        if item["name"] == "run_shell":
-            command = str(item["args"].get("command", "")).strip() or "shell"
+        if item["name"] in {"run_shell", "run_process"}:
+            if item["name"] == "run_shell":
+                command = str(item["args"].get("command", "")).strip() or "shell"
+            else:
+                process_args = item["args"].get("args", [])
+                program = str(item["args"].get("program", "")).strip() or "process"
+                command = " ".join([program, *[str(value) for value in process_args]])
             lines = [line.strip() for line in str(item.get("content", "")).splitlines() if line.strip()]
             summary = " | ".join(lines[:3]) if lines else "(empty)"
             return f"{command} -> {summary}"

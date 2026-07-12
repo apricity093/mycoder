@@ -1254,6 +1254,23 @@ def test_run_shell_nonzero_with_workspace_change_is_recorded_as_partial_success(
     assert agent._last_tool_result_metadata["workspace_changed"] is True
 
 
+def test_run_process_uses_structured_arguments_and_records_exit_code(tmp_path):
+    agent = build_agent(tmp_path, [])
+
+    result = agent.run_tool(
+        "run_process",
+        {
+            "program": sys.executable,
+            "args": ["-c", "import sys; print('process-ok'); sys.exit(2)"],
+            "timeout": 20,
+        },
+    )
+
+    assert "exit_code: 2" in result
+    assert "process-ok" in result
+    assert agent._last_tool_result_metadata["tool_status"] == "error"
+
+
 def test_resume_marks_workspace_mismatch_when_checkpoint_runtime_identity_is_stale(tmp_path):
     agent = build_agent(tmp_path, ["<final>checkpoint ready.</final>"])
     agent.session["checkpoints"] = {

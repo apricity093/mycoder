@@ -51,4 +51,5 @@ def test_build_tool_registry_binds_runners_to_tool_context(tmp_path):
     tools = build_tool_registry(context)
 
     assert "read_file" in tools
+    assert "run_process" in tools
     assert "delegate" not in tools

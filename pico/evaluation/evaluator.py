@@ -1,11 +1,13 @@
 import hashlib
 import json
 import locale as locale_module
+import shlex
 import shutil
 import subprocess
 import tempfile
 from datetime import datetime
 from pathlib import Path
+import sys
 from zoneinfo import ZoneInfo
 
 from ..features import memory as memorylib
@@ -119,6 +121,26 @@ def _git_value(args, fallback="", cwd=None):
         return fallback
 
 
+def _verifier_argv(value):
+    """Convert a legacy verifier string or structured argv into shell-free arguments."""
+    if isinstance(value, list):
+        argv = [str(item) for item in value]
+    else:
+        text = str(value).strip()
+        if not text:
+            raise ValueError("verifier command must not be empty")
+        try:
+            argv = shlex.split(text, posix=True)
+        except ValueError as exc:
+            raise ValueError(f"invalid verifier command: {exc}") from exc
+
+    if not argv or not argv[0].strip():
+        raise ValueError("verifier program must not be empty")
+    if argv[0] in {"python", "python3"}:
+        argv[0] = sys.executable
+    return argv
+
+
 def _current_locale():
     try:
         return locale_module.setlocale(locale_module.LC_CTYPE)
@@ -217,6 +239,11 @@ def validate_benchmark(data, repo_root=None):
         if step_budget < 1:
             raise ValueError(f"benchmark task {task_id} step_budget must be positive")
 
+        try:
+            _verifier_argv(task["verifier"])
+        except ValueError as exc:
+            raise ValueError(f"benchmark task {task_id} verifier is invalid: {exc}") from exc
+
         normalized_task = dict(task)
         normalized_task["id"] = task_id
         normalized_task["prompt"] = str(task["prompt"]).strip()
@@ -224,7 +251,11 @@ def validate_benchmark(data, repo_root=None):
         normalized_task["allowed_tools"] = normalized_allowed_tools
         normalized_task["step_budget"] = step_budget
         normalized_task["expected_artifact"] = str(task["expected_artifact"]).strip()
-        normalized_task["verifier"] = str(task["verifier"]).strip()
+        normalized_task["verifier"] = (
+            [str(item) for item in task["verifier"]]
+            if isinstance(task["verifier"], list)
+            else str(task["verifier"]).strip()
+        )
         normalized_task["category"] = str(task["category"]).strip()
         normalized_tasks.append(normalized_task)
 
@@ -490,9 +521,9 @@ class BenchmarkEvaluator:
         artifact_digest = _digest_file(artifact_file) if expected_artifact_exists else ""
 
         verifier = subprocess.run(
-            task["verifier"],
+            _verifier_argv(task["verifier"]),
             cwd=fixture_copy_root,
-            shell=True,
+            shell=False,
             capture_output=True,
             text=True,
         )

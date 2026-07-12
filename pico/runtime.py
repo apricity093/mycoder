@@ -635,6 +635,9 @@ class Pico:
     def tool_run_shell(self, args):
         return toolkit.tool_run_shell(self.tool_context(), args)
 
+    def tool_run_process(self, args):
+        return toolkit.tool_run_process(self.tool_context(), args)
+
     def tool_write_file(self, args):
         return toolkit.tool_write_file(self.tool_context(), args)
 

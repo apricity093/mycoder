@@ -199,6 +199,8 @@ uv run pico --provider ollama --model qwen3.5:4b
 
 `pico` 不会默认把所有动作都放开。像 shell 执行、文件写入这类高风险操作，会受审批模式控制：
 
+命令执行分成两条路径：`run_shell` 接收当前操作系统的 shell 命令字符串，适合管道和重定向；`run_process` 接收程序名和参数列表，不经过 shell，适合执行 Python、pytest、Git 等带参数的程序，也避免跨平台 quoting 差异。
+
 - `--approval ask`
 - `--approval auto`
 - `--approval never`

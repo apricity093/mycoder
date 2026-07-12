@@ -32,6 +32,11 @@ BASE_TOOL_SPECS = {
         "risky": True,
         "description": "Run a shell command in the repo root.",
     },
+    "run_process": {
+        "schema": {"program": "str", "args": "list[str]=[]", "timeout": "int=20"},
+        "risky": True,
+        "description": "Run an executable with structured arguments and no shell.",
+    },
     "write_file": {
         "schema": {"path": "str", "content": "str"},
         "risky": True,
@@ -59,6 +64,7 @@ TOOL_EXAMPLES = {
     "read_file": '<tool>{"name":"read_file","args":{"path":"README.md","start":1,"end":80}}</tool>',
     "search": '<tool>{"name":"search","args":{"pattern":"binary_search","path":"."}}</tool>',
     "run_shell": '<tool>{"name":"run_shell","args":{"command":"uv run --with pytest python -m pytest -q","timeout":20}}</tool>',
+    "run_process": '<tool>{"name":"run_process","args":{"program":"python","args":["-m","pytest","-q"],"timeout":20}}</tool>',
     "write_file": '<tool name="write_file" path="binary_search.py"><content>def binary_search(nums, target):\n    return -1\n</content></tool>',
     "patch_file": '<tool name="patch_file" path="binary_search.py"><old_text>return -1</old_text><new_text>return mid</new_text></tool>',
     "delegate": '<tool>{"name":"delegate","args":{"task":"inspect README.md","max_steps":3}}</tool>',
@@ -113,6 +119,20 @@ def validate_tool(context, name, args):
         command = str(args.get("command", "")).strip()
         if not command:
             raise ValueError("command must not be empty")
+        timeout = int(args.get("timeout", 20))
+        if timeout < 1 or timeout > 120:
+            raise ValueError("timeout must be in [1, 120]")
+        return
+
+    if name == "run_process":
+        program = str(args.get("program", "")).strip()
+        if not program:
+            raise ValueError("program must not be empty")
+        process_args = args.get("args", [])
+        if not isinstance(process_args, list):
+            raise ValueError("args must be a list of strings")
+        if any(not isinstance(value, str) for value in process_args):
+            raise ValueError("args must be a list of strings")
         timeout = int(args.get("timeout", 20))
         if timeout < 1 or timeout > 120:
             raise ValueError("timeout must be in [1, 120]")
@@ -210,6 +230,18 @@ def tool_search(context, args):
     return "\n".join(matches) or "(no matches)"
 
 
+def _format_process_result(result):
+    return textwrap.dedent(
+        f"""\
+        exit_code: {result.returncode}
+        stdout:
+        {result.stdout.strip() or "(empty)"}
+        stderr:
+        {result.stderr.strip() or "(empty)"}
+        """
+    ).strip()
+
+
 def tool_run_shell(context, args):
     command = str(args.get("command", "")).strip()
     if not command:
@@ -228,15 +260,24 @@ def tool_run_shell(context, args):
         # 目的是减少敏感信息被意外带进命令执行环境的风险。
         env=context.shell_env(),
     )
-    return textwrap.dedent(
-        f"""\
-        exit_code: {result.returncode}
-        stdout:
-        {result.stdout.strip() or "(empty)"}
-        stderr:
-        {result.stderr.strip() or "(empty)"}
-        """
-    ).strip()
+    return _format_process_result(result)
+
+
+def tool_run_process(context, args):
+    program = str(args.get("program", "")).strip()
+    process_args = list(args.get("args", []))
+    timeout = int(args.get("timeout", 20))
+    result = subprocess.run(
+        [program, *process_args],
+        cwd=context.root,
+        shell=False,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        # 结构化参数不经过 shell，仍使用过滤后的环境变量，避免泄露敏感信息。
+        env=context.shell_env(),
+    )
+    return _format_process_result(result)
 
 
 def tool_write_file(context, args):
@@ -278,6 +319,7 @@ _TOOL_RUNNERS = {
     "read_file": tool_read_file,
     "search": tool_search,
     "run_shell": tool_run_shell,
+    "run_process": tool_run_process,
     "write_file": tool_write_file,
     "patch_file": tool_patch_file,
 }

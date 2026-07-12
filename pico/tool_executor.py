@@ -118,7 +118,7 @@ class ToolExecutor:
             workspace_changed = bool(affected_paths)
             tool_status = "ok"
             tool_error_code = ""
-            if name == "run_shell":
+            if name in {"run_shell", "run_process"}:
                 match = re.search(r"exit_code:\s*(-?\d+)", content)
                 exit_code = int(match.group(1)) if match else 0
                 if exit_code != 0 and workspace_changed:
