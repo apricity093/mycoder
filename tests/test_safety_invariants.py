@@ -2,6 +2,8 @@ import os
 import sys
 from unittest.mock import patch
 
+import pytest
+
 from pico import FakeModelClient, Pico, SessionStore, WorkspaceContext
 from pico import cli as pico_cli
 from pico.task_state import TaskState
@@ -37,7 +39,12 @@ def test_workspace_escape_is_rejected(tmp_path):
 def test_symlink_path_traversal_is_rejected(tmp_path):
     outside = tmp_path.parent / f"{tmp_path.name}-outside.txt"
     outside.write_text("outside\n", encoding="utf-8")
-    (tmp_path / "linked.txt").symlink_to(outside)
+    try:
+        (tmp_path / "linked.txt").symlink_to(outside)
+    except OSError as exc:
+        if os.name == "nt" and getattr(exc, "winerror", None) == 1314:
+            pytest.skip("Windows symlink creation requires the symlink privilege")
+        raise
     agent = build_agent(tmp_path, [])
 
     result = agent.run_tool("read_file", {"path": "linked.txt"})
