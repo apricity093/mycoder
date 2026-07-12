@@ -135,44 +135,17 @@ uv run pico --model deepseek-v4-pro --base-url https://api.deepseek.com/anthropi
 
 DeepSeek 当前走 Anthropic-compatible Messages API，所以 runtime 里复用的是 Anthropic-compatible client；这只影响 HTTP 协议，不影响 CLI 用法。
 
-### 可选配置：right.codes
+### OpenAI 和 Anthropic 兼容接口
 
-right.codes 在 Pico 里有两条可选 provider 路径：
-
-- `--provider openai`：走 OpenAI-compatible `/responses`，默认 base URL 是 `https://www.right.codes/codex/v1`，默认模型是 `gpt-5.4`
-- `--provider anthropic`：走 Anthropic-compatible `/messages`，默认 base URL 是 `https://www.right.codes/claude/v1`，默认模型是 `claude-sonnet-4-6`
-
-如果 right.codes 给你的是一把共享 key，推荐只填这一项：
-
-```bash
-PICO_RIGHT_CODES_API_KEY="your-right-codes-key"
-```
-
-然后按需要选择 provider：
-
-```bash
-uv run pico --provider openai
-uv run pico --provider anthropic
-```
-
-如果你想显式区分两条 provider 的 key，也可以分别配置：
-
-```bash
-PICO_OPENAI_API_KEY="your-right-codes-key-for-codex"
-PICO_ANTHROPIC_API_KEY="your-right-codes-key-for-claude"
-```
-
-不要在 `.env` 里写 `PICO_OPENAI_API_KEY=$PICO_RIGHT_CODES_API_KEY` 这种 shell 展开形式；Pico 的 `.env` 解析器只读取字面量，不展开变量引用。要么只写 `PICO_RIGHT_CODES_API_KEY`，要么把 key 字符串分别填到 provider-specific 变量里。
-
-如果请求 right.codes 返回 `API Key额度不足`，说明协议和 endpoint 已经打通，但当前 key 没有可用额度；换一把有额度的 key，或到 right.codes 后台处理额度。
+OpenAI-compatible 和 Anthropic-compatible provider 默认使用官方接口；如果你使用其他兼容服务，可以通过对应的 `PICO_*_API_BASE` 覆盖地址。
 
 当前 provider 环境变量：
 
 | provider | base URL | API key | model |
 | --- | --- | --- | --- |
 | `deepseek` | `PICO_DEEPSEEK_API_BASE`，回退 `DEEPSEEK_API_BASE`，默认 `https://api.deepseek.com/anthropic` | `PICO_DEEPSEEK_API_KEY`，回退 `DEEPSEEK_API_KEY` | `PICO_DEEPSEEK_MODEL`，回退 `DEEPSEEK_MODEL`，默认 `deepseek-v4-pro` |
-| `openai` | `PICO_OPENAI_API_BASE`，回退 `OPENAI_API_BASE`，默认 `https://www.right.codes/codex/v1` | `PICO_OPENAI_API_KEY`，回退 `OPENAI_API_KEY`、`PICO_RIGHT_CODES_API_KEY`、`RIGHT_CODES_API_KEY`、`PICO_ANTHROPIC_API_KEY`、`ANTHROPIC_API_KEY` | `PICO_OPENAI_MODEL`，回退 `OPENAI_MODEL`，默认 `gpt-5.4` |
-| `anthropic` | `PICO_ANTHROPIC_API_BASE`，回退 `ANTHROPIC_API_BASE`，默认 `https://www.right.codes/claude/v1` | `PICO_ANTHROPIC_API_KEY`，回退 `ANTHROPIC_API_KEY`、`PICO_RIGHT_CODES_API_KEY`、`RIGHT_CODES_API_KEY`、`PICO_OPENAI_API_KEY`、`OPENAI_API_KEY` | `PICO_ANTHROPIC_MODEL`，回退 `ANTHROPIC_MODEL`，默认 `claude-sonnet-4-6` |
+| `openai` | `PICO_OPENAI_API_BASE`，回退 `OPENAI_API_BASE`，默认 `https://api.openai.com/v1` | `PICO_OPENAI_API_KEY`，回退 `OPENAI_API_KEY` | `PICO_OPENAI_MODEL`，回退 `OPENAI_MODEL`，默认 `gpt-5.4` |
+| `anthropic` | `PICO_ANTHROPIC_API_BASE`，回退 `ANTHROPIC_API_BASE`，默认 `https://api.anthropic.com/v1` | `PICO_ANTHROPIC_API_KEY`，回退 `ANTHROPIC_API_KEY` | `PICO_ANTHROPIC_MODEL`，回退 `ANTHROPIC_MODEL`，默认 `claude-sonnet-4-6` |
 | `ollama` | `--host`，默认 `http://127.0.0.1:11434` | 不需要 | `--model`，默认 `qwen3.5:4b` |
 
 如果有额外的敏感环境变量需要从 trace/report 里脱敏，可以用 `PICO_SECRET_ENV_NAMES` 配置逗号分隔的变量名，或启动时重复传 `--secret-env-name NAME`。
@@ -185,11 +158,11 @@ PICO_ANTHROPIC_API_KEY="your-right-codes-key-for-claude"
 uv run pico --provider openai
 ```
 
-默认 OpenAI 兼容接口使用 right.codes 的 Codex endpoint：
+默认 OpenAI 兼容接口使用官方 endpoint：
 
 ```bash
-PICO_OPENAI_API_BASE="https://www.right.codes/codex/v1"
-PICO_RIGHT_CODES_API_KEY="your-right-codes-key"
+PICO_OPENAI_API_BASE="https://api.openai.com/v1"
+PICO_OPENAI_API_KEY="your-openai-api-key"
 PICO_OPENAI_MODEL="gpt-5.4"
 ```
 
@@ -209,15 +182,13 @@ PICO_OPENAI_MODEL="gpt-5.4"
 uv run pico --provider anthropic
 ```
 
-默认 Anthropic 兼容接口使用 right.codes 的 Claude endpoint：
+默认 Anthropic 兼容接口使用官方 endpoint：
 
 ```bash
-PICO_ANTHROPIC_API_BASE="https://www.right.codes/claude/v1"
-PICO_RIGHT_CODES_API_KEY="your-right-codes-key"
+PICO_ANTHROPIC_API_BASE="https://api.anthropic.com/v1"
+PICO_ANTHROPIC_API_KEY="your-anthropic-api-key"
 PICO_ANTHROPIC_MODEL="claude-sonnet-4-6"
 ```
-
-如果你的服务端对多个兼容接口复用了同一套密钥，`pico` 也支持从 `PICO_ANTHROPIC_API_KEY` 回退到 `ANTHROPIC_API_KEY`、`PICO_RIGHT_CODES_API_KEY`、`RIGHT_CODES_API_KEY`、`PICO_OPENAI_API_KEY` 或 `OPENAI_API_KEY`。
 
 ### Ollama
 
