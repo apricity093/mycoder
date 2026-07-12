@@ -31,9 +31,9 @@ class FakeModelClient:
 
 
 class OllamaModelClient:
-    def __init__(self, model, host, temperature, top_p, timeout):
+    def __init__(self, model, base_url, temperature, top_p, timeout):
         self.model = model
-        self.host = host.rstrip("/")
+        self.base_url = base_url.rstrip("/")
         self.temperature = temperature
         self.top_p = top_p
         self.timeout = timeout
@@ -57,7 +57,7 @@ class OllamaModelClient:
             },
         }
         request = urllib.request.Request(
-            self.host + "/api/generate",
+            self.base_url + "/api/generate",
             data=json.dumps(payload).encode("utf-8"),
             headers={"Content-Type": "application/json"},
             method="POST",
@@ -72,7 +72,7 @@ class OllamaModelClient:
             raise RuntimeError(
                 "Could not reach Ollama.\n"
                 "Make sure `ollama serve` is running and the model is available.\n"
-                f"Host: {self.host}\n"
+                f"Base URL: {self.base_url}\n"
                 f"Model: {self.model}"
             ) from exc
 

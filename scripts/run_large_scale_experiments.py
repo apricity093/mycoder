@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from pico.metrics import (  # noqa: E402
+from pico.evaluation.metrics import (  # noqa: E402
     collect_resume_metrics,
     render_large_scale_experiment_report,
     render_resume_metrics_markdown,
@@ -24,7 +24,7 @@ def build_arg_parser():
     parser.add_argument("--provider-workspace-root", default="artifacts/provider-workspaces", help="Workspace root for provider experiment copies.")
     parser.add_argument("--provider-artifact-root", default="artifacts/provider-artifacts", help="Artifact root for provider benchmark outputs.")
     parser.add_argument("--experiment-mode", choices=("synthetic", "real"), default="synthetic")
-    parser.add_argument("--real-provider", choices=("gpt", "claude", "deepseek"), default="gpt")
+    parser.add_argument("--provider", choices=("ollama", "openai", "anthropic", "deepseek"), default=None)
     parser.add_argument("--memory-repetitions", type=int, default=3)
     parser.add_argument("--large-memory-repetitions", type=int, default=5)
     parser.add_argument("--context-repetitions", type=int, default=5)
@@ -46,6 +46,7 @@ def main(argv=None):
         benchmark_path=args.provider_benchmark_path,
         workspace_root=args.provider_workspace_root,
         artifact_root=args.provider_artifact_root,
+        provider=args.provider,
     )
     provider_output = Path(args.provider_output_json)
     provider_output.parent.mkdir(parents=True, exist_ok=True)
@@ -60,7 +61,7 @@ def main(argv=None):
         context_repetitions=args.context_repetitions,
         security_repetitions=args.security_repetitions,
         experiment_mode=args.experiment_mode,
-        real_provider=args.real_provider,
+        real_provider=args.provider,
     )
 
     outputs = {

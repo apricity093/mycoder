@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 import pico as pico_pkg
 from pico import (
     AnthropicCompatibleModelClient,
@@ -282,7 +283,7 @@ def test_welcome_screen_keeps_box_shape_for_long_paths(tmp_path):
     deep.mkdir(parents=True)
     agent = build_agent(deep, [])
 
-    welcome = build_welcome(agent, model="qwen3.5:4b", host="http://127.0.0.1:11434")
+    welcome = build_welcome(agent, model="qwen3.5:4b", base_url="http://127.0.0.1:11434")
     lines = welcome.splitlines()
 
     assert len(lines) >= 5
@@ -320,7 +321,7 @@ def test_ollama_client_posts_expected_payload():
 
     client = OllamaModelClient(
         model="qwen3.5:4b",
-        host="http://127.0.0.1:11434",
+        base_url="http://127.0.0.1:11434",
         temperature=0.2,
         top_p=0.9,
         timeout=30,
@@ -632,7 +633,7 @@ def test_anthropic_compatible_client_extracts_first_text_block():
     assert result == "<final>ok</final>"
 
 
-def test_build_agent_uses_openai_provider_and_model_override(tmp_path):
+def test_build_agent_uses_openai_provider_and_cli_overrides(tmp_path):
     args = type(
         "Args",
         (),
@@ -640,8 +641,7 @@ def test_build_agent_uses_openai_provider_and_model_override(tmp_path):
             "cwd": str(tmp_path),
             "provider": "openai",
             "model": "override-model",
-            "base_url": None,
-            "host": "http://127.0.0.1:11434",
+            "base_url": "https://cli.example/v1",
             "ollama_timeout": 300,
             "temperature": 0.2,
             "top_p": 0.9,
@@ -656,9 +656,9 @@ def test_build_agent_uses_openai_provider_and_model_override(tmp_path):
     with patch.dict(
         os.environ,
         {
-            "OPENAI_API_BASE": "https://api.openai.com/v1",
-            "OPENAI_API_KEY": "sk-test",
-            "OPENAI_MODEL": "env-model",
+            "PICO_BASE_URL": "https://api.openai.com/v1",
+            "PICO_API_KEY": "sk-test",
+            "PICO_MODEL": "env-model",
         },
         clear=False,
     ):
@@ -671,8 +671,30 @@ def test_build_agent_uses_openai_provider_and_model_override(tmp_path):
 
     mock_openai.assert_called_once()
     assert mock_openai.call_args.kwargs["model"] == "override-model"
-    assert mock_openai.call_args.kwargs["base_url"] == "https://api.openai.com/v1"
+    assert mock_openai.call_args.kwargs["base_url"] == "https://cli.example/v1"
     assert mock_openai.call_args.kwargs["api_key"] == "sk-test"
+    assert agent.model_client is fake_client
+
+
+def test_build_agent_uses_ollama_with_unified_config(tmp_path):
+    args = pico_pkg.build_arg_parser().parse_args(
+        ["--cwd", str(tmp_path), "--provider", "ollama"]
+    )
+
+    with patch.dict(
+        os.environ,
+        {
+            "PICO_MODEL": "custom-ollama",
+            "PICO_BASE_URL": "http://127.0.0.1:22434",
+        },
+        clear=True,
+    ), patch("pico.cli.OllamaModelClient") as mock_ollama:
+        fake_client = mock_ollama.return_value
+        agent = pico_pkg.build_agent(args)
+
+    assert mock_ollama.call_args.kwargs["model"] == "custom-ollama"
+    assert mock_ollama.call_args.kwargs["base_url"] == "http://127.0.0.1:22434"
+    assert "api_key" not in mock_ollama.call_args.kwargs
     assert agent.model_client is fake_client
 
 
@@ -694,15 +716,33 @@ def test_build_arg_parser_accepts_deepseek_provider(tmp_path):
     assert args.provider == "deepseek"
 
 
+def test_build_arg_parser_normalizes_provider_case(tmp_path):
+    args = pico_pkg.build_arg_parser().parse_args(["--cwd", str(tmp_path), "--provider", "DeepSeek"])
+
+    assert args.provider == "deepseek"
+
+
+def test_main_reports_missing_unified_api_key_without_traceback(tmp_path, capsys):
+    (tmp_path / "README.md").write_text("demo\n", encoding="utf-8")
+
+    with patch.dict(os.environ, {}, clear=True):
+        result = pico_pkg.main(["--cwd", str(tmp_path)])
+
+    captured = capsys.readouterr()
+    assert result == 2
+    assert "Configuration error: PICO_API_KEY is required for provider deepseek." in captured.err
+    assert "PICO_MODEL (or --model)" in captured.err
+    assert "PICO_BASE_URL (or --base-url)" in captured.err
+
+
 def test_build_agent_uses_project_env_provider_when_cli_omitted(tmp_path):
     (tmp_path / ".env").write_text(
         "\n".join(
             [
                 "PICO_PROVIDER=openai",
-                "PICO_OPENAI_API_BASE=https://api.openai.com/v1",
-                "PICO_OPENAI_API_KEY=sk-project-openai",
-                "PICO_OPENAI_MODEL=gpt-5.4",
-                "PICO_DEEPSEEK_API_KEY=sk-project-deepseek",
+                "PICO_BASE_URL=https://api.openai.com/v1",
+                "PICO_API_KEY=sk-project-openai",
+                "PICO_MODEL=gpt-5.4",
             ]
         )
         + "\n",
@@ -731,13 +771,12 @@ def test_build_agent_uses_project_env_provider_when_cli_omitted(tmp_path):
 def test_build_agent_prefers_cli_provider_over_project_env_provider(tmp_path):
     (tmp_path / ".env").write_text(
         "\n".join(
-            [
-                "PICO_PROVIDER=openai",
-                "PICO_OPENAI_API_KEY=sk-project-openai",
-                "PICO_DEEPSEEK_API_BASE=https://api.deepseek.com/anthropic",
-                "PICO_DEEPSEEK_API_KEY=sk-project-deepseek",
-                "PICO_DEEPSEEK_MODEL=deepseek-v4-pro",
-            ]
+                [
+                    "PICO_PROVIDER=openai",
+                    "PICO_API_KEY=sk-project-key",
+                    "PICO_MODEL=deepseek-v4-pro",
+                    "PICO_BASE_URL=https://api.deepseek.com/anthropic",
+                ]
         )
         + "\n",
         encoding="utf-8",
@@ -760,7 +799,7 @@ def test_build_agent_prefers_cli_provider_over_project_env_provider(tmp_path):
     mock_anthropic.assert_called_once()
     assert mock_anthropic.call_args.kwargs["model"] == "deepseek-v4-pro"
     assert mock_anthropic.call_args.kwargs["base_url"] == "https://api.deepseek.com/anthropic"
-    assert mock_anthropic.call_args.kwargs["api_key"] == "sk-project-deepseek"
+    assert mock_anthropic.call_args.kwargs["api_key"] == "sk-project-key"
     assert agent.model_client is fake_client
 
 
@@ -773,7 +812,6 @@ def test_build_agent_uses_anthropic_provider_and_anthropic_key(tmp_path):
             "provider": "anthropic",
             "model": "claude-sonnet-4-5-20250929",
             "base_url": None,
-            "host": "http://127.0.0.1:11434",
             "ollama_timeout": 300,
             "openai_timeout": 300,
             "temperature": 0.2,
@@ -789,7 +827,8 @@ def test_build_agent_uses_anthropic_provider_and_anthropic_key(tmp_path):
     with patch.dict(
         os.environ,
         {
-            "ANTHROPIC_API_KEY": "sk-anthropic",
+            "PICO_API_KEY": "sk-anthropic",
+            "PICO_BASE_URL": "https://api.anthropic.com/v1",
         },
         clear=True,
     ):
@@ -810,28 +849,26 @@ def test_build_agent_uses_anthropic_provider_and_anthropic_key(tmp_path):
     assert agent.model_client is fake_client
 
 
-def test_build_agent_uses_anthropic_default_model_when_env_is_missing(tmp_path):
+def test_build_agent_reports_missing_anthropic_model_and_base_url(tmp_path):
     args = pico_pkg.build_arg_parser().parse_args(["--cwd", str(tmp_path), "--provider", "anthropic"])
 
     with patch.dict(
         os.environ,
-        {},
-        clear=False,
+        {"PICO_API_KEY": "sk-anthropic"},
+        clear=True,
     ):
-        os.environ.pop("ANTHROPIC_MODEL", None)
-        with patch("pico.cli.AnthropicCompatibleModelClient") as mock_anthropic:
+        with pytest.raises(ValueError, match="PICO_MODEL.*PICO_BASE_URL"):
             pico_pkg.build_agent(args)
-
-    assert mock_anthropic.call_args.kwargs["model"] == "claude-sonnet-4-6"
 
 
 def test_build_agent_uses_deepseek_provider_and_env_configuration(tmp_path):
     (tmp_path / ".env").write_text(
         "\n".join(
             [
-                "PICO_DEEPSEEK_API_BASE=https://api.deepseek.com/anthropic",
-                "PICO_DEEPSEEK_API_KEY=sk-project-deepseek",
-                "PICO_DEEPSEEK_MODEL=deepseek-v4-pro",
+                "PICO_PROVIDER=deepseek",
+                "PICO_BASE_URL=https://api.deepseek.com/anthropic",
+                "PICO_API_KEY=sk-project-deepseek",
+                "PICO_MODEL=deepseek-v4-pro",
             ]
         )
         + "\n",
@@ -845,7 +882,6 @@ def test_build_agent_uses_deepseek_provider_and_env_configuration(tmp_path):
             "provider": "deepseek",
             "model": None,
             "base_url": None,
-            "host": "http://127.0.0.1:11434",
             "ollama_timeout": 300,
             "openai_timeout": 300,
             "temperature": 0.2,
@@ -860,13 +896,7 @@ def test_build_agent_uses_deepseek_provider_and_env_configuration(tmp_path):
 
     with patch.dict(
         os.environ,
-        {
-            "DEEPSEEK_API_BASE": "https://legacy.deepseek.example/anthropic",
-            "DEEPSEEK_API_KEY": "sk-legacy-deepseek",
-            "DEEPSEEK_MODEL": "legacy-deepseek-model",
-            "ANTHROPIC_API_KEY": "sk-anthropic",
-            "OPENAI_API_KEY": "sk-openai",
-        },
+        {},
         clear=True,
     ):
         with patch(
@@ -886,15 +916,12 @@ def test_build_agent_uses_deepseek_provider_and_env_configuration(tmp_path):
     assert agent.model_client is fake_client
 
 
-def test_build_agent_uses_deepseek_default_model_when_env_is_missing(tmp_path):
+def test_build_agent_reports_missing_deepseek_model_and_base_url(tmp_path):
     args = pico_pkg.build_arg_parser().parse_args(["--cwd", str(tmp_path), "--provider", "deepseek"])
 
-    with patch.dict(os.environ, {"DEEPSEEK_API_KEY": "sk-deepseek"}, clear=True):
-        with patch("pico.cli.AnthropicCompatibleModelClient") as mock_anthropic:
+    with patch.dict(os.environ, {"PICO_API_KEY": "sk-deepseek"}, clear=True):
+        with pytest.raises(ValueError, match="PICO_MODEL.*PICO_BASE_URL"):
             pico_pkg.build_agent(args)
-
-    assert mock_anthropic.call_args.kwargs["model"] == "deepseek-v4-pro"
-    assert mock_anthropic.call_args.kwargs["base_url"] == "https://api.deepseek.com/anthropic"
 
 
 def test_build_agent_uses_deepseek_provider_by_default(tmp_path):
@@ -903,10 +930,11 @@ def test_build_agent_uses_deepseek_provider_by_default(tmp_path):
     with patch.dict(
         os.environ,
         {
-            "DEEPSEEK_API_BASE": "https://api.deepseek.com/anthropic",
-            "DEEPSEEK_API_KEY": "sk-test",
+            "PICO_API_KEY": "sk-test",
+            "PICO_MODEL": "deepseek-v4-pro",
+            "PICO_BASE_URL": "https://api.deepseek.com/anthropic",
         },
-        clear=False,
+        clear=True,
     ):
         with patch(
             "pico.cli.OllamaModelClient",
@@ -965,11 +993,24 @@ def test_successful_run_persists_run_artifacts_and_stop_reason(tmp_path):
 
 def test_trace_and_report_redact_secret_env_values(tmp_path):
     secret = "sk-test-secret-123"
-    with patch.dict(os.environ, {"OPENAI_API_KEY": secret}, clear=True):
+    shell_command = "echo sk-test-secret-123" if os.name == "nt" else "printf '%s' 'sk-test-secret-123'"
+    shell_env = {"PICO_API_KEY": secret}
+    if os.name == "nt":
+        system_root = os.environ.get("SystemRoot") or os.environ.get("WINDIR") or r"C:\Windows"
+        shell_env.update(
+            {
+                "ComSpec": os.environ.get("ComSpec") or str(Path(system_root) / "System32" / "cmd.exe"),
+                "SystemRoot": system_root,
+            }
+        )
+
+    with patch.dict(os.environ, shell_env, clear=True):
         agent = build_agent(
             tmp_path,
             [
-                '<tool>{"name":"run_shell","args":{"command":"printf \'%s\' \'sk-test-secret-123\'","timeout":20}}</tool>',
+                '<tool>{"name":"run_shell","args":{"command":'
+                + json.dumps(shell_command)
+                + ',"timeout":20}}</tool>',
                 "<final>Masked.</final>",
             ],
         )
@@ -991,7 +1032,7 @@ def test_trace_and_report_redact_secret_env_values(tmp_path):
     prompt_events = [event for event in trace_events if event["event"] == "prompt_built"]
     assert prompt_events
     assert prompt_events[0]["prompt_metadata"]["secret_env_count"] >= 1
-    assert "OPENAI_API_KEY" in prompt_events[0]["prompt_metadata"]["secret_env_names"]
+    assert "PICO_API_KEY" in prompt_events[0]["prompt_metadata"]["secret_env_names"]
 
     tool_events = [event for event in trace_events if event["event"] == "tool_executed"]
     assert tool_events

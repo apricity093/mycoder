@@ -57,9 +57,6 @@ def load_project_env(start, override=True):
     return loaded
 
 
-def provider_env(name, legacy_names=(), default=""):
-    for env_name in (name, *legacy_names):
-        value = os.environ.get(env_name)
-        if value:
-            return value
-    return default
+def provider_env(name, default=""):
+    value = os.environ.get(name)
+    return value if value else default

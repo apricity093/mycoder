@@ -5,6 +5,7 @@ from pico.evaluation.metrics import (
     _provider_profile,
     run_context_ablation_v2,
     run_memory_ablation_v2,
+    run_provider_experiments,
     run_recovery_ablation_v2,
     write_benchmark_core_report,
 )
@@ -25,14 +26,15 @@ def test_run_context_ablation_v2_writes_expected_artifact(tmp_path):
     assert "current_request_preserved_rate" in artifact["summary"]
 
 
-def test_provider_profile_loads_project_env_before_reading_deepseek_config(tmp_path, monkeypatch):
+def test_provider_profile_loads_unified_project_env(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     (tmp_path / ".env").write_text(
         "\n".join(
             [
-                "PICO_DEEPSEEK_API_KEY=sk-project-deepseek",
-                "PICO_DEEPSEEK_MODEL=deepseek-v4-pro",
-                "PICO_DEEPSEEK_API_BASE=https://api.deepseek.com/anthropic",
+                "PICO_PROVIDER=deepseek",
+                "PICO_API_KEY=sk-project-deepseek",
+                "PICO_MODEL=deepseek-v4-pro",
+                "PICO_BASE_URL=https://api.deepseek.com/anthropic",
             ]
         )
         + "\n",
@@ -41,11 +43,7 @@ def test_provider_profile_loads_project_env_before_reading_deepseek_config(tmp_p
 
     with patch.dict(
         os.environ,
-        {
-            "DEEPSEEK_API_KEY": "sk-legacy-deepseek",
-            "DEEPSEEK_MODEL": "legacy-deepseek-model",
-            "DEEPSEEK_API_BASE": "https://legacy.deepseek.example/anthropic",
-        },
+        {},
         clear=True,
     ):
         profile = _provider_profile("deepseek")
@@ -56,15 +54,52 @@ def test_provider_profile_loads_project_env_before_reading_deepseek_config(tmp_p
     assert profile["base_url"] == "https://api.deepseek.com/anthropic"
 
 
-def test_provider_profile_uses_openai_key_for_gpt(tmp_path, monkeypatch):
+def test_provider_profile_uses_unified_openai_config(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 
-    with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-openai"}, clear=True):
-        profile = _provider_profile("gpt")
+    with patch.dict(
+        os.environ,
+        {
+            "PICO_PROVIDER": "openai",
+            "PICO_API_KEY": "sk-openai",
+        },
+        clear=True,
+    ):
+        profile = _provider_profile()
 
     assert profile["status"] == "ready"
     assert profile["api_key"] == "sk-openai"
+    assert profile["provider"] == "openai"
     assert profile["model"] == "gpt-5.4"
+
+
+def test_provider_experiments_runs_only_the_active_provider(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    fake_payload = {
+        "rows": [],
+        "summary": {"total_tasks": 0, "pass_rate": 0.0},
+    }
+
+    with patch.dict(
+        os.environ,
+        {
+            "PICO_PROVIDER": "openai",
+            "PICO_MODEL": "gpt-5.4",
+            "PICO_BASE_URL": "https://api.openai.com/v1",
+            "PICO_API_KEY": "sk-openai",
+        },
+        clear=True,
+    ), patch("pico.evaluation.metrics.run_fixed_benchmark", return_value=fake_payload) as runner:
+        result = run_provider_experiments(
+            benchmark_path=tmp_path / "benchmark.json",
+            workspace_root=tmp_path / "workspaces",
+            artifact_root=tmp_path / "artifacts",
+        )
+
+    assert len(result["providers"]) == 1
+    assert result["providers"][0]["provider"] == "openai"
+    assert runner.call_args.kwargs["model_name"] == "openai"
+    assert runner.call_args.kwargs["workspace_root"] == tmp_path / "workspaces" / "openai"
 
 
 def test_run_memory_ablation_v2_writes_expected_artifact(tmp_path):

@@ -8,11 +8,12 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from pico.metrics import run_provider_experiments  # noqa: E402
+from pico.evaluation.metrics import run_provider_experiments  # noqa: E402
 
 
 def build_arg_parser():
-    parser = argparse.ArgumentParser(description="Run GPT, Claude, and DeepSeek provider experiments for pico benchmark tasks.")
+    parser = argparse.ArgumentParser(description="Run the active pico model provider against benchmark tasks.")
+    parser.add_argument("--provider", choices=("ollama", "openai", "anthropic", "deepseek"), default=None, help="Provider override. Defaults to PICO_PROVIDER.")
     parser.add_argument("--benchmark-path", default="benchmarks/coding_tasks.json", help="Path to benchmark task JSON.")
     parser.add_argument("--workspace-root", default="artifacts/provider-workspaces", help="Workspace root for provider experiment copies.")
     parser.add_argument("--artifact-root", default="artifacts/provider-artifacts", help="Directory to store provider benchmark artifacts.")
@@ -28,6 +29,7 @@ def main(argv=None):
         workspace_root=args.workspace_root,
         artifact_root=args.artifact_root,
         max_new_tokens=args.max_new_tokens,
+        provider=args.provider,
     )
     output = Path(args.output_json)
     output.parent.mkdir(parents=True, exist_ok=True)

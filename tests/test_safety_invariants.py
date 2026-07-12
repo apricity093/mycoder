@@ -64,7 +64,11 @@ def test_cli_build_agent_wires_secret_env_names_from_parser(tmp_path):
             raise AssertionError("model should not be invoked")
 
     (tmp_path / "README.md").write_text("demo\n", encoding="utf-8")
-    with patch.dict(os.environ, {"GITHUB_PAT": "ghp-1", "GH_PAT": "ghp-2"}, clear=True), patch(
+    with patch.dict(
+        os.environ,
+        {"PICO_PROVIDER": "ollama", "GITHUB_PAT": "ghp-1", "GH_PAT": "ghp-2"},
+        clear=True,
+    ), patch(
         "pico.cli.OllamaModelClient",
         DummyModelClient,
     ):
@@ -94,7 +98,11 @@ def test_cli_build_agent_uses_default_configured_secret_names(tmp_path):
             raise AssertionError("model should not be invoked")
 
     (tmp_path / "README.md").write_text("demo\n", encoding="utf-8")
-    with patch.dict(os.environ, {"GH_PAT": "ghp-default-1"}, clear=True), patch(
+    with patch.dict(
+        os.environ,
+        {"PICO_PROVIDER": "ollama", "GH_PAT": "ghp-default-1"},
+        clear=True,
+    ), patch(
         "pico.cli.OllamaModelClient",
         DummyModelClient,
     ):
@@ -113,11 +121,11 @@ def test_cli_build_agent_loads_project_env_secrets_before_redaction_setup(tmp_pa
             raise AssertionError("model should not be invoked")
 
     (tmp_path / "README.md").write_text("demo\n", encoding="utf-8")
-    (tmp_path / ".env").write_text("PICO_DEEPSEEK_API_KEY=sk-project-secret\n", encoding="utf-8")
+    (tmp_path / ".env").write_text("PICO_API_KEY=sk-project-secret\n", encoding="utf-8")
     with patch.dict(os.environ, {}, clear=True), patch("pico.cli.AnthropicCompatibleModelClient", DummyModelClient):
         args = pico_cli.build_arg_parser().parse_args(["--cwd", str(tmp_path), "--provider", "deepseek"])
         agent = pico_cli.build_agent(args)
-        assert agent.secret_env_summary()["secret_env_names"] == ["PICO_DEEPSEEK_API_KEY"]
+        assert agent.secret_env_summary()["secret_env_names"] == ["PICO_API_KEY"]
 
 
 def test_cli_build_agent_reads_secret_names_from_environment_config(tmp_path):
@@ -133,6 +141,7 @@ def test_cli_build_agent_reads_secret_names_from_environment_config(tmp_path):
     with patch.dict(
         os.environ,
         {
+            "PICO_PROVIDER": "ollama",
             "PICO_CUSTOM_SECRET": "custom-secret-value",
             "PICO_SECRET_ENV_NAMES": "PICO_CUSTOM_SECRET",
         },

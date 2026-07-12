@@ -1,4 +1,6 @@
 from pathlib import Path
+import os
+from unittest.mock import patch
 
 import pico
 from pico import Pico, SessionStore, WorkspaceContext, build_agent, build_arg_parser, build_welcome, main
@@ -20,7 +22,8 @@ def test_build_agent_returns_pico(tmp_path):
     (tmp_path / "README.md").write_text("demo\n", encoding="utf-8")
     args = build_arg_parser().parse_args(["--cwd", str(tmp_path), "--approval", "auto"])
 
-    agent = build_agent(args)
+    with patch.dict(os.environ, {"PICO_API_KEY": "sk-test"}, clear=True):
+        agent = build_agent(args)
 
     assert isinstance(agent, Pico)
 

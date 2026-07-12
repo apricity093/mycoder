@@ -85,7 +85,7 @@ python -m pico
 Pico 启动时会读取项目根目录的 `.env`。本地真实 key 放在 `.env`，仓库只保留 `.env.example`。配置优先级是：
 
 ```text
-显式 CLI 参数 > .env 里的 PICO_* 变量 > 旧环境变量 > 代码默认值
+显式 CLI 参数 > .env 里的统一 PICO_* 变量
 ```
 
 Provider 选择的具体顺序是：
@@ -96,7 +96,7 @@ Provider 选择的具体顺序是：
 
 不传 `--provider` 且没有 `PICO_PROVIDER` 时默认使用 `deepseek`。这是推荐配置路径：DeepSeek 的 Anthropic-compatible endpoint 比本地 Ollama 更少依赖本机模型环境，也比 OpenAI-compatible/Anthropic-compatible 代理少一层默认 gateway 假设。其他 provider 仍然保留，可以在 `.env` 里写 `PICO_PROVIDER=openai`、`PICO_PROVIDER=anthropic`、`PICO_PROVIDER=ollama`，也可以显式传 `--provider openai`、`--provider anthropic` 或 `--provider ollama`。
 
-`.env` 会在构建 provider client 前加载，并覆盖当前进程里的同名环境变量。模型名和 base URL 可以通过 `--model`、`--base-url` 临时覆盖；API key 只从环境变量读取。
+`.env` 会在构建 provider client 前加载，并覆盖当前进程里的同名环境变量。`model` 和 `base URL` 必须通过 `PICO_MODEL`、`PICO_BASE_URL` 或对应 CLI 参数提供；远程 provider 还必须配置 `PICO_API_KEY`。API key 只从环境变量读取。
 
 本地第一次配置：
 
@@ -104,24 +104,20 @@ Provider 选择的具体顺序是：
 cp .env.example .env
 ```
 
-然后把要使用的 provider key 填进去。`.env` 已经被 `.gitignore` 忽略，不要提交真实 key。
+然后配置一组 active provider 参数。`.env` 已经被 `.gitignore` 忽略，不要提交真实 key。
 
 ### 推荐配置：DeepSeek
 
-最小配置只需要 key：
+完整配置示例：
 
 ```bash
-PICO_DEEPSEEK_API_KEY="your-api-key"
+PICO_PROVIDER="deepseek"
+PICO_MODEL="deepseek-v4-pro"
+PICO_BASE_URL="https://api.deepseek.com/anthropic"
+PICO_API_KEY="your-api-key"
 ```
 
-默认模型和接口是：
-
-```bash
-PICO_DEEPSEEK_API_BASE="https://api.deepseek.com/anthropic"
-PICO_DEEPSEEK_MODEL="deepseek-v4-pro"
-```
-
-所以常规情况下 `.env` 里只填 `PICO_DEEPSEEK_API_KEY` 就能直接启动：
+配置完成后直接启动：
 
 ```bash
 uv run pico
@@ -135,59 +131,48 @@ uv run pico --model deepseek-v4-pro --base-url https://api.deepseek.com/anthropi
 
 DeepSeek 当前走 Anthropic-compatible Messages API，所以 runtime 里复用的是 Anthropic-compatible client；这只影响 HTTP 协议，不影响 CLI 用法。
 
-### OpenAI 和 Anthropic 兼容接口
-
-OpenAI-compatible 和 Anthropic-compatible provider 默认使用官方接口；如果你使用其他兼容服务，可以通过对应的 `PICO_*_API_BASE` 覆盖地址。
-
-当前 provider 环境变量：
+所有 provider 使用相同的环境变量名，只修改值：
 
 | provider | base URL | API key | model |
 | --- | --- | --- | --- |
-| `deepseek` | `PICO_DEEPSEEK_API_BASE`，回退 `DEEPSEEK_API_BASE`，默认 `https://api.deepseek.com/anthropic` | `PICO_DEEPSEEK_API_KEY`，回退 `DEEPSEEK_API_KEY` | `PICO_DEEPSEEK_MODEL`，回退 `DEEPSEEK_MODEL`，默认 `deepseek-v4-pro` |
-| `openai` | `PICO_OPENAI_API_BASE`，回退 `OPENAI_API_BASE`，默认 `https://api.openai.com/v1` | `PICO_OPENAI_API_KEY`，回退 `OPENAI_API_KEY` | `PICO_OPENAI_MODEL`，回退 `OPENAI_MODEL`，默认 `gpt-5.4` |
-| `anthropic` | `PICO_ANTHROPIC_API_BASE`，回退 `ANTHROPIC_API_BASE`，默认 `https://api.anthropic.com/v1` | `PICO_ANTHROPIC_API_KEY`，回退 `ANTHROPIC_API_KEY` | `PICO_ANTHROPIC_MODEL`，回退 `ANTHROPIC_MODEL`，默认 `claude-sonnet-4-6` |
-| `ollama` | `--host`，默认 `http://127.0.0.1:11434` | 不需要 | `--model`，默认 `qwen3.5:4b` |
+| `deepseek` | `PICO_BASE_URL`，必填 | `PICO_API_KEY`，必填 | `PICO_MODEL`，必填 |
+| `openai` | `PICO_BASE_URL`，必填 | `PICO_API_KEY`，必填 | `PICO_MODEL`，必填 |
+| `anthropic` | `PICO_BASE_URL`，必填 | `PICO_API_KEY`，必填 | `PICO_MODEL`，必填 |
+| `ollama` | `PICO_BASE_URL`，必填 | 不需要 | `PICO_MODEL`，必填 |
+
+旧的 provider-specific 和 vendor-specific 变量不再兼容；检测到非空旧变量时，Pico 会在启动阶段给出迁移错误。
 
 如果有额外的敏感环境变量需要从 trace/report 里脱敏，可以用 `PICO_SECRET_ENV_NAMES` 配置逗号分隔的变量名，或启动时重复传 `--secret-env-name NAME`。
 
 ### OpenAI 兼容接口
 
-如果要改用 OpenAI-compatible `/responses` 服务，显式传 `--provider openai`：
+OpenAI-compatible `/responses` 配置：
 
 ```bash
-uv run pico --provider openai
-```
-
-默认 OpenAI 兼容接口使用官方 endpoint：
-
-```bash
-PICO_OPENAI_API_BASE="https://api.openai.com/v1"
-PICO_OPENAI_API_KEY="your-openai-api-key"
-PICO_OPENAI_MODEL="gpt-5.4"
+PICO_PROVIDER="openai"
+PICO_MODEL="gpt-5.4"
+PICO_BASE_URL="https://api.openai.com/v1"
+PICO_API_KEY="your-openai-api-key"
 ```
 
 也可以改成其他 OpenAI-compatible 服务：
 
 ```bash
-PICO_OPENAI_API_BASE="https://your-api.example/v1"
-PICO_OPENAI_API_KEY="your-api-key"
-PICO_OPENAI_MODEL="gpt-5.4"
+PICO_PROVIDER="openai"
+PICO_MODEL="gpt-5.4"
+PICO_BASE_URL="https://your-api.example/v1"
+PICO_API_KEY="your-api-key"
 ```
 
 ### Anthropic 兼容接口
 
-如果要改用 Anthropic-compatible 服务，显式传 `--provider anthropic`：
+Anthropic-compatible `/messages` 配置：
 
 ```bash
-uv run pico --provider anthropic
-```
-
-默认 Anthropic 兼容接口使用官方 endpoint：
-
-```bash
-PICO_ANTHROPIC_API_BASE="https://api.anthropic.com/v1"
-PICO_ANTHROPIC_API_KEY="your-anthropic-api-key"
-PICO_ANTHROPIC_MODEL="claude-sonnet-4-6"
+PICO_PROVIDER="anthropic"
+PICO_MODEL="claude-sonnet-4-6"
+PICO_BASE_URL="https://api.anthropic.com/v1"
+PICO_API_KEY="your-anthropic-api-key"
 ```
 
 ### Ollama
@@ -199,6 +184,8 @@ ollama serve
 ollama pull qwen3.5:4b
 uv run pico --provider ollama --model qwen3.5:4b
 ```
+
+也可以在 `.env` 中配置 `PICO_PROVIDER=ollama`、`PICO_MODEL` 和 `PICO_BASE_URL`；Ollama 会忽略空的 `PICO_API_KEY`，但缺少 model 或 base URL 仍会在启动阶段报错。
 
 ## 常用交互命令
 

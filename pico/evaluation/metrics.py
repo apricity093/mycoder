@@ -4,9 +4,10 @@ from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 
-from ..config import load_project_env, provider_env
+from ..config import load_project_env
 from .evaluator import run_fixed_benchmark
-from ..providers.clients import AnthropicCompatibleModelClient, FakeModelClient, OpenAICompatibleModelClient
+from ..providers.clients import AnthropicCompatibleModelClient, FakeModelClient, OllamaModelClient, OpenAICompatibleModelClient
+from ..providers.config import PROVIDER_DEFAULTS, resolve_runtime_config
 from ..runtime import Pico, SessionStore
 from ..workspace import WorkspaceContext
 
@@ -677,68 +678,63 @@ def _provider_summary_from_artifact(payload):
     }
 
 
-def _provider_profile(provider):
+def _provider_profile(provider=None):
     load_project_env(Path.cwd())
-    if provider == "gpt":
-        api_key = provider_env(
-            "PICO_OPENAI_API_KEY",
-            ("OPENAI_API_KEY",),
-        )
-        if not api_key:
-            return {"provider": provider, "status": "blocked", "reason": "PICO_OPENAI_API_KEY or OPENAI_API_KEY missing"}
+    try:
+        config = resolve_runtime_config(provider=provider)
+    except ValueError as exc:
         return {
-            "provider": provider,
-            "status": "ready",
-            "model": provider_env("PICO_OPENAI_MODEL", ("OPENAI_MODEL",), "gpt-5.4"),
-            "base_url": provider_env("PICO_OPENAI_API_BASE", ("OPENAI_API_BASE",), "https://api.openai.com/v1"),
-            "api_key": api_key,
+            "provider": str(provider or "").strip() or "unknown",
+            "status": "blocked",
+            "reason": str(exc),
         }
-    if provider == "deepseek":
-        api_key = provider_env("PICO_DEEPSEEK_API_KEY", ("DEEPSEEK_API_KEY",))
-        if not api_key:
-            return {"provider": provider, "status": "blocked", "reason": "PICO_DEEPSEEK_API_KEY or DEEPSEEK_API_KEY missing"}
-        return {
-            "provider": provider,
-            "status": "ready",
-            "model": provider_env("PICO_DEEPSEEK_MODEL", ("DEEPSEEK_MODEL",), "deepseek-v4-pro"),
-            "base_url": provider_env("PICO_DEEPSEEK_API_BASE", ("DEEPSEEK_API_BASE",), "https://api.deepseek.com/anthropic"),
-            "api_key": api_key,
-        }
-    api_key = provider_env(
-        "PICO_ANTHROPIC_API_KEY",
-        ("ANTHROPIC_API_KEY",),
-    )
-    if not api_key:
-        return {"provider": "claude", "status": "blocked", "reason": "PICO_ANTHROPIC_API_KEY or ANTHROPIC_API_KEY missing"}
     return {
-        "provider": "claude",
+        "provider": config.provider,
         "status": "ready",
-        "model": provider_env("PICO_ANTHROPIC_MODEL", ("ANTHROPIC_MODEL",), "claude-sonnet-4-6"),
-        "base_url": provider_env("PICO_ANTHROPIC_API_BASE", ("ANTHROPIC_API_BASE",), "https://api.anthropic.com/v1"),
-        "api_key": api_key,
+        "model": config.model,
+        "base_url": config.base_url,
+        "api_key": config.api_key,
     }
 
 
-def _make_provider_client(provider):
-    profile = _provider_profile(provider)
-    if profile["status"] != "ready":
-        raise RuntimeError(profile["reason"])
-    timeout = 60
-    if provider == "gpt":
+def _client_from_profile(profile, temperature, timeout):
+    if profile["provider"] == "openai":
         return OpenAICompatibleModelClient(
             model=profile["model"],
             base_url=profile["base_url"],
             api_key=profile["api_key"],
-            temperature=0.0,
+            temperature=temperature,
+            timeout=timeout,
+        )
+    if profile["provider"] == "ollama":
+        return OllamaModelClient(
+            model=profile["model"],
+            base_url=profile["base_url"],
+            temperature=temperature,
+            top_p=0.9,
             timeout=timeout,
         )
     return AnthropicCompatibleModelClient(
         model=profile["model"],
         base_url=profile["base_url"],
         api_key=profile["api_key"],
-        temperature=0.0,
+        temperature=temperature,
         timeout=timeout,
     )
+
+
+def _make_provider_client(provider=None):
+    profile = _provider_profile(provider)
+    if profile["status"] != "ready":
+        raise RuntimeError(profile["reason"])
+    return _client_from_profile(profile, temperature=0.0, timeout=60)
+
+
+def _ready_provider_name(provider=None):
+    profile = _provider_profile(provider)
+    if profile["status"] != "ready":
+        raise RuntimeError(profile["reason"])
+    return profile["provider"]
 
 
 def _normalize_text(value):
@@ -748,62 +744,42 @@ def _normalize_text(value):
     return text
 
 
-def run_provider_experiments(benchmark_path, workspace_root, artifact_root, max_new_tokens=64):
+def run_provider_experiments(benchmark_path, workspace_root, artifact_root, max_new_tokens=64, provider=None):
     benchmark_path = Path(benchmark_path)
     workspace_root = Path(workspace_root)
     artifact_root = Path(artifact_root)
-    providers = []
-    for provider_name in ("gpt", "claude", "deepseek"):
-        profile = _provider_profile(provider_name)
-        if profile["status"] != "ready":
-            providers.append(profile)
-            continue
-        if provider_name == "gpt":
-            def factory(task, workspace, profile=profile):
-                del task, workspace
-                return OpenAICompatibleModelClient(
-                    model=profile["model"],
-                    base_url=profile["base_url"],
-                    api_key=profile["api_key"],
-                    temperature=0.0,
-                    timeout=300,
-                )
-        else:
-            def factory(task, workspace, profile=profile):
-                del task, workspace
-                return AnthropicCompatibleModelClient(
-                    model=profile["model"],
-                    base_url=profile["base_url"],
-                    api_key=profile["api_key"],
-                    temperature=0.0,
-                    timeout=300,
-                )
-        artifact_path = artifact_root / f"{provider_name}-benchmark.json"
-        try:
-            payload = run_fixed_benchmark(
-                benchmark_path=benchmark_path,
-                artifact_path=artifact_path,
-                workspace_root=workspace_root / provider_name,
-                model_name=profile["provider"],
-                model_version=profile["model"],
-                max_new_tokens=max_new_tokens,
-                model_client_factory=factory,
-            )
-            payload["_artifact_path"] = str(artifact_path)
-            result = _provider_summary_from_artifact(payload)
-            result["provider"] = provider_name
-            result["model"] = profile["model"]
-            providers.append(result)
-        except Exception as exc:
-            providers.append(
-                {
-                    "provider": provider_name,
-                    "status": "error",
-                    "model": profile["model"],
-                    "reason": str(exc),
-                }
-            )
-    return {"providers": providers}
+    profile = _provider_profile(provider)
+    if profile["status"] != "ready":
+        return {"providers": [profile]}
+
+    provider_name = profile["provider"]
+    def factory(task, workspace, profile=profile):
+        del task, workspace
+        return _client_from_profile(profile, temperature=0.0, timeout=300)
+
+    artifact_path = artifact_root / f"{provider_name}-benchmark.json"
+    try:
+        payload = run_fixed_benchmark(
+            benchmark_path=benchmark_path,
+            artifact_path=artifact_path,
+            workspace_root=workspace_root / provider_name,
+            model_name=provider_name,
+            model_version=profile["model"],
+            max_new_tokens=max_new_tokens,
+            model_client_factory=factory,
+        )
+        payload["_artifact_path"] = str(artifact_path)
+        result = _provider_summary_from_artifact(payload)
+        result["provider"] = provider_name
+        result["model"] = profile["model"]
+    except Exception as exc:
+        result = {
+            "provider": provider_name,
+            "status": "error",
+            "model": profile["model"],
+            "reason": str(exc),
+        }
+    return {"providers": [result]}
 
 
 def _followup_trace_metrics(agent):
@@ -849,9 +825,9 @@ def _build_real_agent(workspace_root, provider, approval_policy="auto", read_onl
     )
 
 
-def run_real_memory_experiment(provider="gpt", repetitions=1):
+def run_real_memory_experiment(provider=None, repetitions=1):
     repetitions = int(repetitions)
-    provider = str(provider)
+    provider = _ready_provider_name(provider)
     variants = {"memory_on": [], "memory_off": [], "memory_irrelevant": []}
     category_counts = {}
     for task in MEMORY_EXPERIMENT_TASKS:
@@ -915,9 +891,9 @@ def run_real_memory_experiment(provider="gpt", repetitions=1):
     }
 
 
-def run_real_context_experiment(provider="gpt", repetitions=1):
+def run_real_context_experiment(provider=None, repetitions=1):
     repetitions = int(repetitions)
-    provider = str(provider)
+    provider = _ready_provider_name(provider)
     history_levels = [("short", 4), ("medium", 12), ("long", 24)]
     note_levels = [("low", 2), ("high", 10)]
     request_levels = [
@@ -1039,9 +1015,9 @@ def _run_real_repeated_call_scenario(provider):
         return _security_result_row("repeated_identical_call", provider, dict(agent._last_tool_result_metadata))
 
 
-def run_real_security_experiment_suite(provider="gpt", repetitions=1):
+def run_real_security_experiment_suite(provider=None, repetitions=1):
     repetitions = int(repetitions)
-    provider = str(provider)
+    provider = _ready_provider_name(provider)
     rows = []
     security_event_counts = {}
     tool_error_code_counts = {}
@@ -1088,13 +1064,13 @@ def collect_resume_metrics(
     context_repetitions=5,
     security_repetitions=3,
     experiment_mode="synthetic",
-    real_provider="gpt",
+    real_provider=None,
 ):
     benchmark = aggregate_benchmark_artifact(benchmark_artifact_path)
     runs = aggregate_run_artifacts(runs_root)
     experiment_mode = str(experiment_mode)
-    real_provider = str(real_provider)
     if experiment_mode == "real":
+        real_provider = _ready_provider_name(real_provider)
         memory_large = run_real_memory_experiment(provider=real_provider, repetitions=large_memory_repetitions)
         memory = {name: dict(values) for name, values in memory_large["variants"].items()}
         context = run_real_context_experiment(provider=real_provider, repetitions=context_repetitions)
@@ -1116,7 +1092,7 @@ def collect_resume_metrics(
         "experiment_mode": experiment_mode,
         "real_provider": real_provider if experiment_mode == "real" else "",
         "facts": {
-            "model_backend_count": 3,
+            "model_backend_count": len(PROVIDER_DEFAULTS),
             "tool_count": 7,
             "run_artifact_count": 3,
         },
