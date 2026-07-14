@@ -9,6 +9,8 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
+from .features import memory as memorylib
+
 
 DEFAULT_TOTAL_BUDGET = 12000
 DEFAULT_SECTION_BUDGETS = {
@@ -485,10 +487,23 @@ class ContextManager:
             "reduction_order": list(self.reduction_order),
             "relevant_memory": {
                 "limit": RELEVANT_MEMORY_LIMIT,
+                "query_features": memorylib.retrieval_query_metadata(user_message),
                 "selected_count": len(selected_notes),
                 "selected_notes": [note["text"] for note in selected_notes],
                 "selected_sources": [str(note.get("source", "")).strip() for note in selected_notes],
                 "selected_kinds": [str(note.get("kind", "episodic")).strip() or "episodic" for note in selected_notes],
+                "selected_details": [
+                    {
+                        "text": note["text"],
+                        "source": str(note.get("source", "")).strip(),
+                        "kind": str(note.get("kind", "episodic")).strip() or "episodic",
+                        "topic": str(note.get("topic", "")).strip(),
+                        "score": float(note.get("retrieval_score", 0.0)),
+                        "rank": int(note.get("retrieval_rank", index + 1)),
+                        "signals": list(note.get("retrieval_signals", [])),
+                    }
+                    for index, note in enumerate(selected_notes)
+                ],
                 "selected_durable_count": sum(
                     1 for note in selected_notes if (str(note.get("kind", "episodic")).strip() or "episodic") == "durable"
                 ),

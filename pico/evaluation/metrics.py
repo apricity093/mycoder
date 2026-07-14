@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 from ..config import load_project_env
+from ..features.memory import LayeredMemory
 from .evaluator import run_fixed_benchmark
 from ..providers.clients import AnthropicCompatibleModelClient, FakeModelClient, OllamaModelClient, OpenAICompatibleModelClient
 from ..providers.config import PROVIDER_DEFAULTS, resolve_runtime_config
@@ -15,6 +16,7 @@ METRICS_SCHEMA_VERSION = 2
 DEFAULT_HARNESS_REGRESSION_V2_PATH = Path("artifacts/harness-regression-v2.json")
 DEFAULT_CONTEXT_ABLATION_V2_PATH = Path("artifacts/context-ablation-v2.json")
 DEFAULT_MEMORY_ABLATION_V2_PATH = Path("artifacts/memory-ablation-v2.json")
+DEFAULT_BILINGUAL_MEMORY_BENCHMARK_PATH = Path("artifacts/bilingual-memory-retrieval-v1.json")
 DEFAULT_RECOVERY_ABLATION_V2_PATH = Path("artifacts/recovery-ablation-v2.json")
 DEFAULT_CORE_REPORT_PATH = Path("docs/metrics/pico-benchmark-core-report.md")
 
@@ -434,6 +436,103 @@ def run_large_scale_memory_experiment(repetitions=5):
         },
         "rows": variants,
     }
+
+
+BILINGUAL_MEMORY_CASES = (
+    {
+        "id": "zh_encoding_positive",
+        "language_pair": "zh-zh",
+        "note": "项目统一使用 UTF-8 编码。",
+        "query": "项目采用什么编码？",
+        "expected_match": True,
+    },
+    {
+        "id": "mixed_path_positive",
+        "language_pair": "mixed",
+        "note": "上下文总预算是 12000 字符。",
+        "source": "pico/context_manager.py",
+        "query": "context_manager.py 的上下文预算是多少？",
+        "expected_match": True,
+    },
+    {
+        "id": "en_zh_tool_positive",
+        "language_pair": "en-zh",
+        "note": "Use constrained tools instead of guessing.",
+        "query": "工具使用方面有什么要求？",
+        "expected_match": True,
+    },
+    {
+        "id": "zh_en_runtime_positive",
+        "language_pair": "zh-en",
+        "note": "运行环境使用 Python 3.12。",
+        "query": "What Python runtime version is used?",
+        "expected_match": True,
+    },
+    {
+        "id": "zh_project_negative",
+        "language_pair": "zh-zh",
+        "note": "项目使用 Python 3.12。",
+        "query": "README 文件在哪里？",
+        "expected_match": False,
+    },
+    {
+        "id": "cross_language_generic_negative",
+        "language_pair": "zh-zh",
+        "note": "团队吉祥物是蓝色。",
+        "query": "部署密钥是什么颜色？",
+        "expected_match": False,
+    },
+)
+
+
+def run_bilingual_memory_benchmark(
+    artifact_path=DEFAULT_BILINGUAL_MEMORY_BENCHMARK_PATH,
+    repetitions=1,
+):
+    rows = []
+    for case in BILINGUAL_MEMORY_CASES:
+        for repetition in range(int(repetitions)):
+            memory = LayeredMemory()
+            memory.append_note(
+                case["note"],
+                tags=tuple(case.get("tags", ())),
+                source=case.get("source", ""),
+                created_at="2026-07-14T00:00:00+00:00",
+            )
+            selected = memory.retrieval_candidates(case["query"], limit=3)
+            matched = any(note.get("text") == case["note"] for note in selected)
+            rows.append(
+                {
+                    "case_id": case["id"],
+                    "language_pair": case["language_pair"],
+                    "repetition": repetition,
+                    "expected_match": bool(case["expected_match"]),
+                    "matched": matched,
+                    "passed": matched == bool(case["expected_match"]),
+                    "selected_notes": [note.get("text", "") for note in selected],
+                    "selected_scores": [float(note.get("retrieval_score", 0.0)) for note in selected],
+                    "selected_signals": [list(note.get("retrieval_signals", [])) for note in selected],
+                }
+            )
+    positive_rows = [row for row in rows if row["expected_match"]]
+    negative_rows = [row for row in rows if not row["expected_match"]]
+    artifact = {
+        "schema_version": METRICS_SCHEMA_VERSION,
+        "artifact_type": "bilingual-memory-retrieval-v1",
+        "captured_at": datetime.utcnow().isoformat() + "Z",
+        "case_count": len(BILINGUAL_MEMORY_CASES),
+        "runs": len(rows),
+        "summary": {
+            "pass_rate": _safe_ratio(sum(1 for row in rows if row["passed"]), len(rows)),
+            "positive_recall_rate": _safe_ratio(sum(1 for row in positive_rows if row["matched"]), len(positive_rows)),
+            "negative_false_positive_rate": _safe_ratio(
+                sum(1 for row in negative_rows if row["matched"]),
+                len(negative_rows),
+            ),
+        },
+        "rows": rows,
+    }
+    return _write_json_artifact(artifact_path, artifact)
 
 
 def run_context_stress_matrix(repetitions=5):

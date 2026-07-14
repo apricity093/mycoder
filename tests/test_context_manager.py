@@ -237,3 +237,22 @@ def test_context_manager_relevant_memory_can_mix_durable_notes(tmp_path):
     assert metadata["relevant_memory"]["selected_durable_count"] == 1
     assert metadata["relevant_memory"]["selected_sources"] == ["project-conventions"]
     assert metadata["relevant_memory"]["selected_kinds"] == ["durable"]
+
+
+def test_context_manager_records_auditable_multilingual_retrieval_signals(tmp_path):
+    agent = build_agent(tmp_path, [])
+    agent.memory.append_note(
+        "Use constrained tools instead of guessing.",
+        source="project-guide.md",
+        created_at="2026-07-14T10:00:00+00:00",
+    )
+
+    prompt, metadata = ContextManager(agent).build("工具使用方面有什么要求？")
+    relevant = metadata["relevant_memory"]
+
+    assert "Use constrained tools instead of guessing." in prompt
+    assert relevant["query_features"]["cjk_bigram_count"] > 0
+    assert "tool-usage" in relevant["query_features"]["concepts"]
+    assert relevant["selected_details"][0]["score"] > 0
+    assert relevant["selected_details"][0]["rank"] == 1
+    assert any("tool-usage" in signal for signal in relevant["selected_details"][0]["signals"])

@@ -1,4 +1,4 @@
-from pico.features.memory import LayeredMemory
+from pico.features.memory import LayeredMemory, normalize_search_text, search_features
 
 
 def test_working_memory_tracks_summary_and_recent_files():
@@ -119,4 +119,87 @@ def test_durable_memory_index_and_topic_notes_are_loaded_and_retrieved(tmp_path)
     assert snapshot["durable_topics"] == ["project-conventions"]
 
     lines = [line for line in memory.retrieval_view("constrained tools", limit=4).splitlines() if line.startswith("- ")]
+    chinese_lines = [line for line in memory.retrieval_view("项目规范是什么？", limit=4).splitlines() if line.startswith("- ")]
     assert any("Use constrained tools instead of guessing." in line for line in lines)
+    assert any("Use constrained tools instead of guessing." in line for line in chinese_lines)
+
+
+def test_search_features_normalize_nfkc_identifiers_paths_and_chinese_ngrams():
+    features = search_features("ＣｏｎｔｅｘｔManager 位于 pico\\context_manager.py，负责上下文预算")
+
+    assert normalize_search_text("ＵＴＦ－８") == "utf-8"
+    assert {"context", "manager", "pico", "py"} <= features["ascii_tokens"]
+    assert "context_manager.py" in features["paths"]
+    assert "上下" in features["cjk_bigrams"]
+    assert "上下文" in features["cjk_trigrams"]
+
+
+def test_chinese_memory_retrieval_matches_relevant_note_and_rejects_project_only_overlap():
+    memory = LayeredMemory()
+    memory.append_note("项目统一使用 UTF-8 编码。", created_at="2026-07-14T10:00:00+00:00")
+    memory.append_note("项目使用 Python 3.12。", created_at="2026-07-14T10:01:00+00:00")
+
+    selected = memory.retrieval_candidates("项目采用什么编码？", limit=3)
+    unrelated = memory.retrieval_candidates("README 文件在哪里？", limit=3)
+
+    assert [note["text"] for note in selected] == ["项目统一使用 UTF-8 编码。"]
+    assert unrelated == []
+    assert selected[0]["retrieval_score"] > 0
+    assert any("cjk_" in signal or "concept=" in signal for signal in selected[0]["retrieval_signals"])
+
+
+def test_virtual_bilingual_tags_support_cross_language_retrieval_without_schema_changes():
+    memory = LayeredMemory()
+    memory.append_note("Use constrained tools instead of guessing.")
+    memory.append_note("运行环境使用 Python 3.12。")
+
+    zh_selected = memory.retrieval_candidates("工具使用方面有什么要求？", limit=3)
+    en_selected = memory.retrieval_candidates("What Python runtime version is used?", limit=3)
+
+    assert zh_selected[0]["text"] == "Use constrained tools instead of guessing."
+    assert en_selected[0]["text"] == "运行环境使用 Python 3.12。"
+    assert "tool-usage" in " ".join(zh_selected[0]["retrieval_signals"])
+    assert set(memory.to_dict()["episodic_notes"][0]) == {
+        "text",
+        "tags",
+        "source",
+        "created_at",
+        "note_index",
+        "kind",
+    }
+
+
+def test_retrieval_rejects_generic_cross_language_concept_false_positive():
+    memory = LayeredMemory()
+    memory.append_note("团队吉祥物是蓝色。")
+
+    assert memory.retrieval_candidates("部署密钥是什么颜色？", limit=3) == []
+
+
+def test_retrieval_dedupes_near_duplicates_but_preserves_conflicting_versions():
+    memory = LayeredMemory()
+    memory.append_note("Use constrained tools instead of guessing.", tags=("tools",))
+    memory.append_note("Use constrained tools instead of guessing!", tags=("tools",))
+    memory.append_note("Python runtime is 3.11.", tags=("runtime",))
+    memory.append_note("Python runtime is 3.12.", tags=("runtime",))
+
+    tool_notes = memory.retrieval_candidates("tools", limit=3)
+    runtime_notes = memory.retrieval_candidates("runtime", limit=3)
+
+    assert len(tool_notes) == 1
+    assert {note["text"] for note in runtime_notes} == {
+        "Python runtime is 3.11.",
+        "Python runtime is 3.12.",
+    }
+
+
+def test_retrieval_diversifies_sources_when_scores_are_close():
+    memory = LayeredMemory()
+    memory.append_note("Recall alpha constraint.", tags=("recall",), source="a.txt")
+    memory.append_note("Recall beta constraint.", tags=("recall",), source="a.txt")
+    memory.append_note("Recall gamma constraint.", tags=("recall",), source="b.txt")
+
+    selected = memory.retrieval_candidates("recall constraint", limit=2)
+
+    assert len(selected) == 2
+    assert {note["source"] for note in selected} == {"a.txt", "b.txt"}

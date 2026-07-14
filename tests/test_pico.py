@@ -454,16 +454,16 @@ def test_openai_compatible_client_sends_prompt_cache_fields_and_records_usage():
     assert client.last_completion_metadata["input_tokens"] == 2048
 
 
-def test_openai_compatible_custom_endpoint_does_not_enable_provider_specific_cache():
+def test_openai_compatible_coding101_endpoint_enables_provider_specific_cache():
     client = OpenAICompatibleModelClient(
         model="gpt-5.4",
-        base_url="https://gateway.example/v1",
+        base_url="https://coding101.site/v1",
         api_key="sk-test",
         temperature=0.2,
         timeout=30,
     )
 
-    assert client.supports_prompt_cache is False
+    assert client.supports_prompt_cache is True
 
 
 def test_openai_compatible_client_extracts_text_from_event_stream():

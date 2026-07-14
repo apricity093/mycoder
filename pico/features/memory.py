@@ -6,8 +6,10 @@ session history 负责保存完整事件流；这个模块只保存更小的一�
 """
 
 import hashlib
+from difflib import SequenceMatcher
 from datetime import datetime
 import re
+import unicodedata
 from pathlib import Path
 
 from ..workspace import clip, now
@@ -15,6 +17,101 @@ from ..workspace import clip, now
 WORKING_FILE_LIMIT = 8
 EPISODIC_NOTE_LIMIT = 12
 FILE_SUMMARY_LIMIT = 6
+MIN_RETRIEVAL_SCORE = 0.8
+NEAR_DUPLICATE_THRESHOLD = 0.92
+
+# 检索层使用的“虚拟双语标签”。它们不会写回 session 或 durable Markdown，
+# 因而旧记忆无需迁移；查询和记忆只要命中同一概念，就能获得跨语言信号。
+BILINGUAL_SEARCH_ALIASES = {
+    "project-conventions": (
+        "project convention",
+        "project conventions",
+        "coding convention",
+        "coding conventions",
+        "项目约定",
+        "项目规范",
+        "编码规范",
+        "开发规范",
+    ),
+    "key-decisions": (
+        "decision",
+        "decisions",
+        "architecture decision",
+        "design decision",
+        "关键决策",
+        "架构决策",
+        "设计决策",
+        "技术选型",
+    ),
+    "dependency-facts": (
+        "dependency",
+        "dependencies",
+        "runtime",
+        "environment",
+        "依赖",
+        "运行时",
+        "运行环境",
+        "环境配置",
+    ),
+    "user-preferences": (
+        "preference",
+        "preferences",
+        "user preference",
+        "用户偏好",
+        "个人偏好",
+        "使用习惯",
+    ),
+    "tool-usage": (
+        "tool usage",
+        "constrained tool",
+        "constrained tools",
+        "use tools",
+        "工具使用",
+        "受约束工具",
+        "使用工具",
+    ),
+    "memory": (
+        "memory",
+        "durable memory",
+        "working memory",
+        "记忆",
+        "长期记忆",
+        "工作记忆",
+    ),
+    "encoding": ("encoding", "charset", "utf-8", "编码", "字符集"),
+    "version": ("version", "版本"),
+    "testing": ("test", "tests", "testing", "pytest", "测试", "用例"),
+    "file-path": ("file", "path", "filename", "文件", "路径", "文件名"),
+    "deploy-key": ("deploy key", "deployment key", "部署密钥", "发布密钥"),
+    "color": ("color", "colour", "颜色"),
+}
+
+CONCEPT_WEIGHTS = {
+    "project-conventions": 1.2,
+    "key-decisions": 1.2,
+    "dependency-facts": 1.0,
+    "user-preferences": 1.0,
+    "tool-usage": 1.2,
+    "memory": 0.8,
+    "encoding": 0.9,
+    "version": 0.4,
+    "testing": 0.8,
+    "file-path": 0.3,
+    "deploy-key": 1.2,
+    "color": 0.3,
+}
+
+CJK_STOP_BIGRAMS = {
+    "一个",
+    "这个",
+    "那个",
+    "什么",
+    "如何",
+    "怎么",
+    "是否",
+    "已经",
+    "当前",
+}
 
 DURABLE_TOPIC_DEFAULTS = {
     "project-conventions": {
@@ -142,21 +239,16 @@ class DurableMemoryStore:
         return None
 
     def retrieval_candidates(self, query, limit=3):
-        query_tokens = _tokenize(query)
-        ranked = []
+        candidates = []
         for topic in self.load_index():
             notes = self.load_topic_notes(topic["topic"])
             for note in notes:
-                note_tags = {tag.lower() for tag in note.get("tags", [])}
-                note_tokens = _tokenize(note.get("text", "")) | _tokenize(topic.get("title", "")) | note_tags
-                exact_tag_match = int(bool(query_tokens & note_tags))
-                keyword_overlap = len(query_tokens & note_tokens)
-                if exact_tag_match == 0 and keyword_overlap == 0:
-                    continue
-                recency = _parse_timestamp(note.get("created_at"))
-                ranked.append(((exact_tag_match, keyword_overlap, recency), note))
-        ranked.sort(key=lambda item: item[0], reverse=True)
-        return [note for _, note in ranked[:limit]]
+                enriched = dict(note)
+                enriched["topic"] = topic["topic"]
+                enriched["topic_title"] = topic.get("title", "")
+                enriched["topic_summary"] = topic.get("summary", "")
+                candidates.append(enriched)
+        return _rank_memory_notes(candidates, query, limit=limit)
 
     def _write_index(self, topics):
         self.root.mkdir(parents=True, exist_ok=True)
@@ -279,8 +371,287 @@ def file_freshness(raw_path, workspace_root=None):
     return hashlib.sha256(resolved.read_bytes()).hexdigest()
 
 
+def normalize_search_text(text):
+    text = unicodedata.normalize("NFKC", str(text or ""))
+    # 在 casefold 之前拆 camelCase / PascalCase，保留 coding 场景中的标识符边界。
+    text = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", text)
+    text = text.casefold().replace("\\", "/")
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
+def _cjk_ngrams(text, size):
+    grams = set()
+    for run in re.findall(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]+", text):
+        if len(run) < size:
+            continue
+        grams.update(run[index : index + size] for index in range(len(run) - size + 1))
+    if size == 2:
+        grams.difference_update(CJK_STOP_BIGRAMS)
+    return grams
+
+
+def _path_terms(text):
+    terms = set()
+    for match in re.findall(r"(?:[a-z0-9_.-]+/)+[a-z0-9_.-]+|\b[a-z0-9_.-]+\.[a-z0-9]+\b", text):
+        path = match.strip("./")
+        if not path:
+            continue
+        terms.add(path)
+        basename = path.rsplit("/", 1)[-1]
+        terms.add(basename)
+        if "." in basename:
+            terms.add(basename.rsplit(".", 1)[0])
+    return terms
+
+
+def _contains_alias(text, alias):
+    alias = normalize_search_text(alias)
+    if not alias:
+        return False
+    if re.fullmatch(r"[a-z0-9 _./-]+", alias):
+        alias_tokens = set(re.findall(r"[a-z0-9]+", alias))
+        text_tokens = set(re.findall(r"[a-z0-9]+", text))
+        return bool(alias_tokens) and alias_tokens <= text_tokens
+    return alias in text
+
+
+def _field_matches_query(query_text, field_text):
+    field_text = normalize_search_text(field_text)
+    if not field_text:
+        return False
+    if re.fullmatch(r"[a-z0-9 _./-]+", field_text):
+        field_tokens = set(re.findall(r"[a-z0-9]+", field_text))
+        query_tokens = set(re.findall(r"[a-z0-9]+", query_text))
+        return bool(field_tokens) and field_tokens <= query_tokens
+    return field_text in query_text
+
+
+def search_features(text):
+    normalized = normalize_search_text(text)
+    ascii_tokens = set(re.findall(r"[a-z0-9]+", normalized))
+    identifiers = {
+        token
+        for token in re.findall(r"[a-z][a-z0-9_]*", normalized)
+        if "_" in token or any(char.isdigit() for char in token)
+    }
+    concepts = {
+        concept
+        for concept, aliases in BILINGUAL_SEARCH_ALIASES.items()
+        if any(_contains_alias(normalized, alias) for alias in aliases)
+    }
+    return {
+        "normalized": normalized,
+        "ascii_tokens": ascii_tokens,
+        "identifiers": identifiers,
+        "cjk_unigrams": set(re.findall(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]", normalized)),
+        "cjk_bigrams": _cjk_ngrams(normalized, 2),
+        "cjk_trigrams": _cjk_ngrams(normalized, 3),
+        "paths": _path_terms(normalized),
+        "concepts": concepts,
+    }
+
+
+def retrieval_query_metadata(query):
+    features = search_features(query)
+    return {
+        "normalized": features["normalized"],
+        "ascii_token_count": len(features["ascii_tokens"]),
+        "identifier_count": len(features["identifiers"]),
+        "cjk_bigram_count": len(features["cjk_bigrams"]),
+        "cjk_trigram_count": len(features["cjk_trigrams"]),
+        "path_count": len(features["paths"]),
+        "concepts": sorted(features["concepts"]),
+    }
+
+
 def _tokenize(text):
-    return {token.lower() for token in re.findall(r"[A-Za-z0-9_]+", str(text))}
+    # 保留旧内部入口的语义，但让 durable subject key 同样支持 NFKC 和中文。
+    features = search_features(text)
+    return features["ascii_tokens"] | features["cjk_bigrams"] | features["concepts"]
+
+
+def _dice(left, right):
+    left = set(left)
+    right = set(right)
+    if not left or not right:
+        return 0.0
+    return 2.0 * len(left & right) / (len(left) + len(right))
+
+
+def _field_score(query_features, field_features, weight, label, signals):
+    score = 0.0
+    ascii_score = _dice(query_features["ascii_tokens"], field_features["ascii_tokens"])
+    if ascii_score:
+        value = weight * ascii_score
+        score += value
+        signals.append(f"{label}:ascii={value:.3f}")
+    bigram_score = _dice(query_features["cjk_bigrams"], field_features["cjk_bigrams"])
+    if bigram_score:
+        value = weight * bigram_score
+        score += value
+        signals.append(f"{label}:cjk_bigram={value:.3f}")
+    trigram_score = _dice(query_features["cjk_trigrams"], field_features["cjk_trigrams"])
+    if trigram_score:
+        value = weight * 0.65 * trigram_score
+        score += value
+        signals.append(f"{label}:cjk_trigram={value:.3f}")
+    identifier_score = _dice(query_features["identifiers"], field_features["identifiers"])
+    if identifier_score:
+        value = weight * 0.75 * identifier_score
+        score += value
+        signals.append(f"{label}:identifier={value:.3f}")
+    return score
+
+
+def _topic_search_text(note):
+    topic = str(note.get("topic", "")).strip()
+    aliases = BILINGUAL_SEARCH_ALIASES.get(topic, ())
+    return " ".join(
+        [
+            topic,
+            str(note.get("topic_title", "")),
+            str(note.get("topic_summary", "")),
+            *aliases,
+        ]
+    )
+
+
+def _score_memory_note(query_features, note):
+    text_features = search_features(note.get("text", ""))
+    tag_text = " ".join(str(tag) for tag in note.get("tags", []))
+    tag_features = search_features(tag_text)
+    source_features = search_features(note.get("source", ""))
+    topic_features = search_features(_topic_search_text(note))
+    signals = []
+    score = 0.0
+
+    query_text = query_features["normalized"]
+    note_text = text_features["normalized"]
+    if min(len(query_text), len(note_text)) >= 4 and (query_text in note_text or note_text in query_text):
+        score += 3.0
+        signals.append("text:phrase=3.000")
+
+    for tag in note.get("tags", []):
+        normalized_tag = normalize_search_text(tag)
+        if _field_matches_query(query_text, normalized_tag):
+            score += 6.0
+            signals.append(f"tag:exact={normalized_tag}")
+            break
+
+    source_text = source_features["normalized"]
+    if source_text and source_text in query_text:
+        score += 8.0
+        signals.append(f"source:exact={source_text}")
+    elif query_features["paths"] & source_features["paths"]:
+        score += 6.0
+        signals.append("source:path=6.000")
+
+    concept_overlap = query_features["concepts"] & text_features["concepts"]
+    if concept_overlap:
+        value = min(3.0, sum(CONCEPT_WEIGHTS.get(concept, 0.5) for concept in concept_overlap))
+        score += value
+        signals.append(f"text:concept={','.join(sorted(concept_overlap))}:{value:.3f}")
+    tag_concepts = query_features["concepts"] & tag_features["concepts"]
+    if tag_concepts:
+        score += 5.0
+        signals.append(f"tag:concept={','.join(sorted(tag_concepts))}:5.000")
+    topic_concepts = query_features["concepts"] & topic_features["concepts"]
+    if topic_concepts:
+        score += 5.0
+        signals.append(f"topic:alias={','.join(sorted(topic_concepts))}:5.000")
+
+    score += _field_score(query_features, text_features, 3.0, "text", signals)
+    score += _field_score(query_features, tag_features, 4.0, "tag", signals)
+    score += _field_score(query_features, source_features, 4.0, "source", signals)
+
+    return score, signals
+
+
+def _polarity_markers(text):
+    normalized = normalize_search_text(text)
+    markers = (" not ", "never", "must not", "不要", "不能", "禁止", "不应")
+    return {marker.strip() for marker in markers if marker in f" {normalized} "}
+
+
+def _text_similarity(left, right):
+    left = normalize_search_text(left)
+    right = normalize_search_text(right)
+    if not left or not right:
+        return 0.0
+    return SequenceMatcher(None, left, right).ratio()
+
+
+def _near_duplicate(left, right):
+    left_text = str(left.get("text", ""))
+    right_text = str(right.get("text", ""))
+    if normalize_search_text(left_text) == normalize_search_text(right_text):
+        return True
+    if set(re.findall(r"\d+(?:\.\d+)*", left_text)) != set(re.findall(r"\d+(?:\.\d+)*", right_text)):
+        return False
+    if _polarity_markers(left_text) != _polarity_markers(right_text):
+        return False
+    return _text_similarity(left_text, right_text) >= NEAR_DUPLICATE_THRESHOLD
+
+
+def _rank_memory_notes(notes, query, limit=3):
+    query_features = search_features(query)
+    ranked = []
+    for note in notes:
+        score, signals = _score_memory_note(query_features, note)
+        if score < MIN_RETRIEVAL_SCORE:
+            continue
+        candidate = dict(note)
+        candidate["retrieval_score"] = round(score, 6)
+        candidate["retrieval_signals"] = signals
+        ranked.append(candidate)
+
+    ranked.sort(
+        key=lambda note: (
+            float(note.get("retrieval_score", 0.0)),
+            _parse_timestamp(note.get("created_at")),
+            int(note.get("note_index", -1)),
+        ),
+        reverse=True,
+    )
+
+    deduped = []
+    for candidate in ranked:
+        if any(_near_duplicate(candidate, selected) for selected in deduped):
+            continue
+        deduped.append(candidate)
+
+    selected = []
+    remaining = list(deduped)
+    while remaining and len(selected) < max(0, int(limit)):
+        best = None
+        best_key = None
+        for candidate in remaining:
+            similarity = max(
+                [_text_similarity(candidate.get("text", ""), item.get("text", "")) for item in selected],
+                default=0.0,
+            )
+            source = str(candidate.get("source", "")).strip()
+            same_source = bool(source) and any(source == str(item.get("source", "")).strip() for item in selected)
+            topic = str(candidate.get("topic", "")).strip()
+            same_topic = bool(topic) and any(topic == str(item.get("topic", "")).strip() for item in selected)
+            diversity_penalty = similarity * 0.75 + (0.35 if same_source else 0.0) + (0.2 if same_topic else 0.0)
+            adjusted = float(candidate["retrieval_score"]) - diversity_penalty
+            key = (
+                adjusted,
+                float(candidate["retrieval_score"]),
+                _parse_timestamp(candidate.get("created_at")),
+                int(candidate.get("note_index", -1)),
+            )
+            if best_key is None or key > best_key:
+                best = candidate
+                best_key = key
+        selected.append(best)
+        remaining.remove(best)
+
+    for index, candidate in enumerate(selected, start=1):
+        candidate["retrieval_rank"] = index
+    return selected
 
 
 def _parse_timestamp(value):
@@ -518,33 +889,19 @@ def summarize_read_result(result, limit=180):
 
 def retrieval_candidates(state, query, limit=3, workspace_root=None):
     state = normalize_memory_state(state, workspace_root)
-    query_tokens = _tokenize(query)
-    ranked = []
-    for note in state["episodic_notes"]:
-        # 召回逻辑故意保持简单透明：先看 tag 精确命中，
-        # 再看关键词重叠，最后看新旧程度。这里不引入 embedding。
-        note_tags = {tag.lower() for tag in note.get("tags", [])}
-        note_tokens = _tokenize(note.get("text", "")) | _tokenize(note.get("source", "")) | note_tags
-        exact_tag_match = int(bool(query_tokens & note_tags))
-        keyword_overlap = len(query_tokens & note_tokens)
-        if exact_tag_match == 0 and keyword_overlap == 0:
-            continue
-        recency = _parse_timestamp(note.get("created_at"))
-        note_index = int(note.get("note_index", 0))
-        ranked.append(((exact_tag_match, keyword_overlap, recency, note_index), note))
+    candidates = [dict(note) for note in state["episodic_notes"]]
 
     if workspace_root is not None:
         durable_store = DurableMemoryStore(Path(workspace_root) / ".pico" / "memory")
-        for note in durable_store.retrieval_candidates(query, limit=limit):
-            note_tags = {tag.lower() for tag in note.get("tags", [])}
-            note_tokens = _tokenize(note.get("text", "")) | _tokenize(note.get("source", "")) | note_tags
-            exact_tag_match = int(bool(query_tokens & note_tags))
-            keyword_overlap = len(query_tokens & note_tokens)
-            recency = _parse_timestamp(note.get("created_at"))
-            ranked.append(((exact_tag_match, keyword_overlap, recency, -1), note))
+        for topic in durable_store.load_index():
+            for note in durable_store.load_topic_notes(topic["topic"]):
+                enriched = dict(note)
+                enriched["topic"] = topic["topic"]
+                enriched["topic_title"] = topic.get("title", "")
+                enriched["topic_summary"] = topic.get("summary", "")
+                candidates.append(enriched)
 
-    ranked.sort(key=lambda item: item[0], reverse=True)
-    return [note for _, note in ranked[:limit]]
+    return _rank_memory_notes(candidates, query, limit=limit)
 
 
 def retrieval_view(state, query, limit=3, workspace_root=None):

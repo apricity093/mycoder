@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from pico.evaluation.metrics import (
     _provider_profile,
+    run_bilingual_memory_benchmark,
     run_context_ablation_v2,
     run_memory_ablation_v2,
     run_provider_experiments,
@@ -115,6 +116,22 @@ def test_run_memory_ablation_v2_writes_expected_artifact(tmp_path):
     assert artifact["task_count"] == 12
     assert set(artifact["variants"]) == {"memory_on", "memory_off", "memory_irrelevant"}
     assert "memory_hit_rate" in artifact["variants"]["memory_on"]
+
+
+def test_run_bilingual_memory_benchmark_covers_positive_and_negative_cases(tmp_path):
+    artifact_path = tmp_path / "artifacts" / "bilingual-memory-retrieval-v1.json"
+
+    artifact = run_bilingual_memory_benchmark(artifact_path=artifact_path, repetitions=1)
+
+    assert artifact_path.exists()
+    assert artifact["artifact_type"] == "bilingual-memory-retrieval-v1"
+    assert artifact["case_count"] == 6
+    assert artifact["summary"] == {
+        "pass_rate": 1.0,
+        "positive_recall_rate": 1.0,
+        "negative_false_positive_rate": 0.0,
+    }
+    assert {row["language_pair"] for row in artifact["rows"]} >= {"zh-zh", "en-zh", "zh-en", "mixed"}
 
 
 def test_run_recovery_ablation_v2_writes_expected_artifact(tmp_path):
