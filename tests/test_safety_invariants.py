@@ -4,9 +4,9 @@ from unittest.mock import patch
 
 import pytest
 
-from pico import FakeModelClient, Pico, SessionStore, WorkspaceContext
-from pico import cli as pico_cli
-from pico.task_state import TaskState
+from apricity import FakeModelClient, Apricity, SessionStore, WorkspaceContext
+from apricity import cli as apricity_cli
+from apricity.task_state import TaskState
 
 
 def build_workspace(tmp_path):
@@ -16,9 +16,9 @@ def build_workspace(tmp_path):
 
 def build_agent(tmp_path, outputs, **kwargs):
     workspace = build_workspace(tmp_path)
-    store = SessionStore(tmp_path / ".pico" / "sessions")
+    store = SessionStore(tmp_path / ".apricity" / "sessions")
     approval_policy = kwargs.pop("approval_policy", "auto")
-    return Pico(
+    return Apricity(
         model_client=FakeModelClient(outputs),
         workspace=workspace,
         session_store=store,
@@ -73,18 +73,18 @@ def test_cli_build_agent_wires_secret_env_names_from_parser(tmp_path):
     with patch.dict(
         os.environ,
         {
-            "PICO_PROVIDER": "ollama",
-            "PICO_MODEL": "qwen3.5:4b",
-            "PICO_BASE_URL": "http://127.0.0.1:11434",
+            "APRICITY_PROVIDER": "ollama",
+            "APRICITY_MODEL": "qwen3.5:4b",
+            "APRICITY_BASE_URL": "http://127.0.0.1:11434",
             "GITHUB_PAT": "ghp-1",
             "GH_PAT": "ghp-2",
         },
         clear=True,
     ), patch(
-        "pico.cli.OllamaModelClient",
+        "apricity.cli.OllamaModelClient",
         DummyModelClient,
     ):
-        args = pico_cli.build_arg_parser().parse_args(
+        args = apricity_cli.build_arg_parser().parse_args(
             [
                 "--cwd",
                 str(tmp_path),
@@ -96,7 +96,7 @@ def test_cli_build_agent_wires_secret_env_names_from_parser(tmp_path):
                 "GH_PAT",
             ]
         )
-        agent = pico_cli.build_agent(args)
+        agent = apricity_cli.build_agent(args)
         assert set(agent.secret_env_summary()["secret_env_names"]) == {"GITHUB_PAT", "GH_PAT"}
 
 
@@ -113,18 +113,18 @@ def test_cli_build_agent_uses_default_configured_secret_names(tmp_path):
     with patch.dict(
         os.environ,
         {
-            "PICO_PROVIDER": "ollama",
-            "PICO_MODEL": "qwen3.5:4b",
-            "PICO_BASE_URL": "http://127.0.0.1:11434",
+            "APRICITY_PROVIDER": "ollama",
+            "APRICITY_MODEL": "qwen3.5:4b",
+            "APRICITY_BASE_URL": "http://127.0.0.1:11434",
             "GH_PAT": "ghp-default-1",
         },
         clear=True,
     ), patch(
-        "pico.cli.OllamaModelClient",
+        "apricity.cli.OllamaModelClient",
         DummyModelClient,
     ):
-        args = pico_cli.build_arg_parser().parse_args(["--cwd", str(tmp_path), "--approval", "auto"])
-        agent = pico_cli.build_agent(args)
+        args = apricity_cli.build_arg_parser().parse_args(["--cwd", str(tmp_path), "--approval", "auto"])
+        agent = apricity_cli.build_agent(args)
         assert agent.secret_env_summary()["secret_env_names"] == ["GH_PAT"]
 
 
@@ -139,15 +139,15 @@ def test_cli_build_agent_loads_project_env_secrets_before_redaction_setup(tmp_pa
 
     (tmp_path / "README.md").write_text("demo\n", encoding="utf-8")
     (tmp_path / ".env").write_text(
-        "PICO_MODEL=deepseek-v4-pro\n"
-        "PICO_BASE_URL=https://api.deepseek.com/anthropic\n"
-        "PICO_API_KEY=sk-project-secret\n",
+        "APRICITY_MODEL=deepseek-v4-pro\n"
+        "APRICITY_BASE_URL=https://api.deepseek.com/anthropic\n"
+        "APRICITY_API_KEY=sk-project-secret\n",
         encoding="utf-8",
     )
-    with patch.dict(os.environ, {}, clear=True), patch("pico.cli.AnthropicCompatibleModelClient", DummyModelClient):
-        args = pico_cli.build_arg_parser().parse_args(["--cwd", str(tmp_path), "--provider", "deepseek"])
-        agent = pico_cli.build_agent(args)
-        assert agent.secret_env_summary()["secret_env_names"] == ["PICO_API_KEY"]
+    with patch.dict(os.environ, {}, clear=True), patch("apricity.cli.AnthropicCompatibleModelClient", DummyModelClient):
+        args = apricity_cli.build_arg_parser().parse_args(["--cwd", str(tmp_path), "--provider", "deepseek"])
+        agent = apricity_cli.build_agent(args)
+        assert agent.secret_env_summary()["secret_env_names"] == ["APRICITY_API_KEY"]
 
 
 def test_cli_build_agent_reads_secret_names_from_environment_config(tmp_path):
@@ -163,25 +163,25 @@ def test_cli_build_agent_reads_secret_names_from_environment_config(tmp_path):
     with patch.dict(
         os.environ,
         {
-            "PICO_PROVIDER": "ollama",
-            "PICO_MODEL": "qwen3.5:4b",
-            "PICO_BASE_URL": "http://127.0.0.1:11434",
-            "PICO_CUSTOM_SECRET": "custom-secret-value",
-            "PICO_SECRET_ENV_NAMES": "PICO_CUSTOM_SECRET",
+            "APRICITY_PROVIDER": "ollama",
+            "APRICITY_MODEL": "qwen3.5:4b",
+            "APRICITY_BASE_URL": "http://127.0.0.1:11434",
+            "APRICITY_CUSTOM_SECRET": "custom-secret-value",
+            "APRICITY_SECRET_ENV_NAMES": "APRICITY_CUSTOM_SECRET",
         },
         clear=True,
-    ), patch("pico.cli.OllamaModelClient", DummyModelClient):
-        args = pico_cli.build_arg_parser().parse_args(["--cwd", str(tmp_path), "--approval", "auto"])
-        agent = pico_cli.build_agent(args)
-        assert agent.secret_env_summary()["secret_env_names"] == ["PICO_CUSTOM_SECRET"]
+    ), patch("apricity.cli.OllamaModelClient", DummyModelClient):
+        args = apricity_cli.build_arg_parser().parse_args(["--cwd", str(tmp_path), "--approval", "auto"])
+        agent = apricity_cli.build_agent(args)
+        assert agent.secret_env_summary()["secret_env_names"] == ["APRICITY_CUSTOM_SECRET"]
 
 
 def test_run_process_uses_allowlisted_environment_only(tmp_path):
     secret = "shh-allowlist-secret"
     agent = build_agent(tmp_path, [], approval_policy="auto")
-    script = 'import os; print(os.getenv("PICO_ALLOWLIST_SECRET", "missing"))'
+    script = 'import os; print(os.getenv("APRICITY_ALLOWLIST_SECRET", "missing"))'
 
-    with patch.dict(os.environ, {"PICO_ALLOWLIST_SECRET": secret}, clear=False):
+    with patch.dict(os.environ, {"APRICITY_ALLOWLIST_SECRET": secret}, clear=False):
         result = agent.run_tool(
             "run_process",
             {"program": sys.executable, "args": ["-c", script], "timeout": 20},
@@ -194,7 +194,7 @@ def test_run_process_uses_allowlisted_environment_only(tmp_path):
 def test_bound_tool_methods_delegate_into_tools_module(tmp_path):
     agent = build_agent(tmp_path, [], approval_policy="auto")
 
-    with patch("pico.tools.subprocess.run") as fake_run:
+    with patch("apricity.tools.subprocess.run") as fake_run:
         fake_run.return_value = type(
             "Result",
             (),
@@ -204,9 +204,9 @@ def test_bound_tool_methods_delegate_into_tools_module(tmp_path):
 
     assert "toolkit-shell" in shell_result
     fake_run.assert_called_once()
-    assert agent.tool_run_shell.__func__.__module__ == "pico.runtime"
+    assert agent.tool_run_shell.__func__.__module__ == "apricity.runtime"
 
-    with patch("pico.tools.tool_delegate", return_value="toolkit-delegate") as fake_delegate:
+    with patch("apricity.tools.tool_delegate", return_value="toolkit-delegate") as fake_delegate:
         delegate_result = agent.tool_delegate({"task": "inspect README.md", "max_steps": 2})
 
     assert delegate_result == "toolkit-delegate"

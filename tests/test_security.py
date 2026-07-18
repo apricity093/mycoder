@@ -1,4 +1,4 @@
-from pico.security import (
+from apricity.security import (
     REDACTED_VALUE,
     detected_secret_env_items,
     looks_sensitive_env_name,
@@ -8,7 +8,7 @@ from pico.security import (
 
 
 def test_sensitive_env_name_detection_matches_runtime_policy():
-    assert looks_sensitive_env_name("PICO_API_KEY")
+    assert looks_sensitive_env_name("APRICITY_API_KEY")
     assert looks_sensitive_env_name("SERVICE_TOKEN")
     assert looks_sensitive_env_name("PASSWORD")
     assert not looks_sensitive_env_name("PATH")
@@ -18,27 +18,27 @@ def test_detected_secret_env_items_include_configured_and_sensitive_names():
     env = {
         "PATH": "/bin",
         "CUSTOM_SECRET_NAME": "custom-value",
-        "PICO_API_KEY": "api-value",
+        "APRICITY_API_KEY": "api-value",
     }
 
     items = detected_secret_env_items(env=env, secret_env_names={"CUSTOM_SECRET_NAME"})
 
-    assert items == [("CUSTOM_SECRET_NAME", "custom-value"), ("PICO_API_KEY", "api-value")]
+    assert items == [("APRICITY_API_KEY", "api-value"), ("CUSTOM_SECRET_NAME", "custom-value")]
 
 
 def test_redact_artifact_recurses_through_values_and_secret_keys():
     artifact = {
-        "PICO_API_KEY": "api-value",
+        "APRICITY_API_KEY": "api-value",
         "payload": ["api-value", {"nested": "custom-value"}],
     }
 
     redacted = redact_artifact(
         artifact,
-        env={"PICO_API_KEY": "api-value", "CUSTOM_SECRET_NAME": "custom-value"},
+        env={"APRICITY_API_KEY": "api-value", "CUSTOM_SECRET_NAME": "custom-value"},
         secret_env_names={"CUSTOM_SECRET_NAME"},
     )
 
-    assert redacted["PICO_API_KEY"] == REDACTED_VALUE
+    assert redacted["APRICITY_API_KEY"] == REDACTED_VALUE
     assert redacted["payload"] == [REDACTED_VALUE, {"nested": REDACTED_VALUE}]
 
 

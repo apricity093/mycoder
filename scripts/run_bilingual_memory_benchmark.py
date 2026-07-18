@@ -8,12 +8,12 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from pico.evaluation.metrics import run_bilingual_memory_benchmark  # noqa: E402
+from apricity.evaluation.metrics import run_bilingual_memory_benchmark  # noqa: E402
 
 
 def build_arg_parser():
     parser = argparse.ArgumentParser(
-        description="Run Pico's deterministic bilingual memory retrieval benchmark."
+        description="Run Apricity's deterministic bilingual memory retrieval benchmark."
     )
     parser.add_argument(
         "--output",

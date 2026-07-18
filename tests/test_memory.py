@@ -1,4 +1,4 @@
-from pico.features.memory import LayeredMemory, normalize_search_text, search_features
+from apricity.features.memory import LayeredMemory, normalize_search_text, search_features
 
 
 def test_working_memory_tracks_summary_and_recent_files():
@@ -91,7 +91,7 @@ def test_process_notes_keep_kind_and_latest_duplicate_wins():
 
 
 def test_durable_memory_index_and_topic_notes_are_loaded_and_retrieved(tmp_path):
-    memory_root = tmp_path / ".pico" / "memory"
+    memory_root = tmp_path / ".apricity" / "memory"
     topics_dir = memory_root / "topics"
     topics_dir.mkdir(parents=True)
     (memory_root / "MEMORY.md").write_text(
@@ -109,7 +109,7 @@ def test_durable_memory_index_and_topic_notes_are_loaded_and_retrieved(tmp_path)
         "- updated_at: 2026-04-12T08:14:49+00:00\n\n"
         "## Notes\n"
         "- Use constrained tools instead of guessing.\n"
-        "- Preserve local agent state under .pico/.\n",
+        "- Preserve local agent state under .apricity/.\n",
         encoding="utf-8",
     )
 
@@ -125,10 +125,10 @@ def test_durable_memory_index_and_topic_notes_are_loaded_and_retrieved(tmp_path)
 
 
 def test_search_features_normalize_nfkc_identifiers_paths_and_chinese_ngrams():
-    features = search_features("ＣｏｎｔｅｘｔManager 位于 pico\\context_manager.py，负责上下文预算")
+    features = search_features("ＣｏｎｔｅｘｔManager 位于 apricity\\context_manager.py，负责上下文预算")
 
     assert normalize_search_text("ＵＴＦ－８") == "utf-8"
-    assert {"context", "manager", "pico", "py"} <= features["ascii_tokens"]
+    assert {"context", "manager", "apricity", "py"} <= features["ascii_tokens"]
     assert "context_manager.py" in features["paths"]
     assert "上下" in features["cjk_bigrams"]
     assert "上下文" in features["cjk_trigrams"]

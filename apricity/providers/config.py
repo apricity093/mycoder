@@ -52,7 +52,7 @@ PROVIDER_DEFAULTS = {
 }
 
 REMOVED_PROVIDER_ENV_PATTERN = re.compile(
-    r"^(?:PICO_)?(?:OPENAI|ANTHROPIC|DEEPSEEK)_"
+    r"^(?:APRICITY_)?(?:OPENAI|ANTHROPIC|DEEPSEEK)_"
     r"(?:API_BASE|API_KEY|MODEL|API_TOKEN|AUTH_TOKEN)$"
 )
 
@@ -72,14 +72,14 @@ def validate_unified_provider_env(env=None):
         names = ", ".join(removed_names)
         raise ValueError(
             f"Unsupported model configuration variable(s): {names}. "
-            "Use only PICO_PROVIDER, PICO_MODEL, PICO_BASE_URL, and PICO_API_KEY."
+            "Use only APRICITY_PROVIDER, APRICITY_MODEL, APRICITY_BASE_URL, and APRICITY_API_KEY."
         )
 
 
 def resolve_runtime_config(provider=None, model=None, base_url=None):
     validate_unified_provider_env()
     selected_provider = normalize_provider_name(
-        provider or provider_env("PICO_PROVIDER", default=DEFAULT_PROVIDER)
+        provider or provider_env("APRICITY_PROVIDER", default=DEFAULT_PROVIDER)
     )
     if selected_provider not in PROVIDER_DEFAULTS:
         choices = ", ".join(PROVIDER_CHOICES)
@@ -89,27 +89,27 @@ def resolve_runtime_config(provider=None, model=None, base_url=None):
 
     defaults = PROVIDER_DEFAULTS[selected_provider]
     selected_model = str(
-        model if model is not None else provider_env("PICO_MODEL")
+        model if model is not None else provider_env("APRICITY_MODEL")
     ).strip()
     selected_base_url = str(
-        base_url if base_url is not None else provider_env("PICO_BASE_URL")
+        base_url if base_url is not None else provider_env("APRICITY_BASE_URL")
     ).strip()
-    api_key = str(provider_env("PICO_API_KEY")).strip()
+    api_key = str(provider_env("APRICITY_API_KEY")).strip()
 
     missing_fields = []
     if not selected_model:
-        missing_fields.append("PICO_MODEL (or --model)")
+        missing_fields.append("APRICITY_MODEL (or --model)")
     if not selected_base_url:
-        missing_fields.append("PICO_BASE_URL (or --base-url)")
+        missing_fields.append("APRICITY_BASE_URL (or --base-url)")
     missing_api_key = defaults.requires_api_key and not api_key
     if missing_api_key:
-        missing_fields.append("PICO_API_KEY")
+        missing_fields.append("APRICITY_API_KEY")
 
     if missing_fields:
         if missing_api_key:
-            message = f"PICO_API_KEY is required for provider {selected_provider}."
+            message = f"APRICITY_API_KEY is required for provider {selected_provider}."
             other_missing = [
-                field for field in missing_fields if field != "PICO_API_KEY"
+                field for field in missing_fields if field != "APRICITY_API_KEY"
             ]
             if other_missing:
                 message += " Also missing: " + ", ".join(other_missing) + "."

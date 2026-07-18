@@ -1,6 +1,6 @@
 """命令行入口。
 
-这个模块负责把“用户怎么启动 pico”翻译成 runtime 能理解的对象：
+这个模块负责把“用户怎么启动 apricity”翻译成 runtime 能理解的对象：
 解析参数、挑模型后端、构建工作区快照、恢复或新建 session，
 最后进入 one-shot 或交互式循环。
 """
@@ -25,11 +25,11 @@ from .providers.config import (
     normalize_provider_name,
     resolve_runtime_config,
 )
-from .runtime import Pico, SessionStore
+from .runtime import Apricity, SessionStore
 from .workspace import WorkspaceContext, middle
 
 DEFAULT_SECRET_ENV_NAMES = (
-    "PICO_API_KEY",
+    "APRICITY_API_KEY",
     "GITHUB_PAT",
     "GH_PAT",
 )
@@ -40,7 +40,7 @@ WELCOME_ART = (
     "       /   ^   \\\\",
     "      /|       |\\\\",
 )
-WELCOME_NAME = "pico"
+WELCOME_NAME = "apricity"
 WELCOME_SUBTITLE = "local coding agent"
 WELCOME_STATUS = "calm shell, ready for work"
 HELP_DETAILS = textwrap.dedent(
@@ -55,7 +55,7 @@ HELP_DETAILS = textwrap.dedent(
 ).strip()
 
 
-SECRET_ENV_NAMES_VAR = "PICO_SECRET_ENV_NAMES"
+SECRET_ENV_NAMES_VAR = "APRICITY_SECRET_ENV_NAMES"
 
 
 def _configured_secret_names(args):
@@ -167,7 +167,7 @@ def build_welcome(agent, model, base_url):
 
 
 def build_agent(args):
-    """根据 CLI 参数装配出一个可运行的 Pico 实例。
+    """根据 CLI 参数装配出一个可运行的 Apricity 实例。
 
     为什么存在：
     命令行参数只是字符串和开关，runtime 需要的是已经装配好的对象图：
@@ -176,7 +176,7 @@ def build_agent(args):
 
     输入 / 输出：
     - 输入：`argparse` 解析后的 `args`
-    - 输出：一个新的 `Pico`，或一个从旧 session 恢复出来的 `Pico`
+    - 输出：一个新的 `Apricity`，或一个从旧 session 恢复出来的 `Apricity`
 
     在 agent 链路里的位置：
     它是整个程序启动链路里最靠近 runtime 的装配点。`main()` 先调它，
@@ -187,13 +187,13 @@ def build_agent(args):
     workspace = WorkspaceContext.build(args.cwd)
     load_project_env(workspace.repo_root)
     configured_secret_names = _configured_secret_names(args)
-    store = SessionStore(workspace.repo_root + "/.pico/sessions")
+    store = SessionStore(workspace.repo_root + "/.apricity/sessions")
     model = _build_model_client(args)
     session_id = args.resume
     if session_id == "latest":
         session_id = store.latest()
     if session_id:
-        return Pico.from_session(
+        return Apricity.from_session(
             model_client=model,
             workspace=workspace,
             session_store=store,
@@ -203,7 +203,7 @@ def build_agent(args):
             max_new_tokens=args.max_new_tokens,
             secret_env_names=configured_secret_names,
         )
-    return Pico(
+    return Apricity(
         model_client=model,
         workspace=workspace,
         session_store=store,
@@ -226,17 +226,17 @@ def build_arg_parser():
         type=normalize_provider_name,
         choices=PROVIDER_CHOICES,
         default=None,
-        help="Model backend to use. Defaults to PICO_PROVIDER or deepseek.",
+        help="Model backend to use. Defaults to APRICITY_PROVIDER or deepseek.",
     )
     parser.add_argument(
         "--model",
         default=None,
-        help="Model name override. Required unless PICO_MODEL is set.",
+        help="Model name override. Required unless APRICITY_MODEL is set.",
     )
     parser.add_argument(
         "--base-url",
         default=None,
-        help="Model provider API base URL. Required unless PICO_BASE_URL is set.",
+        help="Model provider API base URL. Required unless APRICITY_BASE_URL is set.",
     )
     parser.add_argument("--ollama-timeout", type=int, default=300, help="Ollama request timeout in seconds.")
     parser.add_argument("--openai-timeout", type=int, default=300, help="OpenAI-compatible request timeout in seconds.")
@@ -284,7 +284,7 @@ def main(argv=None):
         # 交互模式：每次读取一条用户输入，交给同一个 agent，
         # 因此 session history 和 working memory 会跨轮延续。
         try:
-            user_input = input("\npico> ").strip()
+            user_input = input("\napricity> ").strip()
         except (EOFError, KeyboardInterrupt):
             print("")
             return 0

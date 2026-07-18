@@ -16,7 +16,7 @@ from ..providers.clients import (
     is_deepseek_anthropic_base_url,
 )
 from ..providers.config import PROVIDER_DEFAULTS, resolve_runtime_config
-from ..runtime import Pico, SessionStore
+from ..runtime import Apricity, SessionStore
 from ..workspace import WorkspaceContext
 
 METRICS_SCHEMA_VERSION = 2
@@ -25,7 +25,7 @@ DEFAULT_CONTEXT_ABLATION_V2_PATH = Path("artifacts/context-ablation-v2.json")
 DEFAULT_MEMORY_ABLATION_V2_PATH = Path("artifacts/memory-ablation-v2.json")
 DEFAULT_BILINGUAL_MEMORY_BENCHMARK_PATH = Path("artifacts/bilingual-memory-retrieval-v1.json")
 DEFAULT_RECOVERY_ABLATION_V2_PATH = Path("artifacts/recovery-ablation-v2.json")
-DEFAULT_CORE_REPORT_PATH = Path("docs/metrics/pico-benchmark-core-report.md")
+DEFAULT_CORE_REPORT_PATH = Path("docs/metrics/apricity-benchmark-core-report.md")
 
 
 def _safe_mean(values):
@@ -205,12 +205,12 @@ def measure_feature_ablation_metrics(agent, user_message):
 
 
 def build_stress_agent_metrics():
-    with tempfile.TemporaryDirectory(prefix="pico-metrics-") as temp_dir:
+    with tempfile.TemporaryDirectory(prefix="apricity-metrics-") as temp_dir:
         workspace_root = Path(temp_dir)
         (workspace_root / "README.md").write_text("demo\n", encoding="utf-8")
         workspace = WorkspaceContext.build(workspace_root)
-        store = SessionStore(workspace_root / ".pico" / "sessions")
-        agent = Pico(
+        store = SessionStore(workspace_root / ".apricity" / "sessions")
+        agent = Apricity(
             model_client=FakeModelClient([]),
             workspace=workspace,
             session_store=store,
@@ -271,8 +271,8 @@ class _MemoryExperimentModelClient(FakeModelClient):
 
 def _build_memory_experiment_agent(workspace_root, expected_fact, filename):
     workspace = WorkspaceContext.build(workspace_root)
-    store = SessionStore(workspace_root / ".pico" / "sessions")
-    return Pico(
+    store = SessionStore(workspace_root / ".apricity" / "sessions")
+    return Apricity(
         model_client=_MemoryExperimentModelClient(expected_fact, filename),
         workspace=workspace,
         session_store=store,
@@ -298,7 +298,7 @@ def _set_irrelevant_memory(agent):
 
 
 def _run_memory_variant(mode):
-    with tempfile.TemporaryDirectory(prefix="pico-memory-experiment-") as temp_dir:
+    with tempfile.TemporaryDirectory(prefix="apricity-memory-experiment-") as temp_dir:
         workspace_root = Path(temp_dir)
         (workspace_root / "README.md").write_text("demo\n", encoding="utf-8")
         (workspace_root / "facts.txt").write_text("deploy key is red\n", encoding="utf-8")
@@ -395,7 +395,7 @@ def _set_irrelevant_memory_for_task(agent):
 
 
 def _run_memory_task_variant(task, variant):
-    with tempfile.TemporaryDirectory(prefix="pico-memory-large-") as temp_dir:
+    with tempfile.TemporaryDirectory(prefix="apricity-memory-large-") as temp_dir:
         workspace_root = Path(temp_dir)
         (workspace_root / "README.md").write_text("demo\n", encoding="utf-8")
         _write_memory_task_files(workspace_root, task)
@@ -463,7 +463,7 @@ BILINGUAL_MEMORY_CASES = (
         "id": "mixed_path_positive",
         "language_pair": "mixed",
         "note": "上下文总预算是 12000 字符。",
-        "source": "pico/context_manager.py",
+        "source": "apricity/context_manager.py",
         "query": "context_manager.py 的上下文预算是多少？",
         "expected_match": True,
     },
@@ -560,12 +560,12 @@ def run_context_stress_matrix(repetitions=5):
             for request_label, request_text in request_levels:
                 per_run = []
                 for _ in range(repetitions):
-                    with tempfile.TemporaryDirectory(prefix="pico-context-matrix-") as temp_dir:
+                    with tempfile.TemporaryDirectory(prefix="apricity-context-matrix-") as temp_dir:
                         workspace_root = Path(temp_dir)
                         (workspace_root / "README.md").write_text("demo\n", encoding="utf-8")
                         workspace = WorkspaceContext.build(workspace_root)
-                        store = SessionStore(workspace_root / ".pico" / "sessions")
-                        agent = Pico(
+                        store = SessionStore(workspace_root / ".apricity" / "sessions")
+                        agent = Apricity(
                             model_client=FakeModelClient([]),
                             workspace=workspace,
                             session_store=store,
@@ -634,8 +634,8 @@ def run_context_stress_matrix(repetitions=5):
 
 def _security_agent(workspace_root, approval_policy="auto", read_only=False):
     workspace = WorkspaceContext.build(workspace_root)
-    store = SessionStore(workspace_root / ".pico" / "sessions")
-    return Pico(
+    store = SessionStore(workspace_root / ".apricity" / "sessions")
+    return Apricity(
         model_client=FakeModelClient([]),
         workspace=workspace,
         session_store=store,
@@ -743,7 +743,7 @@ def run_security_experiment_suite(repetitions=3):
     tool_error_code_counts = {}
     for scenario_id, runner in SECURITY_SCENARIOS:
         for _ in range(repetitions):
-            with tempfile.TemporaryDirectory(prefix="pico-security-exp-") as temp_dir:
+            with tempfile.TemporaryDirectory(prefix="apricity-security-exp-") as temp_dir:
                 workspace_root = Path(temp_dir)
                 (workspace_root / "README.md").write_text("demo\n", encoding="utf-8")
                 metadata = runner(workspace_root)
@@ -948,8 +948,8 @@ def _truncate_read_history(agent):
 
 def _build_real_agent(workspace_root, provider, approval_policy="auto", read_only=False):
     workspace = WorkspaceContext.build(workspace_root)
-    store = SessionStore(workspace_root / ".pico" / "sessions")
-    return Pico(
+    store = SessionStore(workspace_root / ".apricity" / "sessions")
+    return Apricity(
         model_client=_make_provider_client(provider),
         workspace=workspace,
         session_store=store,
@@ -967,7 +967,7 @@ def run_real_memory_experiment(provider=None, repetitions=1):
         category_counts[task["category"]] = category_counts.get(task["category"], 0) + 1
         for _ in range(repetitions):
             for variant in variants:
-                with tempfile.TemporaryDirectory(prefix="pico-real-memory-") as temp_dir:
+                with tempfile.TemporaryDirectory(prefix="apricity-real-memory-") as temp_dir:
                     workspace_root = Path(temp_dir)
                     (workspace_root / "README.md").write_text("demo\n", encoding="utf-8")
                     _write_memory_task_files(workspace_root, task)
@@ -1041,7 +1041,7 @@ def run_real_context_experiment(provider=None, repetitions=1):
                 per_run = []
                 for _ in range(repetitions):
                     for variant_name, updates in (("full", {}), ("no_context_reduction", {"context_reduction": False})):
-                        with tempfile.TemporaryDirectory(prefix="pico-real-context-") as temp_dir:
+                        with tempfile.TemporaryDirectory(prefix="apricity-real-context-") as temp_dir:
                             workspace_root = Path(temp_dir)
                             (workspace_root / "README.md").write_text("demo\n", encoding="utf-8")
                             agent = _build_real_agent(workspace_root, provider)
@@ -1138,7 +1138,7 @@ def _security_result_row(scenario_id, provider, metadata):
 
 
 def _run_real_repeated_call_scenario(provider):
-    with tempfile.TemporaryDirectory(prefix="pico-real-security-repeat-") as temp_dir:
+    with tempfile.TemporaryDirectory(prefix="apricity-real-security-repeat-") as temp_dir:
         workspace_root = Path(temp_dir)
         (workspace_root / "README.md").write_text("demo\n", encoding="utf-8")
         agent = _build_real_agent(workspace_root, provider)
@@ -1158,7 +1158,7 @@ def run_real_security_experiment_suite(provider=None, repetitions=1):
     for _ in range(repetitions):
         rows.append(_run_real_repeated_call_scenario(provider))
         for scenario in REAL_SECURITY_SCENARIOS:
-            with tempfile.TemporaryDirectory(prefix="pico-real-security-") as temp_dir:
+            with tempfile.TemporaryDirectory(prefix="apricity-real-security-") as temp_dir:
                 workspace_root = Path(temp_dir)
                 _setup_real_security_workspace(workspace_root, scenario["id"])
                 agent = _build_real_agent(
@@ -1263,7 +1263,7 @@ def render_resume_metrics_markdown(metrics):
     security = metrics["security_experiment"]
     provider_payload = metrics.get("provider_experiments", {})
     lines = [
-        "# Pico Resume Metrics",
+        "# Apricity Resume Metrics",
         "",
         "## Key Numbers",
         f"- Experiment mode: {metrics.get('experiment_mode', 'synthetic')}",
@@ -1317,7 +1317,7 @@ def render_large_scale_experiment_report(metrics):
         or "unknown"
     )
     lines = [
-        "# Pico Large-Scale Experiment Report",
+        "# Apricity Large-Scale Experiment Report",
         "",
         "## Executive Summary",
         (
@@ -1462,8 +1462,8 @@ RECOVERY_ABLATION_TASKS = [
 
 def _build_recovery_agent(workspace_root, required_fragments):
     workspace = WorkspaceContext.build(workspace_root)
-    store = SessionStore(workspace_root / ".pico" / "sessions")
-    return Pico(
+    store = SessionStore(workspace_root / ".apricity" / "sessions")
+    return Apricity(
         model_client=_RecoveryScenarioModelClient(required_fragments, "recovery state restored."),
         workspace=workspace,
         session_store=store,
@@ -1626,7 +1626,7 @@ def _apply_recovery_setup(agent, task, workspace_root):
 
 
 def _run_recovery_task_variant(task, variant):
-    with tempfile.TemporaryDirectory(prefix="pico-recovery-ablation-") as temp_dir:
+    with tempfile.TemporaryDirectory(prefix="apricity-recovery-ablation-") as temp_dir:
         workspace_root = Path(temp_dir)
         (workspace_root / "README.md").write_text("demo\n", encoding="utf-8")
         agent = _build_recovery_agent(workspace_root, task["required_fragments"])
@@ -1738,7 +1738,7 @@ def write_benchmark_core_report(
 
     enabled_recovery = recovery["variants"]["resume_enabled"]["summary"]
     lines = [
-        "# Pico Benchmark Core Report",
+        "# Apricity Benchmark Core Report",
         "",
         "这轮 benchmark 只收缩到 Harness regression、context ablation、working memory ablation 和 recovery ablation 四层，不把 provider、run aggregation 或 durable memory 的别的结论揉进来。",
         "",

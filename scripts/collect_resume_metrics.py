@@ -8,16 +8,16 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from pico.evaluation.metrics import collect_resume_metrics, render_resume_metrics_markdown  # noqa: E402
+from apricity.evaluation.metrics import collect_resume_metrics, render_resume_metrics_markdown  # noqa: E402
 
 
 def build_arg_parser():
-    parser = argparse.ArgumentParser(description="Collect pico resume metrics from benchmark and run artifacts.")
+    parser = argparse.ArgumentParser(description="Collect apricity resume metrics from benchmark and run artifacts.")
     parser.add_argument("--benchmark-artifact", required=True, help="Path to benchmark artifact JSON.")
-    parser.add_argument("--runs-root", required=True, help="Path to .pico/runs root.")
+    parser.add_argument("--runs-root", required=True, help="Path to .apricity/runs root.")
     parser.add_argument("--provider-experiments", default=None, help="Optional provider experiments JSON.")
     parser.add_argument("--experiment-mode", choices=("synthetic", "real"), default="synthetic", help="Whether to use deterministic synthetic experiments or real model runs.")
-    parser.add_argument("--provider", choices=("ollama", "openai", "anthropic", "deepseek"), default=None, help="Provider override for real experiment mode. Defaults to PICO_PROVIDER.")
+    parser.add_argument("--provider", choices=("ollama", "openai", "anthropic", "deepseek"), default=None, help="Provider override for real experiment mode. Defaults to APRICITY_PROVIDER.")
     parser.add_argument("--memory-repetitions", type=int, default=3, help="Repetitions for the small memory experiment.")
     parser.add_argument("--large-memory-repetitions", type=int, default=5, help="Repetitions for the large memory experiment.")
     parser.add_argument("--context-repetitions", type=int, default=5, help="Repetitions for the context stress matrix.")

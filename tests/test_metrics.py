@@ -1,7 +1,7 @@
 import os
 from unittest.mock import patch
 
-from pico.evaluation.metrics import (
+from apricity.evaluation.metrics import (
     _client_from_profile,
     _provider_profile,
     _provider_summary_from_artifact,
@@ -12,7 +12,7 @@ from pico.evaluation.metrics import (
     run_recovery_ablation_v2,
     write_benchmark_core_report,
 )
-from pico import AnthropicCompatibleModelClient, DeepSeekModelClient
+from apricity import AnthropicCompatibleModelClient, DeepSeekModelClient
 
 
 def test_provider_summary_excludes_runs_without_cache_telemetry():
@@ -99,10 +99,10 @@ def test_provider_profile_loads_unified_project_env(tmp_path, monkeypatch):
     (tmp_path / ".env").write_text(
         "\n".join(
             [
-                "PICO_PROVIDER=deepseek",
-                "PICO_API_KEY=sk-project-deepseek",
-                "PICO_MODEL=deepseek-v4-pro",
-                "PICO_BASE_URL=https://api.deepseek.com/anthropic",
+                "APRICITY_PROVIDER=deepseek",
+                "APRICITY_API_KEY=sk-project-deepseek",
+                "APRICITY_MODEL=deepseek-v4-pro",
+                "APRICITY_BASE_URL=https://api.deepseek.com/anthropic",
             ]
         )
         + "\n",
@@ -128,10 +128,10 @@ def test_provider_profile_uses_unified_openai_config(tmp_path, monkeypatch):
     with patch.dict(
         os.environ,
         {
-            "PICO_PROVIDER": "openai",
-            "PICO_MODEL": "gpt-5.4",
-            "PICO_BASE_URL": "https://api.openai.com/v1",
-            "PICO_API_KEY": "sk-openai",
+            "APRICITY_PROVIDER": "openai",
+            "APRICITY_MODEL": "gpt-5.4",
+            "APRICITY_BASE_URL": "https://api.openai.com/v1",
+            "APRICITY_API_KEY": "sk-openai",
         },
         clear=True,
     ):
@@ -153,13 +153,13 @@ def test_provider_experiments_runs_only_the_active_provider(tmp_path, monkeypatc
     with patch.dict(
         os.environ,
         {
-            "PICO_PROVIDER": "openai",
-            "PICO_MODEL": "gpt-5.4",
-            "PICO_BASE_URL": "https://api.openai.com/v1",
-            "PICO_API_KEY": "sk-openai",
+            "APRICITY_PROVIDER": "openai",
+            "APRICITY_MODEL": "gpt-5.4",
+            "APRICITY_BASE_URL": "https://api.openai.com/v1",
+            "APRICITY_API_KEY": "sk-openai",
         },
         clear=True,
-    ), patch("pico.evaluation.metrics.run_fixed_benchmark", return_value=fake_payload) as runner:
+    ), patch("apricity.evaluation.metrics.run_fixed_benchmark", return_value=fake_payload) as runner:
         result = run_provider_experiments(
             benchmark_path=tmp_path / "benchmark.json",
             workspace_root=tmp_path / "workspaces",
@@ -233,7 +233,7 @@ def test_write_benchmark_core_report_marks_resume_safe_metrics(tmp_path):
         encoding="utf-8",
     )
 
-    report_path = tmp_path / "docs" / "metrics" / "pico-benchmark-core-report.md"
+    report_path = tmp_path / "docs" / "metrics" / "apricity-benchmark-core-report.md"
     report_text = write_benchmark_core_report(
         report_path=report_path,
         harness_artifact_path=harness_artifact_path,
