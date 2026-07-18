@@ -7,7 +7,14 @@ from pathlib import Path
 from ..config import load_project_env
 from ..features.memory import LayeredMemory
 from .evaluator import run_fixed_benchmark
-from ..providers.clients import AnthropicCompatibleModelClient, FakeModelClient, OllamaModelClient, OpenAICompatibleModelClient
+from ..providers.clients import (
+    AnthropicCompatibleModelClient,
+    DeepSeekModelClient,
+    FakeModelClient,
+    OllamaModelClient,
+    OpenAICompatibleModelClient,
+    is_deepseek_anthropic_base_url,
+)
 from ..providers.config import PROVIDER_DEFAULTS, resolve_runtime_config
 from ..runtime import Pico, SessionStore
 from ..workspace import WorkspaceContext
@@ -126,9 +133,14 @@ def aggregate_run_artifacts(runs_root):
     tool_steps = [int(report.get("tool_steps", 0)) for report in reports]
     attempts = [int(report.get("attempts", 0)) for report in reports]
     prompt_chars = [int((report.get("prompt_metadata") or {}).get("prompt_chars", 0)) for report in reports]
-    cached_tokens = [int((report.get("prompt_metadata") or {}).get("cached_tokens", 0) or 0) for report in reports]
-    cache_hits = [bool((report.get("prompt_metadata") or {}).get("cache_hit")) for report in reports]
-    input_tokens = [int((report.get("prompt_metadata") or {}).get("input_tokens", 0) or 0) for report in reports]
+    cache_metadata = [
+        report.get("prompt_metadata") or {}
+        for report in reports
+        if (report.get("prompt_metadata") or {}).get("cache_telemetry_available") is True
+    ]
+    cached_tokens = [int(metadata.get("cached_tokens", 0) or 0) for metadata in cache_metadata]
+    cache_hits = [bool(metadata.get("cache_hit")) for metadata in cache_metadata]
+    input_tokens = [int(metadata.get("input_tokens", 0) or 0) for metadata in cache_metadata]
     prefix_reused = [
         not bool((report.get("prompt_metadata") or {}).get("prefix_changed"))
         for report in reports
@@ -147,6 +159,7 @@ def aggregate_run_artifacts(runs_root):
         "cache_hit_rate": _safe_ratio(sum(1 for hit in cache_hits if hit), len(cache_hits)),
         "cached_token_ratio": _safe_ratio(sum(cached_tokens), sum(input_tokens)),
         "avg_cached_tokens": _safe_mean(cached_tokens),
+        "cache_telemetry_run_count": len(cache_metadata),
         "prefix_reuse_rate": _safe_ratio(sum(1 for reused in prefix_reused if reused), len(prefix_reused)),
         "tool_status_counts": tool_status_counts,
         "tool_name_counts": tool_name_counts,
@@ -755,13 +768,20 @@ def _provider_summary_from_artifact(payload):
     rows = list(payload.get("rows", []))
     cached_tokens = []
     cache_hits = []
+    input_tokens = []
+    prompt_cache_modes = set()
     tool_steps = []
     attempts = []
     for row in rows:
         report = row.get("report", {})
         prompt_metadata = report.get("prompt_metadata", {})
-        cached_tokens.append(int(prompt_metadata.get("cached_tokens", 0) or 0))
-        cache_hits.append(bool(prompt_metadata.get("cache_hit")))
+        prompt_cache_mode = str(prompt_metadata.get("prompt_cache_mode", "")).strip()
+        if prompt_cache_mode:
+            prompt_cache_modes.add(prompt_cache_mode)
+        if prompt_metadata.get("cache_telemetry_available") is True:
+            cached_tokens.append(int(prompt_metadata.get("cached_tokens", 0) or 0))
+            cache_hits.append(bool(prompt_metadata.get("cache_hit")))
+            input_tokens.append(int(prompt_metadata.get("input_tokens", 0) or 0))
         tool_steps.append(int(row.get("tool_steps", 0)))
         attempts.append(int(row.get("attempts", 0)))
     summary = payload.get("summary", {})
@@ -773,6 +793,9 @@ def _provider_summary_from_artifact(payload):
         "avg_attempts": _safe_mean(attempts),
         "cache_hit_rate": _safe_ratio(sum(1 for hit in cache_hits if hit), len(cache_hits)),
         "avg_cached_tokens": _safe_mean(cached_tokens),
+        "cached_token_ratio": _safe_ratio(sum(cached_tokens), sum(input_tokens)),
+        "cache_telemetry_run_count": len(cache_hits),
+        "prompt_cache_modes": sorted(prompt_cache_modes),
         "artifact_path": payload.get("_artifact_path", ""),
     }
 
@@ -813,13 +836,19 @@ def _client_from_profile(profile, temperature, timeout):
             top_p=0.9,
             timeout=timeout,
         )
-    return AnthropicCompatibleModelClient(
+    client_class = AnthropicCompatibleModelClient
+    if profile["provider"] == "deepseek" and not is_deepseek_anthropic_base_url(profile["base_url"]):
+        client_class = DeepSeekModelClient
+    client = client_class(
         model=profile["model"],
         base_url=profile["base_url"],
         api_key=profile["api_key"],
         temperature=temperature,
         timeout=timeout,
     )
+    if profile["provider"] == "deepseek":
+        client.provider = "deepseek"
+    return client
 
 
 def _make_provider_client(provider=None):
@@ -871,6 +900,11 @@ def run_provider_experiments(benchmark_path, workspace_root, artifact_root, max_
         result = _provider_summary_from_artifact(payload)
         result["provider"] = provider_name
         result["model"] = profile["model"]
+        result["prompt_cache_mode"] = getattr(
+            _client_from_profile(profile, temperature=0.0, timeout=300),
+            "prompt_cache_mode",
+            "none",
+        )
     except Exception as exc:
         result = {
             "provider": provider_name,

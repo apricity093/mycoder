@@ -9,6 +9,7 @@ import pytest
 import pico as pico_pkg
 from pico import (
     AnthropicCompatibleModelClient,
+    DeepSeekModelClient,
     FakeModelClient,
     Pico,
     OllamaModelClient,
@@ -466,6 +467,73 @@ def test_openai_compatible_coding101_endpoint_enables_provider_specific_cache():
     assert client.supports_prompt_cache is True
 
 
+def test_deepseek_client_posts_native_payload_and_records_cache_usage():
+    captured = {}
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self):
+            return json.dumps(
+                {
+                    "choices": [{"message": {"content": "<final>ok</final>"}}],
+                    "usage": {
+                        "prompt_tokens": 2048,
+                        "completion_tokens": 32,
+                        "total_tokens": 2080,
+                        "prompt_cache_hit_tokens": 1536,
+                        "prompt_cache_miss_tokens": 512,
+                    },
+                }
+            ).encode("utf-8")
+
+    def fake_urlopen(request, timeout):
+        captured["url"] = request.full_url
+        captured["timeout"] = timeout
+        captured["headers"] = dict(request.headers)
+        captured["body"] = json.loads(request.data.decode("utf-8"))
+        return FakeResponse()
+
+    client = DeepSeekModelClient(
+        model="deepseek-v4-pro",
+        base_url="https://api.deepseek.com",
+        api_key="sk-test",
+        temperature=0.2,
+        timeout=30,
+    )
+
+    with patch("urllib.request.urlopen", fake_urlopen):
+        result = client.complete(
+            "stable prefix\nquestion",
+            42,
+            prompt_cache_key="prefix-hash-123",
+            prompt_cache_retention="in_memory",
+        )
+
+    assert result == "<final>ok</final>"
+    assert captured["url"] == "https://api.deepseek.com/v1/chat/completions"
+    assert captured["headers"]["Authorization"] == "Bearer sk-test"
+    assert captured["body"] == {
+        "model": "deepseek-v4-pro",
+        "messages": [{"role": "user", "content": "stable prefix\nquestion"}],
+        "max_tokens": 42,
+        "stream": False,
+        "temperature": 0.2,
+    }
+    assert "prompt_cache_key" not in captured["body"]
+    assert "prompt_cache_retention" not in captured["body"]
+    assert "cache_control" not in captured["body"]
+    assert client.prompt_cache_mode == "automatic_prefix"
+    assert client.last_completion_metadata["cached_tokens"] == 1536
+    assert client.last_completion_metadata["cache_miss_tokens"] == 512
+    assert client.last_completion_metadata["cache_hit"] is True
+    assert client.last_completion_metadata["cache_telemetry_available"] is True
+
+
 def test_openai_compatible_client_extracts_text_from_event_stream():
     class FakeResponse:
         headers = {"Content-Type": "text/event-stream"}
@@ -913,6 +981,31 @@ def test_build_agent_uses_deepseek_provider_and_env_configuration(tmp_path):
     assert mock_anthropic.call_args.kwargs["model"] == "deepseek-v4-pro"
     assert mock_anthropic.call_args.kwargs["base_url"] == "https://api.deepseek.com/anthropic"
     assert mock_anthropic.call_args.kwargs["api_key"] == "sk-project-deepseek"
+    assert agent.model_client is fake_client
+
+
+def test_build_agent_uses_native_deepseek_client_for_native_base_url(tmp_path):
+    (tmp_path / ".env").write_text(
+        "PICO_PROVIDER=deepseek\n"
+        "PICO_BASE_URL=https://api.deepseek.com\n"
+        "PICO_API_KEY=sk-project-deepseek\n"
+        "PICO_MODEL=deepseek-v4-pro\n",
+        encoding="utf-8",
+    )
+    args = pico_pkg.build_arg_parser().parse_args(["--cwd", str(tmp_path)])
+
+    with patch.dict(os.environ, {}, clear=True):
+        with patch(
+            "pico.cli.AnthropicCompatibleModelClient",
+            side_effect=AssertionError("anthropic client should not be used"),
+        ), patch("pico.cli.DeepSeekModelClient") as mock_deepseek:
+            fake_client = mock_deepseek.return_value
+            agent = pico_pkg.build_agent(args)
+
+    mock_deepseek.assert_called_once()
+    assert mock_deepseek.call_args.kwargs["model"] == "deepseek-v4-pro"
+    assert mock_deepseek.call_args.kwargs["base_url"] == "https://api.deepseek.com"
+    assert mock_deepseek.call_args.kwargs["api_key"] == "sk-project-deepseek"
     assert agent.model_client is fake_client
 
 
@@ -1704,6 +1797,43 @@ def test_agent_records_model_cache_metadata_in_last_prompt_metadata(tmp_path):
     assert agent.last_prompt_metadata["cache_hit"] is True
     assert agent.last_prompt_metadata["prefix_hash"]
     assert agent.last_prompt_metadata["prompt_cache_key"] == agent.last_prompt_metadata["prefix_hash"]
+
+
+def test_agent_keeps_automatic_cache_key_local_without_retention(tmp_path):
+    class AutomaticCacheFakeModelClient(FakeModelClient):
+        def __init__(self):
+            super().__init__(["<final>Done.</final>"])
+            self.supports_prompt_cache = True
+            self.prompt_cache_mode = "automatic_prefix"
+            self.received_cache_kwargs = {}
+
+        def complete(self, prompt, max_new_tokens, **kwargs):
+            self.received_cache_kwargs = dict(kwargs)
+            self.last_completion_metadata = {
+                "prompt_cache_supported": True,
+                "prompt_cache_mode": "automatic_prefix",
+                "cache_telemetry_available": True,
+                "cached_tokens": 0,
+                "cache_miss_tokens": 256,
+                "cache_hit": False,
+                "input_tokens": 256,
+            }
+            return super().complete(prompt, max_new_tokens, **kwargs)
+
+    workspace = build_workspace(tmp_path)
+    store = SessionStore(tmp_path / ".pico" / "sessions")
+    client = AutomaticCacheFakeModelClient()
+    agent = Pico(
+        model_client=client,
+        workspace=workspace,
+        session_store=store,
+        approval_policy="auto",
+    )
+
+    assert agent.ask("Automatic cache run") == "Done."
+    assert client.received_cache_kwargs["prompt_cache_key"] == agent.last_prompt_metadata["prefix_hash"]
+    assert client.received_cache_kwargs["prompt_cache_retention"] is None
+    assert agent.last_prompt_metadata["prompt_cache_mode"] == "automatic_prefix"
 
 
 def test_recent_transcript_entries_stay_richer_than_older_ones(tmp_path):

@@ -17,7 +17,9 @@ class AgentLoop:
         agent.memory.set_task_summary(user_message)
         agent.record({"role": "user", "content": user_message, "created_at": now()})
 
-        task_state = TaskState.create(run_id=agent.new_run_id(), task_id=agent.new_task_id(), user_request=user_message)
+        task_state = TaskState.create(run_id=agent.new_run_id(),
+                                      task_id=agent.new_task_id(),
+                                      user_request=user_message)
         task_state.resume_status = agent.resume_state.get("status", CHECKPOINT_NONE_STATUS)
         agent.current_task_state = task_state
         agent.current_run_dir = agent.run_store.start_run(task_state)
@@ -105,10 +107,18 @@ class AgentLoop:
             )
             prompt_cache_key = None
             prompt_cache_retention = None
-            if getattr(agent.model_client, "supports_prompt_cache", False):
+            cache_mode = getattr(
+                agent.model_client,
+                "prompt_cache_mode",
+                "explicit_key" if getattr(agent.model_client, "supports_prompt_cache", False) else "none",
+            )
+            if cache_mode == "explicit_key":
                 # 只有后端明确支持时，才把稳定前缀的 hash 作为 cache key 发出去。
                 prompt_cache_key = prompt_metadata.get("prompt_cache_key")
                 prompt_cache_retention = "in_memory"
+            elif cache_mode == "automatic_prefix":
+                # 自动前缀缓存不接收控制参数，但保留本地 key 供 trace 关联。
+                prompt_cache_key = prompt_metadata.get("prompt_cache_key")
             model_started_at = time.monotonic()
             raw = agent.model_client.complete(
                 prompt,

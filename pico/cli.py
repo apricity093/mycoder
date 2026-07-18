@@ -12,7 +12,13 @@ import sys
 import textwrap
 
 from .config import load_project_env
-from .providers.clients import AnthropicCompatibleModelClient, OllamaModelClient, OpenAICompatibleModelClient
+from .providers.clients import (
+    AnthropicCompatibleModelClient,
+    DeepSeekModelClient,
+    OllamaModelClient,
+    OpenAICompatibleModelClient,
+    is_deepseek_anthropic_base_url,
+)
 from .providers.config import (
     PROVIDER_CHOICES,
     PROVIDER_DEFAULTS,
@@ -90,13 +96,20 @@ def _build_model_client(args):
             timeout=getattr(args, "openai_timeout", getattr(args, "ollama_timeout", 300)),
         )
     if config.provider == "deepseek":
-        return AnthropicCompatibleModelClient(
+        client_class = (
+            AnthropicCompatibleModelClient
+            if is_deepseek_anthropic_base_url(config.base_url)
+            else DeepSeekModelClient
+        )
+        client = client_class(
             model=config.model,
             base_url=config.base_url,
             api_key=config.api_key,
             temperature=args.temperature,
             timeout=getattr(args, "openai_timeout", getattr(args, "ollama_timeout", 300)),
         )
+        client.provider = "deepseek"
+        return client
 
     return OllamaModelClient(
         model=config.model,

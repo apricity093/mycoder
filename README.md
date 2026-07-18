@@ -94,7 +94,7 @@ Provider 选择的具体顺序是：
 --provider > PICO_PROVIDER > 代码默认 deepseek
 ```
 
-不传 `--provider` 且没有 `PICO_PROVIDER` 时默认使用 `deepseek`。这是推荐配置路径：DeepSeek 的 Anthropic-compatible endpoint 比本地 Ollama 更少依赖本机模型环境，也比 OpenAI-compatible/Anthropic-compatible 代理少一层默认 gateway 假设。其他 provider 仍然保留，可以在 `.env` 里写 `PICO_PROVIDER=openai`、`PICO_PROVIDER=anthropic`、`PICO_PROVIDER=ollama`，也可以显式传 `--provider openai`、`--provider anthropic` 或 `--provider ollama`。
+不传 `--provider` 且没有 `PICO_PROVIDER` 时默认使用 `deepseek`。推荐配置 DeepSeek 原生 endpoint，以获得自动前缀缓存及命中 token 遥测。其他 provider 仍然保留，可以在 `.env` 里写 `PICO_PROVIDER=openai`、`PICO_PROVIDER=anthropic`、`PICO_PROVIDER=ollama`，也可以显式传 `--provider openai`、`--provider anthropic` 或 `--provider ollama`。
 
 `.env` 会在构建 provider client 前加载，并覆盖当前进程里的同名环境变量。`model` 和 `base URL` 必须通过 `PICO_MODEL`、`PICO_BASE_URL` 或对应 CLI 参数提供；远程 provider 还必须配置 `PICO_API_KEY`。API key 只从环境变量读取。
 
@@ -113,7 +113,7 @@ cp .env.example .env
 ```bash
 PICO_PROVIDER="deepseek"
 PICO_MODEL="deepseek-v4-pro"
-PICO_BASE_URL="https://api.deepseek.com/anthropic"
+PICO_BASE_URL="https://api.deepseek.com"
 PICO_API_KEY="your-api-key"
 ```
 
@@ -126,10 +126,12 @@ uv run pico
 如果你需要临时切模型或代理地址，不必改 `.env`，可以直接覆盖：
 
 ```bash
-uv run pico --model deepseek-v4-pro --base-url https://api.deepseek.com/anthropic
+uv run pico --model deepseek-v4-pro --base-url https://api.deepseek.com
 ```
 
-DeepSeek 当前走 Anthropic-compatible Messages API，所以 runtime 里复用的是 Anthropic-compatible client；这只影响 HTTP 协议，不影响 CLI 用法。
+DeepSeek 推荐走原生 Chat Completions API。该接口默认启用前缀缓存，Pico 会从 `usage.prompt_cache_hit_tokens` 和 `usage.prompt_cache_miss_tokens` 记录缓存命中情况。旧的 `https://api.deepseek.com/anthropic` 地址仍可使用，但只作为 Anthropic-compatible 兼容路径，缓存遥测会标记为不可用。
+
+OpenAI 和 DeepSeek 仍使用完全相同的 `PICO_*` 环境变量名。分别运行实验并保存产物后，可以比较 `cache_hit_rate`、`cached_token_ratio` 和 `avg_cached_tokens`；由于两家分词器不同，优先比较前两项比例指标。
 
 所有 provider 使用相同的环境变量名，只修改值：
 

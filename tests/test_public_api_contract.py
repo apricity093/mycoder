@@ -22,7 +22,16 @@ def test_build_agent_returns_pico(tmp_path):
     (tmp_path / "README.md").write_text("demo\n", encoding="utf-8")
     args = build_arg_parser().parse_args(["--cwd", str(tmp_path), "--approval", "auto"])
 
-    with patch.dict(os.environ, {"PICO_API_KEY": "sk-test"}, clear=True):
+    with patch.dict(
+        os.environ,
+        {
+            "PICO_PROVIDER": "deepseek",
+            "PICO_MODEL": "deepseek-v4-pro",
+            "PICO_BASE_URL": "https://api.deepseek.com",
+            "PICO_API_KEY": "sk-test",
+        },
+        clear=True,
+    ):
         agent = build_agent(args)
 
     assert isinstance(agent, Pico)

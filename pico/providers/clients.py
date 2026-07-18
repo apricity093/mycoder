@@ -12,6 +12,9 @@ import urllib.error
 import urllib.request
 
 OPENAI_COMPATIBLE_USER_AGENT = "pico/0.1"
+PROMPT_CACHE_NONE = "none"
+PROMPT_CACHE_EXPLICIT_KEY = "explicit_key"
+PROMPT_CACHE_AUTOMATIC_PREFIX = "automatic_prefix"
 
 
 class FakeModelClient:
@@ -19,6 +22,7 @@ class FakeModelClient:
         self.outputs = list(outputs)
         self.prompts = []
         self.supports_prompt_cache = False
+        self.prompt_cache_mode = PROMPT_CACHE_NONE
         self.last_completion_metadata = {}
 
     def complete(self, prompt, max_new_tokens, **kwargs):
@@ -38,6 +42,7 @@ class OllamaModelClient:
         self.top_p = top_p
         self.timeout = timeout
         self.supports_prompt_cache = False
+        self.prompt_cache_mode = PROMPT_CACHE_NONE
         self.last_completion_metadata = {}
 
     def complete(self, prompt, max_new_tokens, **kwargs):
@@ -206,21 +211,47 @@ def _extract_openai_response_from_sse(body_text):
     return "", {}
 
 
-def _extract_usage_cache_details(data):
+def _extract_usage_cache_details(data, prompt_cache_mode=PROMPT_CACHE_NONE):
     # 把不同 OpenAI-compatible 返回里的 usage 字段整理成统一结构，
     # 让 runtime/trace/report 不需要关心 provider 细节。
     usage = data.get("usage") or {}
     input_tokens = usage.get("input_tokens", usage.get("prompt_tokens"))
     output_tokens = usage.get("output_tokens", usage.get("completion_tokens"))
     input_details = usage.get("input_tokens_details") or usage.get("prompt_tokens_details") or {}
-    cached_tokens = int(input_details.get("cached_tokens") or 0)
+    deepseek_hit_present = "prompt_cache_hit_tokens" in usage
+    deepseek_miss_present = "prompt_cache_miss_tokens" in usage
+    openai_cache_present = "cached_tokens" in input_details
+    cached_tokens = int(
+        (
+            usage.get("prompt_cache_hit_tokens")
+            if deepseek_hit_present
+            else input_details.get("cached_tokens")
+        )
+        or 0
+    )
+    cache_miss_tokens = usage.get("prompt_cache_miss_tokens")
+    cache_telemetry_available = bool(
+        deepseek_hit_present or deepseek_miss_present or openai_cache_present
+    )
+    if input_tokens is None and (deepseek_hit_present or deepseek_miss_present):
+        input_tokens = cached_tokens + int(cache_miss_tokens or 0)
+    if cache_miss_tokens is None and cache_telemetry_available and input_tokens is not None:
+        cache_miss_tokens = max(int(input_tokens) - cached_tokens, 0)
     return {
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
         "total_tokens": usage.get("total_tokens"),
         "cached_tokens": cached_tokens,
+        "cache_miss_tokens": int(cache_miss_tokens or 0),
         "cache_hit": cached_tokens > 0,
+        "cache_telemetry_available": cache_telemetry_available,
+        "prompt_cache_mode": prompt_cache_mode,
     }
+
+
+def is_deepseek_anthropic_base_url(base_url):
+    """Return whether a DeepSeek URL selects its Anthropic-compatible transport."""
+    return "/anthropic" in str(base_url).rstrip("/").lower().split("?", 1)[0]
 
 
 class OpenAICompatibleModelClient:
@@ -236,6 +267,9 @@ class OpenAICompatibleModelClient:
             host in self.base_url.lower()
             for host in ("openai.com", "coding101.site")
             )
+        self.prompt_cache_mode = (
+            PROMPT_CACHE_EXPLICIT_KEY if self.supports_prompt_cache else PROMPT_CACHE_NONE
+        )
         self.last_completion_metadata = {}
 
     def complete(self, prompt, max_new_tokens, prompt_cache_key=None, prompt_cache_retention=None):
@@ -327,10 +361,12 @@ class OpenAICompatibleModelClient:
                 # 这些元数据会一路传回 runtime，进入 trace 和 report，
                 # 用来观察 prompt cache 是否真的命中。
                 self.last_completion_metadata = {
+                    "provider": "openai",
+                    "model": self.model,
                     "prompt_cache_supported": self.supports_prompt_cache,
                     "prompt_cache_key": prompt_cache_key,
                     "prompt_cache_retention": prompt_cache_retention,
-                    **_extract_usage_cache_details(response_data),
+                    **_extract_usage_cache_details(response_data, self.prompt_cache_mode),
                 }
             if text:
                 return text
@@ -345,12 +381,98 @@ class OpenAICompatibleModelClient:
         if data.get("error"):
             raise RuntimeError(f"OpenAI-compatible error: {data['error']}")
         self.last_completion_metadata = {
+            "provider": "openai",
+            "model": self.model,
             "prompt_cache_supported": self.supports_prompt_cache,
             "prompt_cache_key": prompt_cache_key,
             "prompt_cache_retention": prompt_cache_retention,
-            **_extract_usage_cache_details(data),
+            **_extract_usage_cache_details(data, self.prompt_cache_mode),
         }
         return _extract_openai_text(data)
+
+
+class DeepSeekModelClient:
+    """DeepSeek native chat-completions adapter with automatic cache telemetry."""
+
+    def __init__(self, model, base_url, api_key, temperature, timeout):
+        self.provider = "deepseek"
+        self.model = model
+        self.base_url = _normalize_versioned_base_url(base_url)
+        self.api_key = api_key
+        self.temperature = temperature
+        self.timeout = timeout
+        self.supports_prompt_cache = True
+        self.prompt_cache_mode = PROMPT_CACHE_AUTOMATIC_PREFIX
+        self.last_completion_metadata = {}
+
+    def complete(self, prompt, max_new_tokens, prompt_cache_key=None, prompt_cache_retention=None):
+        # DeepSeek 按请求内容的相同前缀自动缓存；本地 prefix hash 只用于 trace
+        # 关联，不能作为请求字段发送给 DeepSeek。
+        self.last_completion_metadata = {}
+        payload = {
+            "model": self.model,
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": max_new_tokens,
+            "stream": False,
+        }
+        if self.temperature is not None:
+            payload["temperature"] = self.temperature
+
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": OPENAI_COMPATIBLE_USER_AGENT,
+        }
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+
+        request = urllib.request.Request(
+            self.base_url + "/chat/completions",
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST",
+        )
+        attempts = 3
+        for attempt in range(attempts):
+            try:
+                with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                    body_text = response.read().decode("utf-8")
+                break
+            except urllib.error.HTTPError as exc:
+                body = exc.read().decode("utf-8", errors="replace")
+                if exc.code >= 500 and attempt < attempts - 1:
+                    time.sleep(0.5 * (attempt + 1))
+                    continue
+                raise RuntimeError(f"DeepSeek request failed with HTTP {exc.code}: {body}") from exc
+            except (urllib.error.URLError, RemoteDisconnected) as exc:
+                if attempt < attempts - 1:
+                    time.sleep(0.5 * (attempt + 1))
+                    continue
+                raise RuntimeError(
+                    "Could not reach DeepSeek.\n"
+                    f"Base URL: {self.base_url}\n"
+                    f"Model: {self.model}"
+                ) from exc
+
+        try:
+            data = json.loads(body_text)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError("DeepSeek error: backend returned non-JSON content") from exc
+        if data.get("error"):
+            raise RuntimeError(f"DeepSeek error: {data['error']}")
+
+        self.last_completion_metadata = {
+            "provider": "deepseek",
+            "model": self.model,
+            "prompt_cache_supported": True,
+            "prompt_cache_key": prompt_cache_key,
+            "prompt_cache_retention": None,
+            **_extract_usage_cache_details(data, self.prompt_cache_mode),
+        }
+        text = _extract_openai_text(data)
+        if text:
+            return text
+        raise RuntimeError("DeepSeek error: could not extract text from response")
 
 
 def _extract_anthropic_text(data):
@@ -364,12 +486,14 @@ def _extract_anthropic_text(data):
 
 class AnthropicCompatibleModelClient:
     def __init__(self, model, base_url, api_key, temperature, timeout):
+        self.provider = "anthropic"
         self.model = model
         self.base_url = _normalize_versioned_base_url(base_url)
         self.api_key = api_key
         self.temperature = temperature
         self.timeout = timeout
         self.supports_prompt_cache = False
+        self.prompt_cache_mode = PROMPT_CACHE_NONE
         self.last_completion_metadata = {}
 
     def complete(self, prompt, max_new_tokens, prompt_cache_key=None, prompt_cache_retention=None):
@@ -438,6 +562,12 @@ class AnthropicCompatibleModelClient:
             ) from exc
         if data.get("error"):
             raise RuntimeError(f"Anthropic-compatible error: {data['error']}")
+        self.last_completion_metadata = {
+            "provider": self.provider,
+            "model": self.model,
+            "prompt_cache_supported": False,
+            **_extract_usage_cache_details(data, self.prompt_cache_mode),
+        }
         text = _extract_anthropic_text(data)
         if text:
             return text

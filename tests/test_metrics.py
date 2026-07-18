@@ -2,7 +2,9 @@ import os
 from unittest.mock import patch
 
 from pico.evaluation.metrics import (
+    _client_from_profile,
     _provider_profile,
+    _provider_summary_from_artifact,
     run_bilingual_memory_benchmark,
     run_context_ablation_v2,
     run_memory_ablation_v2,
@@ -10,6 +12,71 @@ from pico.evaluation.metrics import (
     run_recovery_ablation_v2,
     write_benchmark_core_report,
 )
+from pico import AnthropicCompatibleModelClient, DeepSeekModelClient
+
+
+def test_provider_summary_excludes_runs_without_cache_telemetry():
+    payload = {
+        "rows": [
+            {
+                "tool_steps": 1,
+                "attempts": 1,
+                "report": {
+                    "prompt_metadata": {
+                        "cache_telemetry_available": True,
+                        "cached_tokens": 75,
+                        "input_tokens": 100,
+                        "cache_hit": True,
+                    }
+                },
+            },
+            {
+                "tool_steps": 1,
+                "attempts": 1,
+                "report": {
+                    "prompt_metadata": {
+                        "cache_telemetry_available": False,
+                        "cached_tokens": 0,
+                        "input_tokens": 100,
+                        "cache_hit": False,
+                    }
+                },
+            },
+        ],
+        "summary": {"total_tasks": 2, "pass_rate": 1.0},
+    }
+
+    summary = _provider_summary_from_artifact(payload)
+
+    assert summary["cache_telemetry_run_count"] == 1
+    assert summary["cache_hit_rate"] == 1.0
+    assert summary["cached_token_ratio"] == 0.75
+
+
+def test_provider_experiment_client_selects_deepseek_transport_from_base_url():
+    native = _client_from_profile(
+        {
+            "provider": "deepseek",
+            "model": "deepseek-v4-pro",
+            "base_url": "https://api.deepseek.com",
+            "api_key": "sk-test",
+        },
+        temperature=0.0,
+        timeout=30,
+    )
+    anthropic_compatible = _client_from_profile(
+        {
+            "provider": "deepseek",
+            "model": "deepseek-v4-pro",
+            "base_url": "https://api.deepseek.com/anthropic",
+            "api_key": "sk-test",
+        },
+        temperature=0.0,
+        timeout=30,
+    )
+
+    assert isinstance(native, DeepSeekModelClient)
+    assert isinstance(anthropic_compatible, AnthropicCompatibleModelClient)
 
 
 def test_run_context_ablation_v2_writes_expected_artifact(tmp_path):
@@ -62,6 +129,8 @@ def test_provider_profile_uses_unified_openai_config(tmp_path, monkeypatch):
         os.environ,
         {
             "PICO_PROVIDER": "openai",
+            "PICO_MODEL": "gpt-5.4",
+            "PICO_BASE_URL": "https://api.openai.com/v1",
             "PICO_API_KEY": "sk-openai",
         },
         clear=True,

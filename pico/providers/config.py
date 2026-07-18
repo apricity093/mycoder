@@ -47,7 +47,7 @@ PROVIDER_DEFAULTS = {
     ),
     "deepseek": ProviderDefaults(
         model="deepseek-v4-pro",
-        base_url="https://api.deepseek.com/anthropic",
+        base_url="https://api.deepseek.com",
     ),
 }
 

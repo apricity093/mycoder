@@ -1,10 +1,11 @@
 """Model provider adapters."""
 
-from .clients import AnthropicCompatibleModelClient, FakeModelClient, OllamaModelClient, OpenAICompatibleModelClient
+from .clients import AnthropicCompatibleModelClient, DeepSeekModelClient, FakeModelClient, OllamaModelClient, OpenAICompatibleModelClient
 from .config import PROVIDER_CHOICES, PROVIDER_DEFAULTS, RuntimeConfig, resolve_runtime_config
 
 __all__ = [
     "AnthropicCompatibleModelClient",
+    "DeepSeekModelClient",
     "FakeModelClient",
     "OllamaModelClient",
     "OpenAICompatibleModelClient",
