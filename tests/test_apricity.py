@@ -193,6 +193,143 @@ def test_retries_do_not_consume_the_whole_budget(tmp_path):
     assert answer == "Recovered after several retries."
 
 
+def test_agent_gets_one_final_only_turn_after_reaching_tool_step_limit(tmp_path):
+    (tmp_path / "hello.txt").write_text("alpha\n", encoding="utf-8")
+    agent = build_agent(
+        tmp_path,
+        [
+            '<tool>{"name":"read_file","args":{"path":"hello.txt","start":1,"end":1}}</tool>',
+            "<final>Summarized the last tool result.</final>",
+        ],
+        max_steps=1,
+    )
+
+    answer = agent.ask("Inspect hello.txt")
+
+    assert answer == "Summarized the last tool result."
+    assert len(agent.model_client.prompts) == 2
+    assert "the tool step limit has been reached" in agent.model_client.prompts[-1]
+    assert agent.current_task_state.status == "completed"
+    assert agent.current_task_state.stop_reason == "final_answer_returned"
+
+
+def test_final_only_turn_does_not_execute_another_tool(tmp_path):
+    (tmp_path / "hello.txt").write_text("alpha\n", encoding="utf-8")
+    agent = build_agent(
+        tmp_path,
+        [
+            '<tool>{"name":"read_file","args":{"path":"hello.txt","start":1,"end":1}}</tool>',
+            '<tool>{"name":"write_file","args":{"path":"should-not-exist.txt","content":"nope"}}</tool>',
+        ],
+        max_steps=1,
+    )
+
+    answer = agent.ask("Inspect hello.txt")
+
+    assert answer == "Stopped after reaching the step limit without a final answer."
+    assert not (tmp_path / "should-not-exist.txt").exists()
+    tool_events = [item for item in agent.session["history"] if item["role"] == "tool"]
+    assert len(tool_events) == 1
+    assert agent.current_task_state.tool_steps == 1
+    assert agent.current_task_state.stop_reason == "step_limit_reached"
+
+
+def test_rejected_tool_uses_independent_budget_without_consuming_tool_step(tmp_path):
+    (tmp_path / "hello.txt").write_text("alpha\n", encoding="utf-8")
+    agent = build_agent(
+        tmp_path,
+        [
+            '<tool name="write_file" path="blocked.txt"><content>nope</content></tool>',
+            '<tool>{"name":"read_file","args":{"path":"hello.txt","start":1,"end":1}}</tool>',
+            "<final>Recovered after the rejected tool.</final>",
+        ],
+        max_steps=1,
+        allowed_tools=["read_file", "patch_file"],
+    )
+
+    answer = agent.ask("Inspect hello.txt")
+
+    assert answer == "Recovered after the rejected tool."
+    assert not (tmp_path / "blocked.txt").exists()
+    assert agent.current_task_state.tool_steps == 1
+    assert agent.current_task_state.invalid_tool_attempts == 1
+    assert agent.current_task_state.stop_reason == "final_answer_returned"
+
+
+def test_agent_stops_after_independent_invalid_tool_budget(tmp_path):
+    rejected = '<tool name="write_file" path="blocked.txt"><content>nope</content></tool>'
+    agent = build_agent(
+        tmp_path,
+        [rejected, rejected, rejected],
+        max_steps=1,
+        allowed_tools=["read_file"],
+    )
+
+    answer = agent.ask("Inspect the workspace")
+
+    assert answer == "Stopped after too many invalid or rejected tool calls."
+    assert agent.current_task_state.tool_steps == 0
+    assert agent.current_task_state.invalid_tool_attempts == 3
+    assert agent.current_task_state.stop_reason == "invalid_tool_limit_reached"
+
+
+def test_successful_test_run_guides_next_turn_to_finish(tmp_path):
+    agent = build_agent(
+        tmp_path,
+        [
+            '<tool>{"name":"run_process","args":{"program":"python","args":["-c","print(\'pytest passed\')"],"timeout":20}}</tool>',
+            "<final>Tests passed and the task is complete.</final>",
+        ],
+    )
+
+    answer = agent.ask("Run the tests and finish")
+
+    assert answer == "Tests passed and the task is complete."
+    assert "verification command succeeded" in agent.model_client.prompts[-1]
+    trace_events = [
+        json.loads(line)
+        for line in agent.run_store.trace_path(agent.current_task_state).read_text(encoding="utf-8").splitlines()
+    ]
+    assert any(event.get("event") == "verification_succeeded" for event in trace_events)
+
+
+def test_provider_error_persists_complete_failure_artifacts(tmp_path):
+    class FailingModelClient:
+        supports_prompt_cache = False
+        prompt_cache_mode = "none"
+        last_completion_metadata = {
+            "finish_reason": "length",
+            "reasoning_tokens": 2048,
+            "empty_content_retry_count": 1,
+        }
+
+        def complete(self, prompt, max_new_tokens, **kwargs):
+            del prompt, max_new_tokens, kwargs
+            raise RuntimeError("empty message.content after semantic retry")
+
+    agent = build_agent(tmp_path, ["unused"])
+    agent.model_client = FailingModelClient()
+
+    answer = agent.ask("Fix the task")
+
+    assert answer.startswith("Stopped because the model provider failed: RuntimeError")
+    assert agent.current_task_state.status == "failed"
+    assert agent.current_task_state.stop_reason == "model_error"
+    run_dir = Path(agent.current_run_dir)
+    task_state = json.loads((run_dir / "task_state.json").read_text(encoding="utf-8"))
+    report = json.loads((run_dir / "report.json").read_text(encoding="utf-8"))
+    trace = [json.loads(line) for line in (run_dir / "trace.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert task_state["stop_reason"] == "model_error"
+    assert report["stop_reason"] == "model_error"
+    assert report["prompt_metadata"]["reasoning_tokens"] == 2048
+    assert any(event.get("event") == "model_failed" for event in trace)
+    assert any(
+        event.get("event") == "checkpoint_created" and event.get("trigger") == "model_error"
+        for event in trace
+    )
+    assert trace[-1]["event"] == "run_finished"
+
+
 def test_agent_saves_and_resumes_session(tmp_path):
     agent = build_agent(tmp_path, ["<final>First pass.</final>"])
     assert agent.ask("Start a session") == "First pass."
@@ -532,6 +669,125 @@ def test_deepseek_client_posts_native_payload_and_records_cache_usage():
     assert client.last_completion_metadata["cache_miss_tokens"] == 512
     assert client.last_completion_metadata["cache_hit"] is True
     assert client.last_completion_metadata["cache_telemetry_available"] is True
+
+
+def test_deepseek_client_retries_empty_content_with_larger_output_budget():
+    captured_bodies = []
+    responses = [
+        {
+            "choices": [
+                {
+                    "finish_reason": "length",
+                    "message": {"content": "", "reasoning_content": "hidden reasoning"},
+                }
+            ],
+            "usage": {
+                "prompt_tokens": 100,
+                "completion_tokens": 42,
+                "total_tokens": 142,
+                "prompt_cache_hit_tokens": 0,
+                "prompt_cache_miss_tokens": 100,
+                "completion_tokens_details": {"reasoning_tokens": 42},
+            },
+        },
+        {
+            "choices": [
+                {
+                    "finish_reason": "stop",
+                    "message": {"content": "<final>ok</final>", "reasoning_content": ""},
+                }
+            ],
+            "usage": {
+                "prompt_tokens": 100,
+                "completion_tokens": 8,
+                "total_tokens": 108,
+                "prompt_cache_hit_tokens": 100,
+                "prompt_cache_miss_tokens": 0,
+                "completion_tokens_details": {"reasoning_tokens": 0},
+            },
+        },
+    ]
+
+    class FakeResponse:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self):
+            return json.dumps(self.payload).encode("utf-8")
+
+    def fake_urlopen(request, timeout):
+        del timeout
+        captured_bodies.append(json.loads(request.data.decode("utf-8")))
+        return FakeResponse(responses.pop(0))
+
+    client = DeepSeekModelClient(
+        model="deepseek-v4-flash",
+        base_url="https://api.deepseek.com",
+        api_key="sk-test",
+        temperature=0.0,
+        timeout=30,
+    )
+
+    with patch("urllib.request.urlopen", fake_urlopen):
+        result = client.complete("complex prompt", 512)
+
+    assert result == "<final>ok</final>"
+    assert [body["max_tokens"] for body in captured_bodies] == [512, 2048]
+    assert client.last_completion_metadata["empty_content_retry_count"] == 1
+    assert client.last_completion_metadata["input_tokens"] == 200
+    assert client.last_completion_metadata["output_tokens"] == 50
+    assert client.last_completion_metadata["cached_tokens"] == 100
+
+
+def test_deepseek_client_reports_diagnostics_after_persistent_empty_content():
+    payload = {
+        "choices": [
+            {
+                "finish_reason": "length",
+                "message": {"content": None, "reasoning_content": "hidden reasoning"},
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 100,
+            "completion_tokens": 512,
+            "total_tokens": 612,
+            "completion_tokens_details": {"reasoning_tokens": 512},
+        },
+    }
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self):
+            return json.dumps(payload).encode("utf-8")
+
+    client = DeepSeekModelClient(
+        model="deepseek-v4-flash",
+        base_url="https://api.deepseek.com",
+        api_key="sk-test",
+        temperature=0.0,
+        timeout=30,
+    )
+
+    with patch("urllib.request.urlopen", return_value=FakeResponse()):
+        with pytest.raises(RuntimeError, match="empty message.content after semantic retry") as exc_info:
+            client.complete("complex prompt", 512)
+
+    message = str(exc_info.value)
+    assert "finish_reason=length" in message
+    assert "reasoning_tokens=512" in message
+    assert "requested_max_tokens=2048" in message
+    assert client.last_completion_metadata["empty_content_retry_count"] == 1
 
 
 def test_openai_compatible_client_extracts_text_from_event_stream():

@@ -1,0 +1,269 @@
+{
+  "allowed_tools": [
+    "list_files",
+    "read_file",
+    "search",
+    "patch_file",
+    "run_process"
+  ],
+  "artifact_digest": "sha256:2ccdb3b60c756e975292002509a61dc80cf68bef798e595557ef45818a33b0a3",
+  "artifact_exists": true,
+  "artifact_path": "miniapp/cache.py",
+  "attempts": 10,
+  "category": "bug-fix",
+  "duration_seconds": 59.152609,
+  "expected_artifact": "miniapp/cache.py avoids shared mutable default state",
+  "expected_artifact_exists": true,
+  "failure_category": "failure_stop_reason",
+  "final_answer": "Stopped after reaching the step limit without a final answer.",
+  "fixture_copy_relpath": "cache_instance_isolation\\real_model_bench_repo",
+  "fixture_repo": "tests/fixtures/real_model_bench_repo",
+  "id": "cache_instance_isolation",
+  "initial_episodic_notes_empty": true,
+  "initial_history_empty": true,
+  "initial_memory_empty": true,
+  "initial_task_summary_empty": true,
+  "non_failure_stop_reason": false,
+  "passed": false,
+  "prompt": "Fix BucketCache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. Run the targeted test before finishing.",
+  "repetition": 3,
+  "report": {
+    "attempts": 10,
+    "checkpoint_id": "ckpt_a57844ee",
+    "durable_promotions": [],
+    "durable_rejections": [],
+    "durable_superseded": [],
+    "final_answer": "Stopped after reaching the step limit without a final answer.",
+    "prompt_metadata": {
+      "budget_reductions": [],
+      "cache_hit": true,
+      "cache_miss_tokens": 1282,
+      "cache_telemetry_available": true,
+      "cached_tokens": 3456,
+      "current_request": {
+        "raw_chars": 203,
+        "rendered_chars": 203,
+        "section_chars": 225,
+        "text": "Fix BucketCache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. Run the targeted test before finishing."
+      },
+      "empty_content_retry_count": 1,
+      "finish_reason": "stop",
+      "history": {
+        "collapsed_duplicate_reads": 0,
+        "older_entries_count": 3,
+        "raw_chars": 4824,
+        "rendered_chars": 3691,
+        "reused_file_summary_count": 0,
+        "summarized_tool_count": 3
+      },
+      "history_chars": 4461,
+      "input_tokens": 4738,
+      "memory_chars": 417,
+      "model": "deepseek-v4-flash",
+      "output_tokens": 877,
+      "prefix_changed": false,
+      "prefix_chars": 6606,
+      "prefix_hash": "f20c64b5dc0756e8440960c14fa542b1696ab9a1652ed75c8e149d6762ae27e9",
+      "prompt_budget_chars": 12000,
+      "prompt_cache_key": "f20c64b5dc0756e8440960c14fa542b1696ab9a1652ed75c8e149d6762ae27e9",
+      "prompt_cache_mode": "automatic_prefix",
+      "prompt_cache_retention": null,
+      "prompt_cache_supported": true,
+      "prompt_chars": 8111,
+      "prompt_over_budget": false,
+      "provider": "deepseek",
+      "reasoning_content_chars": 1266,
+      "reasoning_tokens": 337,
+      "recent_commits": 5,
+      "reduction_order": [
+        "relevant_memory",
+        "history",
+        "memory",
+        "prefix"
+      ],
+      "relevant_memory": {
+        "limit": 3,
+        "query_features": {
+          "ascii_token_count": 31,
+          "cjk_bigram_count": 0,
+          "cjk_trigram_count": 0,
+          "concepts": [
+            "testing"
+          ],
+          "identifier_count": 0,
+          "normalized": "fix bucket cache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. run the targeted test before finishing.",
+          "path_count": 3
+        },
+        "raw_chars": 170,
+        "rendered_chars": 170,
+        "rendered_count": 2,
+        "rendered_notes": [
+          "1: class BucketCache: | 2:     def __init__(self, storage={}): | 3:         self.storage = storage",
+          "1: from miniapp.cache import BucketCache | 2: | 3:"
+        ],
+        "selected_count": 2,
+        "selected_details": [
+          {
+            "kind": "episodic",
+            "rank": 1,
+            "score": 15.850789,
+            "signals": [
+              "tag:exact=miniapp/cache.py",
+              "source:exact=miniapp/cache.py",
+              "text:ascii=0.439",
+              "tag:ascii=0.706",
+              "source:ascii=0.706"
+            ],
+            "source": "miniapp/cache.py",
+            "text": "1: class BucketCache: | 2:     def __init__(self, storage={}): | 3:         self.storage = storage",
+            "topic": ""
+          },
+          {
+            "kind": "episodic",
+            "rank": 2,
+            "score": 1.375824,
+            "signals": [
+              "text:ascii=0.462",
+              "tag:ascii=0.457",
+              "source:ascii=0.457"
+            ],
+            "source": "verifiers/cache_check.py",
+            "text": "1: from miniapp.cache import BucketCache | 2: | 3:",
+            "topic": ""
+          }
+        ],
+        "selected_durable_count": 0,
+        "selected_kinds": [
+          "episodic",
+          "episodic"
+        ],
+        "selected_notes": [
+          "1: class BucketCache: | 2:     def __init__(self, storage={}): | 3:         self.storage = storage",
+          "1: from miniapp.cache import BucketCache | 2: | 3:"
+        ],
+        "selected_sources": [
+          "miniapp/cache.py",
+          "verifiers/cache_check.py"
+        ]
+      },
+      "request_chars": 203,
+      "requested_max_tokens": 1024,
+      "resume_status": "full-valid",
+      "runtime_identity_mismatch_fields": [],
+      "secret_env_count": 1,
+      "secret_env_names": [
+        "APRICITY_API_KEY"
+      ],
+      "section_budgets": {
+        "current_request": null,
+        "history": 5200,
+        "memory": 1600,
+        "prefix": 3600,
+        "relevant_memory": 1200
+      },
+      "section_order": [
+        "prefix",
+        "memory",
+        "relevant_memory",
+        "history",
+        "current_request"
+      ],
+      "sections": {
+        "current_request": {
+          "budget_chars": null,
+          "raw_chars": 225,
+          "rendered_chars": 225
+        },
+        "history": {
+          "budget_chars": 5200,
+          "raw_chars": 4824,
+          "rendered_chars": 3691
+        },
+        "memory": {
+          "budget_chars": 1600,
+          "raw_chars": 417,
+          "rendered_chars": 417
+        },
+        "prefix": {
+          "budget_chars": 3600,
+          "raw_chars": 7175,
+          "rendered_chars": 3600
+        },
+        "relevant_memory": {
+          "budget_chars": 1200,
+          "raw_chars": 170,
+          "rendered_chars": 170
+        }
+      },
+      "stale_paths": [],
+      "stale_summary_invalidations": 0,
+      "tool_count": 5,
+      "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+      "total_tokens": 5615,
+      "workspace_changed": false,
+      "workspace_chars": 4047,
+      "workspace_docs": 5,
+      "workspace_fingerprint": "d488c2b71d516c5250a9112b73eab8ab319d47118979a4c31373b5092305e5ea"
+    },
+    "redacted_env": {
+      "secret_env_count": 1,
+      "secret_env_names": [
+        "APRICITY_API_KEY"
+      ]
+    },
+    "resume_status": "no-checkpoint",
+    "run_id": "run_20260719-021138-4edc04",
+    "status": "stopped",
+    "stop_reason": "step_limit_reached",
+    "task_id": "task_20260719-021138-8b028d",
+    "task_state": {
+      "attempts": 10,
+      "checkpoint_id": "ckpt_a57844ee",
+      "final_answer": "Stopped after reaching the step limit without a final answer.",
+      "last_tool": "search",
+      "resume_status": "no-checkpoint",
+      "run_id": "run_20260719-021138-4edc04",
+      "status": "stopped",
+      "stop_reason": "step_limit_reached",
+      "task_id": "task_20260719-021138-8b028d",
+      "tool_steps": 10,
+      "user_request": "Fix BucketCache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. Run the targeted test before finishing."
+    },
+    "tool_steps": 10
+  },
+  "report_relpath": "cache_instance_isolation\\real_model_bench_repo\\.apricity\\runs\\run_20260719-021138-4edc04\\report.json",
+  "run_dir_relpath": "cache_instance_isolation\\real_model_bench_repo\\.apricity\\runs\\run_20260719-021138-4edc04",
+  "run_id": "run_20260719-021138-4edc04",
+  "status": "fail",
+  "step_budget": 10,
+  "stop_reason": "step_limit_reached",
+  "task_state": {
+    "attempts": 10,
+    "checkpoint_id": "ckpt_a57844ee",
+    "final_answer": "Stopped after reaching the step limit without a final answer.",
+    "last_tool": "search",
+    "resume_status": "no-checkpoint",
+    "run_id": "run_20260719-021138-4edc04",
+    "status": "stopped",
+    "stop_reason": "step_limit_reached",
+    "task_id": "task_20260719-021138-8b028d",
+    "tool_steps": 10,
+    "user_request": "Fix BucketCache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. Run the targeted test before finishing."
+  },
+  "task_state_relpath": "cache_instance_isolation\\real_model_bench_repo\\.apricity\\runs\\run_20260719-021138-4edc04\\task_state.json",
+  "tool_steps": 10,
+  "verifier": [
+    "python3",
+    "-m",
+    "pytest",
+    "-q",
+    "verifiers/cache_check.py"
+  ],
+  "verifier_exit_code": 0,
+  "verifier_passed": true,
+  "verifier_stderr": "",
+  "verifier_stdout": ".                                                                        [100%]\n1 passed in 0.05s\n",
+  "verifier_timed_out": false,
+  "within_budget": true,
+  "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces-postfix\\deepseek\\repetition-03"
+}

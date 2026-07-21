@@ -1,0 +1,271 @@
+{
+  "allowed_tools": [
+    "list_files",
+    "read_file",
+    "search",
+    "patch_file",
+    "run_process"
+  ],
+  "artifact_digest": "sha256:d1acb9e9f1eda41809e7f18058bb32b58a75132354aa95cd5fcb158d5237fb51",
+  "artifact_exists": true,
+  "artifact_path": "miniapp/parser.py",
+  "attempts": 10,
+  "category": "bug-fix",
+  "duration_seconds": 45.857019,
+  "expected_artifact": "miniapp/parser.py normalizes CSV fields",
+  "expected_artifact_exists": true,
+  "failure_category": "failure_stop_reason",
+  "final_answer": "Stopped after reaching the step limit without a final answer.",
+  "fixture_copy_relpath": "csv_field_normalization\\real_model_bench_repo",
+  "fixture_repo": "tests/fixtures/real_model_bench_repo",
+  "id": "csv_field_normalization",
+  "initial_episodic_notes_empty": true,
+  "initial_history_empty": true,
+  "initial_memory_empty": true,
+  "initial_task_summary_empty": true,
+  "non_failure_stop_reason": false,
+  "passed": false,
+  "prompt": "Fix parse_csv_line in miniapp/parser.py. It must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. Run the targeted test before finishing.",
+  "repetition": 1,
+  "report": {
+    "attempts": 10,
+    "checkpoint_id": "ckpt_18b143f5",
+    "durable_promotions": [],
+    "durable_rejections": [],
+    "durable_superseded": [],
+    "final_answer": "Stopped after reaching the step limit without a final answer.",
+    "prompt_metadata": {
+      "budget_reductions": [],
+      "cache_hit": true,
+      "cache_miss_tokens": 941,
+      "cache_telemetry_available": true,
+      "cached_tokens": 896,
+      "current_request": {
+        "raw_chars": 184,
+        "rendered_chars": 184,
+        "section_chars": 206,
+        "text": "Fix parse_csv_line in miniapp/parser.py. It must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. Run the targeted test before finishing."
+      },
+      "empty_content_retry_count": 0,
+      "finish_reason": "stop",
+      "history": {
+        "collapsed_duplicate_reads": 0,
+        "older_entries_count": 3,
+        "raw_chars": 2739,
+        "rendered_chars": 2254,
+        "reused_file_summary_count": 0,
+        "summarized_tool_count": 3
+      },
+      "history_chars": 2558,
+      "input_tokens": 1837,
+      "memory_chars": 405,
+      "model": "deepseek-v4-flash",
+      "output_tokens": 69,
+      "prefix_changed": false,
+      "prefix_chars": 6603,
+      "prefix_hash": "1604ded024d390c594ab95d09a34f8f177340f53b0c538a10c59b133dd5ae209",
+      "prompt_budget_chars": 12000,
+      "prompt_cache_key": "1604ded024d390c594ab95d09a34f8f177340f53b0c538a10c59b133dd5ae209",
+      "prompt_cache_mode": "automatic_prefix",
+      "prompt_cache_retention": null,
+      "prompt_cache_supported": true,
+      "prompt_chars": 6609,
+      "prompt_over_budget": false,
+      "provider": "deepseek",
+      "reasoning_content_chars": 101,
+      "reasoning_tokens": 26,
+      "recent_commits": 5,
+      "reduction_order": [
+        "relevant_memory",
+        "history",
+        "memory",
+        "prefix"
+      ],
+      "relevant_memory": {
+        "limit": 3,
+        "query_features": {
+          "ascii_token_count": 29,
+          "cjk_bigram_count": 0,
+          "cjk_trigram_count": 0,
+          "concepts": [
+            "testing"
+          ],
+          "identifier_count": 1,
+          "normalized": "fix parse_csv_line in miniapp/parser.py. it must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. run the targeted test before finishing.",
+          "path_count": 3
+        },
+        "raw_chars": 136,
+        "rendered_chars": 136,
+        "rendered_count": 2,
+        "rendered_notes": [
+          "1: def parse_csv_line(line): | 2:     return line.split(\",\")",
+          "1: from miniapp.parser import parse_csv_line | 2: | 3:"
+        ],
+        "selected_count": 2,
+        "selected_details": [
+          {
+            "kind": "episodic",
+            "rank": 1,
+            "score": 18.398649,
+            "signals": [
+              "tag:exact=miniapp/parser.py",
+              "source:exact=miniapp/parser.py",
+              "text:ascii=0.649",
+              "text:identifier=2.250",
+              "tag:ascii=0.750",
+              "source:ascii=0.750"
+            ],
+            "source": "miniapp/parser.py",
+            "text": "1: def parse_csv_line(line): | 2:     return line.split(\",\")",
+            "topic": ""
+          },
+          {
+            "kind": "episodic",
+            "rank": 2,
+            "score": 3.988928,
+            "signals": [
+              "text:ascii=0.769",
+              "text:identifier=2.250",
+              "tag:ascii=0.485",
+              "source:ascii=0.485"
+            ],
+            "source": "verifiers/parser_check.py",
+            "text": "1: from miniapp.parser import parse_csv_line | 2: | 3:",
+            "topic": ""
+          }
+        ],
+        "selected_durable_count": 0,
+        "selected_kinds": [
+          "episodic",
+          "episodic"
+        ],
+        "selected_notes": [
+          "1: def parse_csv_line(line): | 2:     return line.split(\",\")",
+          "1: from miniapp.parser import parse_csv_line | 2: | 3:"
+        ],
+        "selected_sources": [
+          "miniapp/parser.py",
+          "verifiers/parser_check.py"
+        ]
+      },
+      "request_chars": 184,
+      "requested_max_tokens": 512,
+      "resume_status": "full-valid",
+      "runtime_identity_mismatch_fields": [],
+      "secret_env_count": 1,
+      "secret_env_names": [
+        "APRICITY_API_KEY"
+      ],
+      "section_budgets": {
+        "current_request": null,
+        "history": 5200,
+        "memory": 1600,
+        "prefix": 3600,
+        "relevant_memory": 1200
+      },
+      "section_order": [
+        "prefix",
+        "memory",
+        "relevant_memory",
+        "history",
+        "current_request"
+      ],
+      "sections": {
+        "current_request": {
+          "budget_chars": null,
+          "raw_chars": 206,
+          "rendered_chars": 206
+        },
+        "history": {
+          "budget_chars": 5200,
+          "raw_chars": 2739,
+          "rendered_chars": 2254
+        },
+        "memory": {
+          "budget_chars": 1600,
+          "raw_chars": 405,
+          "rendered_chars": 405
+        },
+        "prefix": {
+          "budget_chars": 3600,
+          "raw_chars": 7154,
+          "rendered_chars": 3600
+        },
+        "relevant_memory": {
+          "budget_chars": 1200,
+          "raw_chars": 136,
+          "rendered_chars": 136
+        }
+      },
+      "stale_paths": [],
+      "stale_summary_invalidations": 0,
+      "tool_count": 5,
+      "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+      "total_tokens": 1906,
+      "workspace_changed": false,
+      "workspace_chars": 4044,
+      "workspace_docs": 5,
+      "workspace_fingerprint": "b567bdbb7a251d6ba0e7877041ff5780f1233c56dfd34a32bc23dcbd4f14a566"
+    },
+    "redacted_env": {
+      "secret_env_count": 1,
+      "secret_env_names": [
+        "APRICITY_API_KEY"
+      ]
+    },
+    "resume_status": "no-checkpoint",
+    "run_id": "run_20260719-015541-9560b9",
+    "status": "stopped",
+    "stop_reason": "step_limit_reached",
+    "task_id": "task_20260719-015541-68d292",
+    "task_state": {
+      "attempts": 10,
+      "checkpoint_id": "ckpt_18b143f5",
+      "final_answer": "Stopped after reaching the step limit without a final answer.",
+      "last_tool": "run_process",
+      "resume_status": "no-checkpoint",
+      "run_id": "run_20260719-015541-9560b9",
+      "status": "stopped",
+      "stop_reason": "step_limit_reached",
+      "task_id": "task_20260719-015541-68d292",
+      "tool_steps": 10,
+      "user_request": "Fix parse_csv_line in miniapp/parser.py. It must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. Run the targeted test before finishing."
+    },
+    "tool_steps": 10
+  },
+  "report_relpath": "csv_field_normalization\\real_model_bench_repo\\.apricity\\runs\\run_20260719-015541-9560b9\\report.json",
+  "run_dir_relpath": "csv_field_normalization\\real_model_bench_repo\\.apricity\\runs\\run_20260719-015541-9560b9",
+  "run_id": "run_20260719-015541-9560b9",
+  "status": "fail",
+  "step_budget": 10,
+  "stop_reason": "step_limit_reached",
+  "task_state": {
+    "attempts": 10,
+    "checkpoint_id": "ckpt_18b143f5",
+    "final_answer": "Stopped after reaching the step limit without a final answer.",
+    "last_tool": "run_process",
+    "resume_status": "no-checkpoint",
+    "run_id": "run_20260719-015541-9560b9",
+    "status": "stopped",
+    "stop_reason": "step_limit_reached",
+    "task_id": "task_20260719-015541-68d292",
+    "tool_steps": 10,
+    "user_request": "Fix parse_csv_line in miniapp/parser.py. It must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. Run the targeted test before finishing."
+  },
+  "task_state_relpath": "csv_field_normalization\\real_model_bench_repo\\.apricity\\runs\\run_20260719-015541-9560b9\\task_state.json",
+  "tool_steps": 10,
+  "verifier": [
+    "python3",
+    "-m",
+    "pytest",
+    "-q",
+    "verifiers/parser_check.py"
+  ],
+  "verifier_exit_code": 0,
+  "verifier_passed": true,
+  "verifier_stderr": "",
+  "verifier_stdout": ".                                                                        [100%]\n1 passed in 0.06s\n",
+  "verifier_timed_out": false,
+  "within_budget": true,
+  "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces-postfix\\deepseek\\repetition-01"
+}

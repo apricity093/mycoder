@@ -16,6 +16,7 @@ STATUS_FAILED = "failed"
 STOP_REASON_FINAL_ANSWER_RETURNED = "final_answer_returned"
 STOP_REASON_STEP_LIMIT_REACHED = "step_limit_reached"
 STOP_REASON_RETRY_LIMIT_REACHED = "retry_limit_reached"
+STOP_REASON_INVALID_TOOL_LIMIT_REACHED = "invalid_tool_limit_reached"
 STOP_REASON_MODEL_ERROR = "model_error"
 STOP_REASON_TOOL_TIMEOUT = "tool_timeout"
 STOP_REASON_APPROVAL_DENIED = "approval_denied"
@@ -32,6 +33,7 @@ class TaskState:
     status: str = STATUS_RUNNING
     tool_steps: int = 0
     attempts: int = 0
+    invalid_tool_attempts: int = 0
     last_tool: str = ""
     stop_reason: str = ""
     final_answer: str = ""
@@ -53,6 +55,7 @@ class TaskState:
             status=str(data.get("status", STATUS_RUNNING)),
             tool_steps=int(data.get("tool_steps", 0)),
             attempts=int(data.get("attempts", 0)),
+            invalid_tool_attempts=int(data.get("invalid_tool_attempts", 0)),
             last_tool=str(data.get("last_tool", "")),
             stop_reason=str(data.get("stop_reason", "")),
             final_answer=str(data.get("final_answer", "")),
@@ -71,6 +74,10 @@ class TaskState:
         self.last_tool = str(name or "")
         return self
 
+    def record_invalid_tool(self):
+        self.invalid_tool_attempts += 1
+        return self
+
     def stop(self, stop_reason, status=STATUS_STOPPED, final_answer=""):
         # stop_reason 和 status 分开存，是为了区分“怎么停的”和“停下时是什么状态”。
         self.status = status
@@ -84,6 +91,9 @@ class TaskState:
 
     def stop_retry_limit(self, final_answer=""):
         return self.stop(STOP_REASON_RETRY_LIMIT_REACHED, final_answer=final_answer)
+
+    def stop_invalid_tool_limit(self, final_answer=""):
+        return self.stop(STOP_REASON_INVALID_TOOL_LIMIT_REACHED, final_answer=final_answer)
 
     def stop_model_error(self, final_answer=""):
         return self.stop(STOP_REASON_MODEL_ERROR, status=STATUS_FAILED, final_answer=final_answer)
@@ -102,6 +112,7 @@ class TaskState:
             "status": self.status,
             "tool_steps": self.tool_steps,
             "attempts": self.attempts,
+            "invalid_tool_attempts": self.invalid_tool_attempts,
             "last_tool": self.last_tool,
             "stop_reason": self.stop_reason,
             "final_answer": self.final_answer,

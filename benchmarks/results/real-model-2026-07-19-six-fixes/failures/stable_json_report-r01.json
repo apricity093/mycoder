@@ -1,0 +1,257 @@
+{
+  "allowed_tools": [
+    "list_files",
+    "read_file",
+    "search",
+    "patch_file",
+    "write_file",
+    "run_process"
+  ],
+  "artifact_digest": "sha256:6c11874a67ef96cbc1b2aaa592dc6844d0cd3ace9bd589bfd6053dcb27344093",
+  "artifact_exists": true,
+  "artifact_path": "miniapp/report.py",
+  "attempts": 12,
+  "category": "test-driven",
+  "duration_seconds": 84.949545,
+  "expected_artifact": "miniapp/report.py writes deterministic JSON reports",
+  "expected_artifact_exists": true,
+  "failure_category": "failure_stop_reason",
+  "final_answer": "Stopped after too many invalid or rejected tool calls.",
+  "fixture_copy_relpath": "stable_json_report\\real_model_bench_repo",
+  "fixture_repo": "tests/fixtures/real_model_bench_repo",
+  "id": "stable_json_report",
+  "initial_episodic_notes_empty": true,
+  "initial_history_empty": true,
+  "initial_memory_empty": true,
+  "initial_task_summary_empty": true,
+  "non_failure_stop_reason": false,
+  "passed": false,
+  "prompt": "Implement write_report in miniapp/report.py. It must create missing parent directories and write UTF-8 JSON with sorted keys, two-space indentation, ensure_ascii=False, and exactly one trailing newline. Run the targeted test.",
+  "repetition": 1,
+  "report": {
+    "attempts": 12,
+    "checkpoint_id": "ckpt_3b815595",
+    "durable_promotions": [],
+    "durable_rejections": [],
+    "durable_superseded": [],
+    "final_answer": "Stopped after too many invalid or rejected tool calls.",
+    "prompt_metadata": {
+      "budget_reductions": [],
+      "cache_hit": true,
+      "cache_miss_tokens": 486,
+      "cache_telemetry_available": true,
+      "cached_tokens": 2432,
+      "current_request": {
+        "raw_chars": 225,
+        "rendered_chars": 225,
+        "section_chars": 247,
+        "text": "Implement write_report in miniapp/report.py. It must create missing parent directories and write UTF-8 JSON with sorted keys, two-space indentation, ensure_ascii=False, and exactly one trailing newline. Run the targeted test."
+      },
+      "empty_content_retry_count": 1,
+      "finish_reason": "stop",
+      "history": {
+        "collapsed_duplicate_reads": 0,
+        "older_entries_count": 5,
+        "raw_chars": 1861,
+        "rendered_chars": 1155,
+        "reused_file_summary_count": 0,
+        "summarized_tool_count": 5
+      },
+      "history_chars": 1796,
+      "input_tokens": 2918,
+      "memory_chars": 335,
+      "model": "deepseek-v4-flash",
+      "output_tokens": 1170,
+      "prefix_changed": false,
+      "prefix_chars": 6915,
+      "prefix_hash": "873fa269ec1086996cc1228caa800c357e24428826ea77673454d4618d9b31bd",
+      "prompt_budget_chars": 12000,
+      "prompt_cache_key": "873fa269ec1086996cc1228caa800c357e24428826ea77673454d4618d9b31bd",
+      "prompt_cache_mode": "automatic_prefix",
+      "prompt_cache_retention": null,
+      "prompt_cache_supported": true,
+      "prompt_chars": 5434,
+      "prompt_over_budget": false,
+      "provider": "deepseek",
+      "reasoning_content_chars": 2763,
+      "reasoning_tokens": 629,
+      "recent_commits": 5,
+      "reduction_order": [
+        "relevant_memory",
+        "history",
+        "memory",
+        "prefix"
+      ],
+      "relevant_memory": {
+        "limit": 3,
+        "query_features": {
+          "ascii_token_count": 33,
+          "cjk_bigram_count": 0,
+          "cjk_trigram_count": 0,
+          "concepts": [
+            "encoding",
+            "testing"
+          ],
+          "identifier_count": 2,
+          "normalized": "implement write_report in miniapp/report.py. it must create missing parent directories and write utf-8 json with sorted keys, two-space indentation, ensure_ascii=false, and exactly one trailing newline. run the targeted test.",
+          "path_count": 3
+        },
+        "raw_chars": 89,
+        "rendered_chars": 89,
+        "rendered_count": 1,
+        "rendered_notes": [
+          "1: def write_report(path, payload): | 2:     raise NotImplementedError"
+        ],
+        "selected_count": 1,
+        "selected_details": [
+          {
+            "kind": "episodic",
+            "rank": 1,
+            "score": 17.106061,
+            "signals": [
+              "tag:exact=miniapp/report.py",
+              "source:exact=miniapp/report.py",
+              "text:ascii=0.273",
+              "text:identifier=1.500",
+              "tag:ascii=0.667",
+              "source:ascii=0.667"
+            ],
+            "source": "miniapp/report.py",
+            "text": "1: def write_report(path, payload): | 2:     raise NotImplementedError",
+            "topic": ""
+          }
+        ],
+        "selected_durable_count": 0,
+        "selected_kinds": [
+          "episodic"
+        ],
+        "selected_notes": [
+          "1: def write_report(path, payload): | 2:     raise NotImplementedError"
+        ],
+        "selected_sources": [
+          "miniapp/report.py"
+        ]
+      },
+      "request_chars": 225,
+      "requested_max_tokens": 2048,
+      "resume_status": "full-valid",
+      "runtime_identity_mismatch_fields": [],
+      "secret_env_count": 1,
+      "secret_env_names": [
+        "APRICITY_API_KEY"
+      ],
+      "section_budgets": {
+        "current_request": null,
+        "history": 5200,
+        "memory": 1600,
+        "prefix": 3600,
+        "relevant_memory": 1200
+      },
+      "section_order": [
+        "prefix",
+        "memory",
+        "relevant_memory",
+        "history",
+        "current_request"
+      ],
+      "sections": {
+        "current_request": {
+          "budget_chars": null,
+          "raw_chars": 247,
+          "rendered_chars": 247
+        },
+        "history": {
+          "budget_chars": 5200,
+          "raw_chars": 1861,
+          "rendered_chars": 1155
+        },
+        "memory": {
+          "budget_chars": 1600,
+          "raw_chars": 335,
+          "rendered_chars": 335
+        },
+        "prefix": {
+          "budget_chars": 3600,
+          "raw_chars": 7477,
+          "rendered_chars": 3600
+        },
+        "relevant_memory": {
+          "budget_chars": 1200,
+          "raw_chars": 89,
+          "rendered_chars": 89
+        }
+      },
+      "stale_paths": [],
+      "stale_summary_invalidations": 0,
+      "tool_count": 6,
+      "tool_signature": "ccfa8d99b285cdca532a1974c93cc12c7e001e638a353674df2d85952502cc1a",
+      "total_tokens": 4088,
+      "workspace_changed": false,
+      "workspace_chars": 4279,
+      "workspace_docs": 5,
+      "workspace_fingerprint": "1271ac86a07c5a2616af833048c7c2164afc7fdd646a71e3d679677c44464ab6"
+    },
+    "redacted_env": {
+      "secret_env_count": 1,
+      "secret_env_names": [
+        "APRICITY_API_KEY"
+      ]
+    },
+    "resume_status": "no-checkpoint",
+    "run_id": "run_20260719-174838-d3bb49",
+    "status": "stopped",
+    "stop_reason": "invalid_tool_limit_reached",
+    "task_id": "task_20260719-174838-f05204",
+    "task_state": {
+      "attempts": 12,
+      "checkpoint_id": "ckpt_3b815595",
+      "final_answer": "Stopped after too many invalid or rejected tool calls.",
+      "invalid_tool_attempts": 3,
+      "last_tool": "search",
+      "resume_status": "no-checkpoint",
+      "run_id": "run_20260719-174838-d3bb49",
+      "status": "stopped",
+      "stop_reason": "invalid_tool_limit_reached",
+      "task_id": "task_20260719-174838-f05204",
+      "tool_steps": 9,
+      "user_request": "Implement write_report in miniapp/report.py. It must create missing parent directories and write UTF-8 JSON with sorted keys, two-space indentation, ensure_ascii=False, and exactly one trailing newline. Run the targeted test."
+    },
+    "tool_steps": 9
+  },
+  "report_relpath": "stable_json_report\\real_model_bench_repo\\.apricity\\runs\\run_20260719-174838-d3bb49\\report.json",
+  "run_dir_relpath": "stable_json_report\\real_model_bench_repo\\.apricity\\runs\\run_20260719-174838-d3bb49",
+  "run_id": "run_20260719-174838-d3bb49",
+  "status": "fail",
+  "step_budget": 12,
+  "stop_reason": "invalid_tool_limit_reached",
+  "task_state": {
+    "attempts": 12,
+    "checkpoint_id": "ckpt_3b815595",
+    "final_answer": "Stopped after too many invalid or rejected tool calls.",
+    "invalid_tool_attempts": 3,
+    "last_tool": "search",
+    "resume_status": "no-checkpoint",
+    "run_id": "run_20260719-174838-d3bb49",
+    "status": "stopped",
+    "stop_reason": "invalid_tool_limit_reached",
+    "task_id": "task_20260719-174838-f05204",
+    "tool_steps": 9,
+    "user_request": "Implement write_report in miniapp/report.py. It must create missing parent directories and write UTF-8 JSON with sorted keys, two-space indentation, ensure_ascii=False, and exactly one trailing newline. Run the targeted test."
+  },
+  "task_state_relpath": "stable_json_report\\real_model_bench_repo\\.apricity\\runs\\run_20260719-174838-d3bb49\\task_state.json",
+  "tool_steps": 9,
+  "verifier": [
+    "python3",
+    "-m",
+    "pytest",
+    "-q",
+    "verifiers/report_check.py"
+  ],
+  "verifier_exit_code": 0,
+  "verifier_passed": true,
+  "verifier_stderr": "",
+  "verifier_stdout": ".                                                                        [100%]\n1 passed in 0.07s\n",
+  "verifier_timed_out": false,
+  "within_budget": true,
+  "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces-six-fixes\\deepseek\\repetition-01"
+}

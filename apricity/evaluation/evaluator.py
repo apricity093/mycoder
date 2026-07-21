@@ -1,6 +1,7 @@
 import hashlib
 import json
 import locale as locale_module
+import os
 import shlex
 import shutil
 import subprocess
@@ -153,6 +154,9 @@ def _now_in_timezone(timezone_name):
 
 
 def _artifact_path_for_task(task):
+    explicit_path = str(task.get("artifact_path", "")).strip()
+    if explicit_path:
+        return explicit_path
     fixture_repo_name = Path(str(task["fixture_repo"])).name
     if fixture_repo_name not in TASK_FIXTURE_ARTIFACTS:
         raise ValueError(f"unsupported fixture repo for artifact lookup: {fixture_repo_name}")
@@ -239,6 +243,16 @@ def validate_benchmark(data, repo_root=None):
         if step_budget < 1:
             raise ValueError(f"benchmark task {task_id} step_budget must be positive")
 
+        artifact_path = str(task.get("artifact_path", "")).strip()
+        if artifact_path:
+            artifact_parts = Path(artifact_path)
+            if artifact_parts.is_absolute() or ".." in artifact_parts.parts:
+                raise ValueError(f"benchmark task {task_id} artifact_path must stay inside the fixture")
+
+        verifier_timeout_seconds = int(task.get("verifier_timeout_seconds", 60))
+        if verifier_timeout_seconds < 1:
+            raise ValueError(f"benchmark task {task_id} verifier_timeout_seconds must be positive")
+
         try:
             _verifier_argv(task["verifier"])
         except ValueError as exc:
@@ -251,6 +265,9 @@ def validate_benchmark(data, repo_root=None):
         normalized_task["allowed_tools"] = normalized_allowed_tools
         normalized_task["step_budget"] = step_budget
         normalized_task["expected_artifact"] = str(task["expected_artifact"]).strip()
+        if artifact_path:
+            normalized_task["artifact_path"] = artifact_path
+        normalized_task["verifier_timeout_seconds"] = verifier_timeout_seconds
         normalized_task["verifier"] = (
             [str(item) for item in task["verifier"]]
             if isinstance(task["verifier"], list)
@@ -520,16 +537,33 @@ class BenchmarkEvaluator:
         expected_artifact_exists = artifact_file.exists()
         artifact_digest = _digest_file(artifact_file) if expected_artifact_exists else ""
 
-        verifier = subprocess.run(
-            _verifier_argv(task["verifier"]),
-            cwd=fixture_copy_root,
-            shell=False,
-            capture_output=True,
-            text=True,
-        )
+        verifier_timed_out = False
+        verifier_env = os.environ.copy()
+        verifier_env["PYTHONUTF8"] = "1"
+        verifier_env["PYTHONIOENCODING"] = "utf-8"
+        try:
+            verifier = subprocess.run(
+                _verifier_argv(task["verifier"]),
+                cwd=fixture_copy_root,
+                shell=False,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                env=verifier_env,
+                timeout=int(task.get("verifier_timeout_seconds", 60)),
+            )
+            verifier_exit_code = verifier.returncode
+            verifier_stdout = verifier.stdout
+            verifier_stderr = verifier.stderr
+        except subprocess.TimeoutExpired as exc:
+            verifier_timed_out = True
+            verifier_exit_code = None
+            verifier_stdout = exc.stdout or ""
+            verifier_stderr = exc.stderr or ""
 
         within_budget = task_state.tool_steps <= int(task["step_budget"])
-        verifier_passed = verifier.returncode == 0
+        verifier_passed = verifier_exit_code == 0
         non_failure_stop_reason = task_state.stop_reason == STOP_REASON_FINAL_ANSWER_RETURNED
         passed = within_budget and verifier_passed and expected_artifact_exists and non_failure_stop_reason
         failure_category = None if passed else self._failure_category(
@@ -537,6 +571,7 @@ class BenchmarkEvaluator:
             verifier_passed=verifier_passed,
             expected_artifact_exists=expected_artifact_exists,
             non_failure_stop_reason=non_failure_stop_reason,
+            verifier_timed_out=verifier_timed_out,
         )
 
         return {
@@ -555,9 +590,10 @@ class BenchmarkEvaluator:
             "artifact_exists": expected_artifact_exists,
             "artifact_digest": artifact_digest,
             "verifier": task["verifier"],
-            "verifier_exit_code": verifier.returncode,
-            "verifier_stdout": verifier.stdout,
-            "verifier_stderr": verifier.stderr,
+            "verifier_exit_code": verifier_exit_code,
+            "verifier_stdout": verifier_stdout,
+            "verifier_stderr": verifier_stderr,
+            "verifier_timed_out": verifier_timed_out,
             "category": task["category"],
             "status": "pass" if passed else "fail",
             "passed": passed,
@@ -584,11 +620,14 @@ class BenchmarkEvaluator:
         verifier_passed,
         expected_artifact_exists,
         non_failure_stop_reason,
+        verifier_timed_out=False,
     ):
         if not expected_artifact_exists:
             return "missing_artifact"
         if not within_budget:
             return "budget_exceeded"
+        if verifier_timed_out:
+            return "verifier_timeout"
         if not verifier_passed:
             return "verifier_failed"
         if not non_failure_stop_reason:

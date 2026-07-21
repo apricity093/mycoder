@@ -1,0 +1,4075 @@
+{
+  "artifact_type": "real-model-benchmark-v1",
+  "benchmark": {
+    "sha256": "dc1ecea75c0cd698d09d608573d232efacd04161b5d589c8878b4065af176200",
+    "source": "benchmarks\\real_model_tasks.json",
+    "task_count": 10
+  },
+  "captured_at": "2026-07-18T16:59:14.053752+00:00",
+  "completed_at": "2026-07-18T17:12:40.196875+00:00",
+  "provider": {
+    "base_url": "https://api.deepseek.com",
+    "model": "deepseek-v4-flash",
+    "name": "deepseek"
+  },
+  "rows": [
+    {
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "artifact_digest": "sha256:cddc31fe31f4f327c5e1038109c197a55b535a40afd84be0968c8495e7e663f3",
+      "artifact_exists": true,
+      "artifact_path": "miniapp/calculator.py",
+      "attempts": 10,
+      "category": "bug-fix",
+      "duration_seconds": 30.659762,
+      "expected_artifact": "miniapp/calculator.py implements the safe division contract",
+      "expected_artifact_exists": true,
+      "failure_category": null,
+      "final_answer": "Done. The `safe_divide` function now returns the quotient for normal inputs and raises `ValueError('division by zero')` when the denominator is zero. The targeted test `verifiers/calculator_check.py` passes.",
+      "fixture_copy_relpath": "safe_divide_contract\\real_model_bench_repo",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "id": "safe_divide_contract",
+      "initial_episodic_notes_empty": true,
+      "initial_history_empty": true,
+      "initial_memory_empty": true,
+      "initial_task_summary_empty": true,
+      "non_failure_stop_reason": true,
+      "passed": true,
+      "prompt": "Fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises ValueError with message 'division by zero' when the denominator is zero. Run the targeted test before finishing.",
+      "repetition": 1,
+      "report": {
+        "attempts": 10,
+        "checkpoint_id": "ckpt_7a25059a",
+        "durable_promotions": [],
+        "durable_rejections": [],
+        "durable_superseded": [],
+        "final_answer": "Done. The `safe_divide` function now returns the quotient for normal inputs and raises `ValueError('division by zero')` when the denominator is zero. The targeted test `verifiers/calculator_check.py` passes.",
+        "prompt_metadata": {
+          "budget_reductions": [],
+          "cache_hit": true,
+          "cache_miss_tokens": 989,
+          "cache_telemetry_available": true,
+          "cached_tokens": 896,
+          "current_request": {
+            "raw_chars": 203,
+            "rendered_chars": 203,
+            "section_chars": 225,
+            "text": "Fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises ValueError with message 'division by zero' when the denominator is zero. Run the targeted test before finishing."
+          },
+          "history": {
+            "collapsed_duplicate_reads": 0,
+            "older_entries_count": 3,
+            "raw_chars": 3099,
+            "rendered_chars": 2342,
+            "reused_file_summary_count": 0,
+            "summarized_tool_count": 3
+          },
+          "history_chars": 2938,
+          "input_tokens": 1885,
+          "memory_chars": 451,
+          "model": "deepseek-v4-flash",
+          "output_tokens": 93,
+          "prefix_changed": false,
+          "prefix_chars": 6246,
+          "prefix_hash": "587a30ae182651dbbe4a033fc6b9f6aeb7e5085b1b3c9fad4be1ae31dd147143",
+          "prompt_budget_chars": 12000,
+          "prompt_cache_key": "587a30ae182651dbbe4a033fc6b9f6aeb7e5085b1b3c9fad4be1ae31dd147143",
+          "prompt_cache_mode": "automatic_prefix",
+          "prompt_cache_retention": null,
+          "prompt_cache_supported": true,
+          "prompt_chars": 6812,
+          "prompt_over_budget": false,
+          "provider": "deepseek",
+          "recent_commits": 5,
+          "reduction_order": [
+            "relevant_memory",
+            "history",
+            "memory",
+            "prefix"
+          ],
+          "relevant_memory": {
+            "limit": 3,
+            "query_features": {
+              "ascii_token_count": 30,
+              "cjk_bigram_count": 0,
+              "cjk_trigram_count": 0,
+              "concepts": [
+                "testing"
+              ],
+              "identifier_count": 1,
+              "normalized": "fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises value error with message 'division by zero' when the denominator is zero. run the targeted test before finishing.",
+              "path_count": 3
+            },
+            "raw_chars": 186,
+            "rendered_chars": 186,
+            "rendered_count": 2,
+            "rendered_notes": [
+              "1: def safe_divide(numerator, denominator): | 2:     if denominator == 0: | 3:         return 0",
+              "1: import pytest | 2: | 3: from miniapp.calculator import safe_divide"
+            ],
+            "selected_count": 2,
+            "selected_details": [
+              {
+                "kind": "episodic",
+                "rank": 1,
+                "score": 18.14357,
+                "signals": [
+                  "tag:exact=miniapp/calculator.py",
+                  "source:exact=miniapp/calculator.py",
+                  "text:ascii=0.439",
+                  "text:identifier=2.250",
+                  "tag:ascii=0.727",
+                  "source:ascii=0.727"
+                ],
+                "source": "miniapp/calculator.py",
+                "text": "1: def safe_divide(numerator, denominator): | 2:     if denominator == 0: | 3:         return 0",
+                "topic": ""
+              },
+              {
+                "kind": "episodic",
+                "rank": 2,
+                "score": 4.591176,
+                "signals": [
+                  "text:concept=testing:0.800",
+                  "text:ascii=0.600",
+                  "text:identifier=2.250",
+                  "tag:ascii=0.471",
+                  "source:ascii=0.471"
+                ],
+                "source": "verifiers/calculator_check.py",
+                "text": "1: import pytest | 2: | 3: from miniapp.calculator import safe_divide",
+                "topic": ""
+              }
+            ],
+            "selected_durable_count": 0,
+            "selected_kinds": [
+              "episodic",
+              "episodic"
+            ],
+            "selected_notes": [
+              "1: def safe_divide(numerator, denominator): | 2:     if denominator == 0: | 3:         return 0",
+              "1: import pytest | 2: | 3: from miniapp.calculator import safe_divide"
+            ],
+            "selected_sources": [
+              "miniapp/calculator.py",
+              "verifiers/calculator_check.py"
+            ]
+          },
+          "request_chars": 203,
+          "resume_status": "full-valid",
+          "runtime_identity_mismatch_fields": [],
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ],
+          "section_budgets": {
+            "current_request": null,
+            "history": 5200,
+            "memory": 1600,
+            "prefix": 3600,
+            "relevant_memory": 1200
+          },
+          "section_order": [
+            "prefix",
+            "memory",
+            "relevant_memory",
+            "history",
+            "current_request"
+          ],
+          "sections": {
+            "current_request": {
+              "budget_chars": null,
+              "raw_chars": 225,
+              "rendered_chars": 225
+            },
+            "history": {
+              "budget_chars": 5200,
+              "raw_chars": 3099,
+              "rendered_chars": 2342
+            },
+            "memory": {
+              "budget_chars": 1600,
+              "raw_chars": 451,
+              "rendered_chars": 451
+            },
+            "prefix": {
+              "budget_chars": 3600,
+              "raw_chars": 6825,
+              "rendered_chars": 3600
+            },
+            "relevant_memory": {
+              "budget_chars": 1200,
+              "raw_chars": 186,
+              "rendered_chars": 186
+            }
+          },
+          "stale_paths": [],
+          "stale_summary_invalidations": 0,
+          "tool_count": 5,
+          "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+          "total_tokens": 1978,
+          "workspace_changed": false,
+          "workspace_chars": 3687,
+          "workspace_docs": 5,
+          "workspace_fingerprint": "b640e8364d57460d8bc4116c6e09b4d19fba832c155cc7440f3ecad438ad3fdc"
+        },
+        "redacted_env": {
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ]
+        },
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-005915-44f488",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-005915-d2970f",
+        "task_state": {
+          "attempts": 10,
+          "checkpoint_id": "ckpt_7a25059a",
+          "final_answer": "Done. The `safe_divide` function now returns the quotient for normal inputs and raises `ValueError('division by zero')` when the denominator is zero. The targeted test `verifiers/calculator_check.py` passes.",
+          "last_tool": "run_process",
+          "resume_status": "no-checkpoint",
+          "run_id": "run_20260719-005915-44f488",
+          "status": "completed",
+          "stop_reason": "final_answer_returned",
+          "task_id": "task_20260719-005915-d2970f",
+          "tool_steps": 9,
+          "user_request": "Fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises ValueError with message 'division by zero' when the denominator is zero. Run the targeted test before finishing."
+        },
+        "tool_steps": 9
+      },
+      "report_relpath": "safe_divide_contract\\real_model_bench_repo\\.apricity\\runs\\run_20260719-005915-44f488\\report.json",
+      "run_dir_relpath": "safe_divide_contract\\real_model_bench_repo\\.apricity\\runs\\run_20260719-005915-44f488",
+      "run_id": "run_20260719-005915-44f488",
+      "status": "pass",
+      "step_budget": 10,
+      "stop_reason": "final_answer_returned",
+      "task_state": {
+        "attempts": 10,
+        "checkpoint_id": "ckpt_7a25059a",
+        "final_answer": "Done. The `safe_divide` function now returns the quotient for normal inputs and raises `ValueError('division by zero')` when the denominator is zero. The targeted test `verifiers/calculator_check.py` passes.",
+        "last_tool": "run_process",
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-005915-44f488",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-005915-d2970f",
+        "tool_steps": 9,
+        "user_request": "Fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises ValueError with message 'division by zero' when the denominator is zero. Run the targeted test before finishing."
+      },
+      "task_state_relpath": "safe_divide_contract\\real_model_bench_repo\\.apricity\\runs\\run_20260719-005915-44f488\\task_state.json",
+      "tool_steps": 9,
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/calculator_check.py"
+      ],
+      "verifier_exit_code": 0,
+      "verifier_passed": true,
+      "verifier_stderr": "",
+      "verifier_stdout": ".                                                                        [100%]\n1 passed in 0.06s\n",
+      "verifier_timed_out": false,
+      "within_budget": true,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-01"
+    },
+    {
+      "attempts": 0,
+      "category": "bug-fix",
+      "duration_seconds": 8.888227,
+      "error": "PermissionError: [WinError 5] \u62d2\u7edd\u8bbf\u95ee\u3002: 'D:\\\\Pythonprojects\\\\yan_1\\\\agent\\\\mypico\\\\artifacts\\\\real-model-workspaces\\\\deepseek\\\\repetition-01\\\\csv_field_normalization\\\\real_model_bench_repo\\\\.apricity\\\\runs\\\\run_20260719-005946-62f094\\\\task_state.json.p18u0u3x.tmp' -> 'artifacts\\\\real-model-workspaces\\\\deepseek\\\\repetition-01\\\\csv_field_normalization\\\\real_model_bench_repo\\\\.apricity\\\\runs\\\\run_20260719-005946-62f094\\\\task_state.json'",
+      "failure_category": "runner_error",
+      "id": "csv_field_normalization",
+      "passed": false,
+      "repetition": 1,
+      "report": {},
+      "status": "fail",
+      "tool_steps": 0,
+      "verifier_passed": false,
+      "within_budget": false,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-01"
+    },
+    {
+      "attempts": 0,
+      "category": "bug-fix",
+      "duration_seconds": 16.848445,
+      "error": "RuntimeError: DeepSeek error: could not extract text from response",
+      "failure_category": "runner_error",
+      "id": "retry_attempt_budget",
+      "passed": false,
+      "repetition": 1,
+      "report": {},
+      "status": "fail",
+      "tool_steps": 0,
+      "verifier_passed": false,
+      "within_budget": false,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-01"
+    },
+    {
+      "attempts": 0,
+      "category": "bug-fix",
+      "duration_seconds": 23.943945,
+      "error": "RuntimeError: DeepSeek error: could not extract text from response",
+      "failure_category": "runner_error",
+      "id": "cache_instance_isolation",
+      "passed": false,
+      "repetition": 1,
+      "report": {},
+      "status": "fail",
+      "tool_steps": 0,
+      "verifier_passed": false,
+      "within_budget": false,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-01"
+    },
+    {
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "artifact_digest": "sha256:9aaf31f0b6870288d1a3c61d33c756cfe66ed9a928b9b762aed7f07402597583",
+      "artifact_exists": true,
+      "artifact_path": "miniapp/runtime.py",
+      "attempts": 12,
+      "category": "cross-file",
+      "duration_seconds": 45.478714,
+      "expected_artifact": "config and runtime share one default timeout constant",
+      "expected_artifact_exists": true,
+      "failure_category": null,
+      "final_answer": "Done. The default timeout is now 45 seconds in `miniapp/config.py`, `miniapp/runtime.py` imports and uses that constant, and the explicit override on line 8 of `verifiers/runtime_check.py` confirms `request_options(timeout=7)` still works. Both targeted tests pass.",
+      "fixture_copy_relpath": "centralized_timeout_default\\real_model_bench_repo",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "id": "centralized_timeout_default",
+      "initial_episodic_notes_empty": true,
+      "initial_history_empty": true,
+      "initial_memory_empty": true,
+      "initial_task_summary_empty": true,
+      "non_failure_stop_reason": true,
+      "passed": true,
+      "prompt": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test.",
+      "repetition": 1,
+      "report": {
+        "attempts": 12,
+        "checkpoint_id": "ckpt_f7393edb",
+        "durable_promotions": [],
+        "durable_rejections": [],
+        "durable_superseded": [],
+        "final_answer": "Done. The default timeout is now 45 seconds in `miniapp/config.py`, `miniapp/runtime.py` imports and uses that constant, and the explicit override on line 8 of `verifiers/runtime_check.py` confirms `request_options(timeout=7)` still works. Both targeted tests pass.",
+        "prompt_metadata": {
+          "budget_reductions": [],
+          "cache_hit": true,
+          "cache_miss_tokens": 884,
+          "cache_telemetry_available": true,
+          "cached_tokens": 1024,
+          "current_request": {
+            "raw_chars": 256,
+            "rendered_chars": 256,
+            "section_chars": 278,
+            "text": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test."
+          },
+          "history": {
+            "collapsed_duplicate_reads": 0,
+            "older_entries_count": 5,
+            "raw_chars": 3692,
+            "rendered_chars": 2357,
+            "reused_file_summary_count": 0,
+            "summarized_tool_count": 5
+          },
+          "history_chars": 2994,
+          "input_tokens": 1908,
+          "memory_chars": 552,
+          "model": "deepseek-v4-flash",
+          "output_tokens": 171,
+          "prefix_changed": false,
+          "prefix_chars": 6337,
+          "prefix_hash": "3c68c02cc3d31f266bbe8622c6e83ea8b5f355c1f3eda0fb0cefa83755a6d0e5",
+          "prompt_budget_chars": 12000,
+          "prompt_cache_key": "3c68c02cc3d31f266bbe8622c6e83ea8b5f355c1f3eda0fb0cefa83755a6d0e5",
+          "prompt_cache_mode": "automatic_prefix",
+          "prompt_cache_retention": null,
+          "prompt_cache_supported": true,
+          "prompt_chars": 7059,
+          "prompt_over_budget": false,
+          "provider": "deepseek",
+          "recent_commits": 5,
+          "reduction_order": [
+            "relevant_memory",
+            "history",
+            "memory",
+            "prefix"
+          ],
+          "relevant_memory": {
+            "limit": 3,
+            "query_features": {
+              "ascii_token_count": 34,
+              "cjk_bigram_count": 0,
+              "cjk_trigram_count": 0,
+              "concepts": [
+                "dependency-facts",
+                "testing"
+              ],
+              "identifier_count": 0,
+              "normalized": "the default request timeout must be 45 seconds everywhere. make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. preserve explicit timeout overrides and run the targeted test.",
+              "path_count": 6
+            },
+            "raw_chars": 264,
+            "rendered_chars": 264,
+            "rendered_count": 3,
+            "rendered_notes": [
+              "1: def request_options(timeout=None): | 2:     return {\"timeout\": 30 if timeout is None else timeout}",
+              "1: DEFAULT_REQUEST_TIMEOUT = 30",
+              "1: from miniapp.config import DEFAULT_REQUEST_TIMEOUT | 2: from miniapp.runtime import request_options | 3:"
+            ],
+            "selected_count": 3,
+            "selected_details": [
+              {
+                "kind": "episodic",
+                "rank": 1,
+                "score": 20.558167,
+                "signals": [
+                  "tag:exact=miniapp/runtime.py",
+                  "source:exact=miniapp/runtime.py",
+                  "tag:concept=dependency-facts:5.000",
+                  "text:ascii=0.261",
+                  "tag:ascii=0.649",
+                  "source:ascii=0.649"
+                ],
+                "source": "miniapp/runtime.py",
+                "text": "1: def request_options(timeout=None): | 2:     return {\"timeout\": 30 if timeout is None else timeout}",
+                "topic": ""
+              },
+              {
+                "kind": "episodic",
+                "rank": 2,
+                "score": 15.758836,
+                "signals": [
+                  "tag:exact=miniapp/config.py",
+                  "source:exact=miniapp/config.py",
+                  "text:ascii=0.462",
+                  "tag:ascii=0.649",
+                  "source:ascii=0.649"
+                ],
+                "source": "miniapp/config.py",
+                "text": "1: DEFAULT_REQUEST_TIMEOUT = 30",
+                "topic": ""
+              },
+              {
+                "kind": "episodic",
+                "rank": 3,
+                "score": 7.624714,
+                "signals": [
+                  "text:concept=dependency-facts:1.000",
+                  "tag:concept=dependency-facts:5.000",
+                  "text:ascii=0.783",
+                  "tag:ascii=0.421",
+                  "source:ascii=0.421"
+                ],
+                "source": "verifiers/runtime_check.py",
+                "text": "1: from miniapp.config import DEFAULT_REQUEST_TIMEOUT | 2: from miniapp.runtime import request_options | 3:",
+                "topic": ""
+              }
+            ],
+            "selected_durable_count": 0,
+            "selected_kinds": [
+              "episodic",
+              "episodic",
+              "episodic"
+            ],
+            "selected_notes": [
+              "1: def request_options(timeout=None): | 2:     return {\"timeout\": 30 if timeout is None else timeout}",
+              "1: DEFAULT_REQUEST_TIMEOUT = 30",
+              "1: from miniapp.config import DEFAULT_REQUEST_TIMEOUT | 2: from miniapp.runtime import request_options | 3:"
+            ],
+            "selected_sources": [
+              "miniapp/runtime.py",
+              "miniapp/config.py",
+              "verifiers/runtime_check.py"
+            ]
+          },
+          "request_chars": 256,
+          "resume_status": "full-valid",
+          "runtime_identity_mismatch_fields": [],
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ],
+          "section_budgets": {
+            "current_request": null,
+            "history": 5200,
+            "memory": 1600,
+            "prefix": 3600,
+            "relevant_memory": 1200
+          },
+          "section_order": [
+            "prefix",
+            "memory",
+            "relevant_memory",
+            "history",
+            "current_request"
+          ],
+          "sections": {
+            "current_request": {
+              "budget_chars": null,
+              "raw_chars": 278,
+              "rendered_chars": 278
+            },
+            "history": {
+              "budget_chars": 5200,
+              "raw_chars": 3692,
+              "rendered_chars": 2357
+            },
+            "memory": {
+              "budget_chars": 1600,
+              "raw_chars": 552,
+              "rendered_chars": 552
+            },
+            "prefix": {
+              "budget_chars": 3600,
+              "raw_chars": 6983,
+              "rendered_chars": 3600
+            },
+            "relevant_memory": {
+              "budget_chars": 1200,
+              "raw_chars": 264,
+              "rendered_chars": 264
+            }
+          },
+          "stale_paths": [],
+          "stale_summary_invalidations": 0,
+          "tool_count": 5,
+          "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+          "total_tokens": 2079,
+          "workspace_changed": false,
+          "workspace_chars": 3778,
+          "workspace_docs": 5,
+          "workspace_fingerprint": "d58808892686f891cf960f39a3ecc2c28c65636b51a2fd37ea7d094fc2fef5b7"
+        },
+        "redacted_env": {
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ]
+        },
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010035-3653b9",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-010035-e4f6bb",
+        "task_state": {
+          "attempts": 12,
+          "checkpoint_id": "ckpt_f7393edb",
+          "final_answer": "Done. The default timeout is now 45 seconds in `miniapp/config.py`, `miniapp/runtime.py` imports and uses that constant, and the explicit override on line 8 of `verifiers/runtime_check.py` confirms `request_options(timeout=7)` still works. Both targeted tests pass.",
+          "last_tool": "run_process",
+          "resume_status": "no-checkpoint",
+          "run_id": "run_20260719-010035-3653b9",
+          "status": "completed",
+          "stop_reason": "final_answer_returned",
+          "task_id": "task_20260719-010035-e4f6bb",
+          "tool_steps": 10,
+          "user_request": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test."
+        },
+        "tool_steps": 10
+      },
+      "report_relpath": "centralized_timeout_default\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010035-3653b9\\report.json",
+      "run_dir_relpath": "centralized_timeout_default\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010035-3653b9",
+      "run_id": "run_20260719-010035-3653b9",
+      "status": "pass",
+      "step_budget": 12,
+      "stop_reason": "final_answer_returned",
+      "task_state": {
+        "attempts": 12,
+        "checkpoint_id": "ckpt_f7393edb",
+        "final_answer": "Done. The default timeout is now 45 seconds in `miniapp/config.py`, `miniapp/runtime.py` imports and uses that constant, and the explicit override on line 8 of `verifiers/runtime_check.py` confirms `request_options(timeout=7)` still works. Both targeted tests pass.",
+        "last_tool": "run_process",
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010035-3653b9",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-010035-e4f6bb",
+        "tool_steps": 10,
+        "user_request": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test."
+      },
+      "task_state_relpath": "centralized_timeout_default\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010035-3653b9\\task_state.json",
+      "tool_steps": 10,
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/runtime_check.py"
+      ],
+      "verifier_exit_code": 0,
+      "verifier_passed": true,
+      "verifier_stderr": "",
+      "verifier_stdout": "..                                                                       [100%]\n2 passed in 0.09s\n",
+      "verifier_timed_out": false,
+      "within_budget": true,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-01"
+    },
+    {
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "write_file",
+        "run_process"
+      ],
+      "artifact_digest": "sha256:05cd2f7972e4c33bbeb8008ffa7a72d10e3fb5330558db4ddb70ef03fee3b49f",
+      "artifact_exists": true,
+      "artifact_path": "miniapp/presentation.py",
+      "attempts": 9,
+      "category": "cross-file",
+      "duration_seconds": 30.704352,
+      "expected_artifact": "presentation reuses user-name normalization",
+      "expected_artifact_exists": true,
+      "failure_category": null,
+      "final_answer": "Implemented `public_user_label` in `miniapp/presentation.py` to reuse `normalize_display_name` from `miniapp/users.py`, producing `@` + normalized name (or `@anonymous` for blank inputs). The targeted test (`verifiers/presentation_check.py`) passed both assertions.",
+      "fixture_copy_relpath": "public_user_label\\real_model_bench_repo",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "id": "public_user_label",
+      "initial_episodic_notes_empty": true,
+      "initial_history_empty": true,
+      "initial_memory_empty": true,
+      "initial_task_summary_empty": true,
+      "non_failure_stop_reason": true,
+      "passed": true,
+      "prompt": "Implement public_user_label in miniapp/presentation.py by reusing normalize_display_name from miniapp/users.py. The result must be '@' followed by the normalized name, and blank names must produce '@anonymous'. Do not duplicate the normalization rules. Run the targeted test.",
+      "repetition": 1,
+      "report": {
+        "attempts": 9,
+        "checkpoint_id": "ckpt_a9769ffc",
+        "durable_promotions": [],
+        "durable_rejections": [],
+        "durable_superseded": [],
+        "final_answer": "Implemented `public_user_label` in `miniapp/presentation.py` to reuse `normalize_display_name` from `miniapp/users.py`, producing `@` + normalized name (or `@anonymous` for blank inputs). The targeted test (`verifiers/presentation_check.py`) passed both assertions.",
+        "prompt_metadata": {
+          "budget_reductions": [],
+          "cache_hit": true,
+          "cache_miss_tokens": 949,
+          "cache_telemetry_available": true,
+          "cached_tokens": 896,
+          "current_request": {
+            "raw_chars": 275,
+            "rendered_chars": 275,
+            "section_chars": 297,
+            "text": "Implement public_user_label in miniapp/presentation.py by reusing normalize_display_name from miniapp/users.py. The result must be '@' followed by the normalized name, and blank names must produce '@anonymous'. Do not duplicate the normalization rules. Run the targeted test."
+          },
+          "history": {
+            "collapsed_duplicate_reads": 0,
+            "older_entries_count": 2,
+            "raw_chars": 2910,
+            "rendered_chars": 2176,
+            "reused_file_summary_count": 0,
+            "summarized_tool_count": 2
+          },
+          "history_chars": 2647,
+          "input_tokens": 1845,
+          "memory_chars": 560,
+          "model": "deepseek-v4-flash",
+          "output_tokens": 117,
+          "prefix_changed": false,
+          "prefix_chars": 6384,
+          "prefix_hash": "523f69be0efa679b1240c5b296660970158f14eddb4bff8db29524e4b6c9e05f",
+          "prompt_budget_chars": 12000,
+          "prompt_cache_key": "523f69be0efa679b1240c5b296660970158f14eddb4bff8db29524e4b6c9e05f",
+          "prompt_cache_mode": "automatic_prefix",
+          "prompt_cache_retention": null,
+          "prompt_cache_supported": true,
+          "prompt_chars": 6860,
+          "prompt_over_budget": false,
+          "provider": "deepseek",
+          "recent_commits": 5,
+          "reduction_order": [
+            "relevant_memory",
+            "history",
+            "memory",
+            "prefix"
+          ],
+          "relevant_memory": {
+            "limit": 3,
+            "query_features": {
+              "ascii_token_count": 34,
+              "cjk_bigram_count": 0,
+              "cjk_trigram_count": 0,
+              "concepts": [
+                "testing"
+              ],
+              "identifier_count": 2,
+              "normalized": "implement public_user_label in miniapp/presentation.py by reusing normalize_display_name from miniapp/users.py. the result must be '@' followed by the normalized name, and blank names must produce '@anonymous'. do not duplicate the normalization rules. run the targeted test.",
+              "path_count": 6
+            },
+            "raw_chars": 219,
+            "rendered_chars": 219,
+            "rendered_count": 2,
+            "rendered_notes": [
+              "1: def normalize_display_name(value): | 2:     normalized = \" \".join(str(value).split()) | 3:     return normalized or \"anonymous\"",
+              "1: def public_user_label(value): | 2:     raise NotImplementedError"
+            ],
+            "selected_count": 2,
+            "selected_details": [
+              {
+                "kind": "episodic",
+                "rank": 1,
+                "score": 17.409542,
+                "signals": [
+                  "tag:exact=miniapp/users.py",
+                  "source:exact=miniapp/users.py",
+                  "text:ascii=0.612",
+                  "text:identifier=1.500",
+                  "tag:ascii=0.649",
+                  "source:ascii=0.649"
+                ],
+                "source": "miniapp/users.py",
+                "text": "1: def normalize_display_name(value): | 2:     normalized = \" \".join(str(value).split()) | 3:     return normalized or \"anonymous\"",
+                "topic": ""
+              },
+              {
+                "kind": "episodic",
+                "rank": 2,
+                "score": 17.330631,
+                "signals": [
+                  "tag:exact=miniapp/presentation.py",
+                  "source:exact=miniapp/presentation.py",
+                  "text:ascii=0.533",
+                  "text:identifier=1.500",
+                  "tag:ascii=0.649",
+                  "source:ascii=0.649"
+                ],
+                "source": "miniapp/presentation.py",
+                "text": "1: def public_user_label(value): | 2:     raise NotImplementedError",
+                "topic": ""
+              }
+            ],
+            "selected_durable_count": 0,
+            "selected_kinds": [
+              "episodic",
+              "episodic"
+            ],
+            "selected_notes": [
+              "1: def normalize_display_name(value): | 2:     normalized = \" \".join(str(value).split()) | 3:     return normalized or \"anonymous\"",
+              "1: def public_user_label(value): | 2:     raise NotImplementedError"
+            ],
+            "selected_sources": [
+              "miniapp/users.py",
+              "miniapp/presentation.py"
+            ]
+          },
+          "request_chars": 275,
+          "resume_status": "full-valid",
+          "runtime_identity_mismatch_fields": [],
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ],
+          "section_budgets": {
+            "current_request": null,
+            "history": 5200,
+            "memory": 1600,
+            "prefix": 3600,
+            "relevant_memory": 1200
+          },
+          "section_order": [
+            "prefix",
+            "memory",
+            "relevant_memory",
+            "history",
+            "current_request"
+          ],
+          "sections": {
+            "current_request": {
+              "budget_chars": null,
+              "raw_chars": 297,
+              "rendered_chars": 297
+            },
+            "history": {
+              "budget_chars": 5200,
+              "raw_chars": 2910,
+              "rendered_chars": 2176
+            },
+            "memory": {
+              "budget_chars": 1600,
+              "raw_chars": 560,
+              "rendered_chars": 560
+            },
+            "prefix": {
+              "budget_chars": 3600,
+              "raw_chars": 7025,
+              "rendered_chars": 3600
+            },
+            "relevant_memory": {
+              "budget_chars": 1200,
+              "raw_chars": 219,
+              "rendered_chars": 219
+            }
+          },
+          "stale_paths": [],
+          "stale_summary_invalidations": 0,
+          "tool_count": 6,
+          "tool_signature": "ccfa8d99b285cdca532a1974c93cc12c7e001e638a353674df2d85952502cc1a",
+          "total_tokens": 1962,
+          "workspace_changed": false,
+          "workspace_chars": 3748,
+          "workspace_docs": 5,
+          "workspace_fingerprint": "e9a2ce5b588bd0b89cafdfcc85a73c1bf5c43e7ba494297aa578eca9cfc33611"
+        },
+        "redacted_env": {
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ]
+        },
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010121-f788ff",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-010121-41346e",
+        "task_state": {
+          "attempts": 9,
+          "checkpoint_id": "ckpt_a9769ffc",
+          "final_answer": "Implemented `public_user_label` in `miniapp/presentation.py` to reuse `normalize_display_name` from `miniapp/users.py`, producing `@` + normalized name (or `@anonymous` for blank inputs). The targeted test (`verifiers/presentation_check.py`) passed both assertions.",
+          "last_tool": "run_process",
+          "resume_status": "no-checkpoint",
+          "run_id": "run_20260719-010121-f788ff",
+          "status": "completed",
+          "stop_reason": "final_answer_returned",
+          "task_id": "task_20260719-010121-41346e",
+          "tool_steps": 8,
+          "user_request": "Implement public_user_label in miniapp/presentation.py by reusing normalize_display_name from miniapp/users.py. The result must be '@' followed by the normalized name, and blank names must produce '@anonymous'. Do not duplicate the normalization rules. Run the targeted test."
+        },
+        "tool_steps": 8
+      },
+      "report_relpath": "public_user_label\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010121-f788ff\\report.json",
+      "run_dir_relpath": "public_user_label\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010121-f788ff",
+      "run_id": "run_20260719-010121-f788ff",
+      "status": "pass",
+      "step_budget": 12,
+      "stop_reason": "final_answer_returned",
+      "task_state": {
+        "attempts": 9,
+        "checkpoint_id": "ckpt_a9769ffc",
+        "final_answer": "Implemented `public_user_label` in `miniapp/presentation.py` to reuse `normalize_display_name` from `miniapp/users.py`, producing `@` + normalized name (or `@anonymous` for blank inputs). The targeted test (`verifiers/presentation_check.py`) passed both assertions.",
+        "last_tool": "run_process",
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010121-f788ff",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-010121-41346e",
+        "tool_steps": 8,
+        "user_request": "Implement public_user_label in miniapp/presentation.py by reusing normalize_display_name from miniapp/users.py. The result must be '@' followed by the normalized name, and blank names must produce '@anonymous'. Do not duplicate the normalization rules. Run the targeted test."
+      },
+      "task_state_relpath": "public_user_label\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010121-f788ff\\task_state.json",
+      "tool_steps": 8,
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/presentation_check.py"
+      ],
+      "verifier_exit_code": 0,
+      "verifier_passed": true,
+      "verifier_stderr": "",
+      "verifier_stdout": "..                                                                       [100%]\n2 passed in 0.06s\n",
+      "verifier_timed_out": false,
+      "within_budget": true,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-01"
+    },
+    {
+      "attempts": 0,
+      "category": "test-driven",
+      "duration_seconds": 23.965836,
+      "error": "RuntimeError: DeepSeek error: could not extract text from response",
+      "failure_category": "runner_error",
+      "id": "stable_json_report",
+      "passed": false,
+      "repetition": 1,
+      "report": {},
+      "status": "fail",
+      "tool_steps": 0,
+      "verifier_passed": false,
+      "within_budget": false,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-01"
+    },
+    {
+      "attempts": 0,
+      "category": "test-driven",
+      "duration_seconds": 30.179043,
+      "error": "RuntimeError: DeepSeek error: could not extract text from response",
+      "failure_category": "runner_error",
+      "id": "casefold_user_deduplication",
+      "passed": false,
+      "repetition": 1,
+      "report": {},
+      "status": "fail",
+      "tool_steps": 0,
+      "verifier_passed": false,
+      "within_budget": false,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-01"
+    },
+    {
+      "attempts": 0,
+      "category": "robustness",
+      "duration_seconds": 21.13646,
+      "error": "RuntimeError: DeepSeek error: could not extract text from response",
+      "failure_category": "runner_error",
+      "id": "workspace_relative_path_guard",
+      "passed": false,
+      "repetition": 1,
+      "report": {},
+      "status": "fail",
+      "tool_steps": 0,
+      "verifier_passed": false,
+      "within_budget": false,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-01"
+    },
+    {
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "artifact_digest": "sha256:1d0d23354eafc3ab47f75427712954376d999444f9b6afa0f476557393e2fd84",
+      "artifact_exists": true,
+      "artifact_path": "miniapp/history.py",
+      "attempts": 9,
+      "category": "context-reasoning",
+      "duration_seconds": 30.407544,
+      "expected_artifact": "miniapp/history.py selects the latest event independently of input order",
+      "expected_artifact_exists": true,
+      "failure_category": null,
+      "final_answer": "Fixed `latest_event` in `miniapp/history.py` \u2013 now uses `max` with ISO-8601 timestamp comparison, returns `None` for empty input, and does not mutate the list. The targeted test (`verifiers/history_check.py`) passed.",
+      "fixture_copy_relpath": "latest_event_selection\\real_model_bench_repo",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "id": "latest_event_selection",
+      "initial_episodic_notes_empty": true,
+      "initial_history_empty": true,
+      "initial_memory_empty": true,
+      "initial_task_summary_empty": true,
+      "non_failure_stop_reason": true,
+      "passed": true,
+      "prompt": "Fix latest_event in miniapp/history.py. Input events may be unsorted. Return the event with the greatest ISO-8601 timestamp without mutating the input, and return None for an empty sequence. Run the targeted test.",
+      "repetition": 1,
+      "report": {
+        "attempts": 9,
+        "checkpoint_id": "ckpt_f2e6f9fc",
+        "durable_promotions": [],
+        "durable_rejections": [],
+        "durable_superseded": [],
+        "final_answer": "Fixed `latest_event` in `miniapp/history.py` \u2013 now uses `max` with ISO-8601 timestamp comparison, returns `None` for empty input, and does not mutate the list. The targeted test (`verifiers/history_check.py`) passed.",
+        "prompt_metadata": {
+          "budget_reductions": [],
+          "cache_hit": true,
+          "cache_miss_tokens": 1250,
+          "cache_telemetry_available": true,
+          "cached_tokens": 896,
+          "current_request": {
+            "raw_chars": 213,
+            "rendered_chars": 213,
+            "section_chars": 235,
+            "text": "Fix latest_event in miniapp/history.py. Input events may be unsorted. Return the event with the greatest ISO-8601 timestamp without mutating the input, and return None for an empty sequence. Run the targeted test."
+          },
+          "history": {
+            "collapsed_duplicate_reads": 0,
+            "older_entries_count": 2,
+            "raw_chars": 3634,
+            "rendered_chars": 3142,
+            "reused_file_summary_count": 0,
+            "summarized_tool_count": 2
+          },
+          "history_chars": 3509,
+          "input_tokens": 2146,
+          "memory_chars": 436,
+          "model": "deepseek-v4-flash",
+          "output_tokens": 102,
+          "prefix_changed": false,
+          "prefix_chars": 6322,
+          "prefix_hash": "4aa1b546ae7b4b4b126fe76f2024a56d957ca8afd775b54711781bd0ae0fa6ba",
+          "prompt_budget_chars": 12000,
+          "prompt_cache_key": "4aa1b546ae7b4b4b126fe76f2024a56d957ca8afd775b54711781bd0ae0fa6ba",
+          "prompt_cache_mode": "automatic_prefix",
+          "prompt_cache_retention": null,
+          "prompt_cache_supported": true,
+          "prompt_chars": 7573,
+          "prompt_over_budget": false,
+          "provider": "deepseek",
+          "recent_commits": 5,
+          "reduction_order": [
+            "relevant_memory",
+            "history",
+            "memory",
+            "prefix"
+          ],
+          "relevant_memory": {
+            "limit": 3,
+            "query_features": {
+              "ascii_token_count": 30,
+              "cjk_bigram_count": 0,
+              "cjk_trigram_count": 0,
+              "concepts": [
+                "testing"
+              ],
+              "identifier_count": 1,
+              "normalized": "fix latest_event in miniapp/history.py. input events may be unsorted. return the event with the greatest iso-8601 timestamp without mutating the input, and return none for an empty sequence. run the targeted test.",
+              "path_count": 3
+            },
+            "raw_chars": 152,
+            "rendered_chars": 152,
+            "rendered_count": 2,
+            "rendered_notes": [
+              "1: def latest_event(events): | 2:     if not events: | 3:         return None",
+              "1: from miniapp.history import latest_event | 2: | 3:"
+            ],
+            "selected_count": 2,
+            "selected_details": [
+              {
+                "kind": "episodic",
+                "rank": 1,
+                "score": 18.436253,
+                "signals": [
+                  "tag:exact=miniapp/history.py",
+                  "source:exact=miniapp/history.py",
+                  "text:ascii=0.732",
+                  "text:identifier=2.250",
+                  "tag:ascii=0.727",
+                  "source:ascii=0.727"
+                ],
+                "source": "miniapp/history.py",
+                "text": "1: def latest_event(events): | 2:     if not events: | 3:         return None",
+                "topic": ""
+              },
+              {
+                "kind": "episodic",
+                "rank": 2,
+                "score": 3.806561,
+                "signals": [
+                  "text:ascii=0.615",
+                  "text:identifier=2.250",
+                  "tag:ascii=0.471",
+                  "source:ascii=0.471"
+                ],
+                "source": "verifiers/history_check.py",
+                "text": "1: from miniapp.history import latest_event | 2: | 3:",
+                "topic": ""
+              }
+            ],
+            "selected_durable_count": 0,
+            "selected_kinds": [
+              "episodic",
+              "episodic"
+            ],
+            "selected_notes": [
+              "1: def latest_event(events): | 2:     if not events: | 3:         return None",
+              "1: from miniapp.history import latest_event | 2: | 3:"
+            ],
+            "selected_sources": [
+              "miniapp/history.py",
+              "verifiers/history_check.py"
+            ]
+          },
+          "request_chars": 213,
+          "resume_status": "full-valid",
+          "runtime_identity_mismatch_fields": [],
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ],
+          "section_budgets": {
+            "current_request": null,
+            "history": 5200,
+            "memory": 1600,
+            "prefix": 3600,
+            "relevant_memory": 1200
+          },
+          "section_order": [
+            "prefix",
+            "memory",
+            "relevant_memory",
+            "history",
+            "current_request"
+          ],
+          "sections": {
+            "current_request": {
+              "budget_chars": null,
+              "raw_chars": 235,
+              "rendered_chars": 235
+            },
+            "history": {
+              "budget_chars": 5200,
+              "raw_chars": 3634,
+              "rendered_chars": 3142
+            },
+            "memory": {
+              "budget_chars": 1600,
+              "raw_chars": 436,
+              "rendered_chars": 436
+            },
+            "prefix": {
+              "budget_chars": 3600,
+              "raw_chars": 6905,
+              "rendered_chars": 3600
+            },
+            "relevant_memory": {
+              "budget_chars": 1200,
+              "raw_chars": 152,
+              "rendered_chars": 152
+            }
+          },
+          "stale_paths": [],
+          "stale_summary_invalidations": 0,
+          "tool_count": 5,
+          "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+          "total_tokens": 2248,
+          "workspace_changed": false,
+          "workspace_chars": 3763,
+          "workspace_docs": 5,
+          "workspace_fingerprint": "ec4033441e709a462f1740a4eedf8159b1c3172764ec5cf9276f4ba99d8dc8ed"
+        },
+        "redacted_env": {
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ]
+        },
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010307-72ee7e",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-010307-a93cd4",
+        "task_state": {
+          "attempts": 9,
+          "checkpoint_id": "ckpt_f2e6f9fc",
+          "final_answer": "Fixed `latest_event` in `miniapp/history.py` \u2013 now uses `max` with ISO-8601 timestamp comparison, returns `None` for empty input, and does not mutate the list. The targeted test (`verifiers/history_check.py`) passed.",
+          "last_tool": "run_process",
+          "resume_status": "no-checkpoint",
+          "run_id": "run_20260719-010307-72ee7e",
+          "status": "completed",
+          "stop_reason": "final_answer_returned",
+          "task_id": "task_20260719-010307-a93cd4",
+          "tool_steps": 8,
+          "user_request": "Fix latest_event in miniapp/history.py. Input events may be unsorted. Return the event with the greatest ISO-8601 timestamp without mutating the input, and return None for an empty sequence. Run the targeted test."
+        },
+        "tool_steps": 8
+      },
+      "report_relpath": "latest_event_selection\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010307-72ee7e\\report.json",
+      "run_dir_relpath": "latest_event_selection\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010307-72ee7e",
+      "run_id": "run_20260719-010307-72ee7e",
+      "status": "pass",
+      "step_budget": 10,
+      "stop_reason": "final_answer_returned",
+      "task_state": {
+        "attempts": 9,
+        "checkpoint_id": "ckpt_f2e6f9fc",
+        "final_answer": "Fixed `latest_event` in `miniapp/history.py` \u2013 now uses `max` with ISO-8601 timestamp comparison, returns `None` for empty input, and does not mutate the list. The targeted test (`verifiers/history_check.py`) passed.",
+        "last_tool": "run_process",
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010307-72ee7e",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-010307-a93cd4",
+        "tool_steps": 8,
+        "user_request": "Fix latest_event in miniapp/history.py. Input events may be unsorted. Return the event with the greatest ISO-8601 timestamp without mutating the input, and return None for an empty sequence. Run the targeted test."
+      },
+      "task_state_relpath": "latest_event_selection\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010307-72ee7e\\task_state.json",
+      "tool_steps": 8,
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/history_check.py"
+      ],
+      "verifier_exit_code": 0,
+      "verifier_passed": true,
+      "verifier_stderr": "",
+      "verifier_stdout": ".                                                                        [100%]\n1 passed in 0.04s\n",
+      "verifier_timed_out": false,
+      "within_budget": true,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-01"
+    },
+    {
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "artifact_digest": "sha256:cddc31fe31f4f327c5e1038109c197a55b535a40afd84be0968c8495e7e663f3",
+      "artifact_exists": true,
+      "artifact_path": "miniapp/calculator.py",
+      "attempts": 8,
+      "category": "bug-fix",
+      "duration_seconds": 26.236731,
+      "expected_artifact": "miniapp/calculator.py implements the safe division contract",
+      "expected_artifact_exists": true,
+      "failure_category": null,
+      "final_answer": "The fix is complete. `miniapp/calculator.py` now raises `ValueError('division by zero')` when the denominator is zero, and the targeted test `verifiers/calculator_check.py` passes successfully.",
+      "fixture_copy_relpath": "safe_divide_contract\\real_model_bench_repo",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "id": "safe_divide_contract",
+      "initial_episodic_notes_empty": true,
+      "initial_history_empty": true,
+      "initial_memory_empty": true,
+      "initial_task_summary_empty": true,
+      "non_failure_stop_reason": true,
+      "passed": true,
+      "prompt": "Fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises ValueError with message 'division by zero' when the denominator is zero. Run the targeted test before finishing.",
+      "repetition": 2,
+      "report": {
+        "attempts": 8,
+        "checkpoint_id": "ckpt_c1c539f1",
+        "durable_promotions": [],
+        "durable_rejections": [],
+        "durable_superseded": [],
+        "final_answer": "The fix is complete. `miniapp/calculator.py` now raises `ValueError('division by zero')` when the denominator is zero, and the targeted test `verifiers/calculator_check.py` passes successfully.",
+        "prompt_metadata": {
+          "budget_reductions": [],
+          "cache_hit": true,
+          "cache_miss_tokens": 1119,
+          "cache_telemetry_available": true,
+          "cached_tokens": 896,
+          "current_request": {
+            "raw_chars": 203,
+            "rendered_chars": 203,
+            "section_chars": 225,
+            "text": "Fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises ValueError with message 'division by zero' when the denominator is zero. Run the targeted test before finishing."
+          },
+          "history": {
+            "collapsed_duplicate_reads": 0,
+            "older_entries_count": 1,
+            "raw_chars": 3256,
+            "rendered_chars": 2734,
+            "reused_file_summary_count": 0,
+            "summarized_tool_count": 1
+          },
+          "history_chars": 3095,
+          "input_tokens": 2015,
+          "memory_chars": 451,
+          "model": "deepseek-v4-flash",
+          "output_tokens": 82,
+          "prefix_changed": false,
+          "prefix_chars": 6316,
+          "prefix_hash": "05cda4e9660800daafa09ebb5c11f5008af9607170cb7507e1eedb2a01181cd5",
+          "prompt_budget_chars": 12000,
+          "prompt_cache_key": "05cda4e9660800daafa09ebb5c11f5008af9607170cb7507e1eedb2a01181cd5",
+          "prompt_cache_mode": "automatic_prefix",
+          "prompt_cache_retention": null,
+          "prompt_cache_supported": true,
+          "prompt_chars": 7204,
+          "prompt_over_budget": false,
+          "provider": "deepseek",
+          "recent_commits": 5,
+          "reduction_order": [
+            "relevant_memory",
+            "history",
+            "memory",
+            "prefix"
+          ],
+          "relevant_memory": {
+            "limit": 3,
+            "query_features": {
+              "ascii_token_count": 30,
+              "cjk_bigram_count": 0,
+              "cjk_trigram_count": 0,
+              "concepts": [
+                "testing"
+              ],
+              "identifier_count": 1,
+              "normalized": "fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises value error with message 'division by zero' when the denominator is zero. run the targeted test before finishing.",
+              "path_count": 3
+            },
+            "raw_chars": 186,
+            "rendered_chars": 186,
+            "rendered_count": 2,
+            "rendered_notes": [
+              "1: def safe_divide(numerator, denominator): | 2:     if denominator == 0: | 3:         return 0",
+              "1: import pytest | 2: | 3: from miniapp.calculator import safe_divide"
+            ],
+            "selected_count": 2,
+            "selected_details": [
+              {
+                "kind": "episodic",
+                "rank": 1,
+                "score": 18.14357,
+                "signals": [
+                  "tag:exact=miniapp/calculator.py",
+                  "source:exact=miniapp/calculator.py",
+                  "text:ascii=0.439",
+                  "text:identifier=2.250",
+                  "tag:ascii=0.727",
+                  "source:ascii=0.727"
+                ],
+                "source": "miniapp/calculator.py",
+                "text": "1: def safe_divide(numerator, denominator): | 2:     if denominator == 0: | 3:         return 0",
+                "topic": ""
+              },
+              {
+                "kind": "episodic",
+                "rank": 2,
+                "score": 4.591176,
+                "signals": [
+                  "text:concept=testing:0.800",
+                  "text:ascii=0.600",
+                  "text:identifier=2.250",
+                  "tag:ascii=0.471",
+                  "source:ascii=0.471"
+                ],
+                "source": "verifiers/calculator_check.py",
+                "text": "1: import pytest | 2: | 3: from miniapp.calculator import safe_divide",
+                "topic": ""
+              }
+            ],
+            "selected_durable_count": 0,
+            "selected_kinds": [
+              "episodic",
+              "episodic"
+            ],
+            "selected_notes": [
+              "1: def safe_divide(numerator, denominator): | 2:     if denominator == 0: | 3:         return 0",
+              "1: import pytest | 2: | 3: from miniapp.calculator import safe_divide"
+            ],
+            "selected_sources": [
+              "miniapp/calculator.py",
+              "verifiers/calculator_check.py"
+            ]
+          },
+          "request_chars": 203,
+          "resume_status": "full-valid",
+          "runtime_identity_mismatch_fields": [],
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ],
+          "section_budgets": {
+            "current_request": null,
+            "history": 5200,
+            "memory": 1600,
+            "prefix": 3600,
+            "relevant_memory": 1200
+          },
+          "section_order": [
+            "prefix",
+            "memory",
+            "relevant_memory",
+            "history",
+            "current_request"
+          ],
+          "sections": {
+            "current_request": {
+              "budget_chars": null,
+              "raw_chars": 225,
+              "rendered_chars": 225
+            },
+            "history": {
+              "budget_chars": 5200,
+              "raw_chars": 3256,
+              "rendered_chars": 2734
+            },
+            "memory": {
+              "budget_chars": 1600,
+              "raw_chars": 451,
+              "rendered_chars": 451
+            },
+            "prefix": {
+              "budget_chars": 3600,
+              "raw_chars": 6895,
+              "rendered_chars": 3600
+            },
+            "relevant_memory": {
+              "budget_chars": 1200,
+              "raw_chars": 186,
+              "rendered_chars": 186
+            }
+          },
+          "stale_paths": [],
+          "stale_summary_invalidations": 0,
+          "tool_count": 5,
+          "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+          "total_tokens": 2097,
+          "workspace_changed": false,
+          "workspace_chars": 3757,
+          "workspace_docs": 5,
+          "workspace_fingerprint": "28db3ae5ac69f97a111af78c287a5f9e579c7d5cc2855965296f619b71926ae0"
+        },
+        "redacted_env": {
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ]
+        },
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010337-5d02b6",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-010337-ef0dd4",
+        "task_state": {
+          "attempts": 8,
+          "checkpoint_id": "ckpt_c1c539f1",
+          "final_answer": "The fix is complete. `miniapp/calculator.py` now raises `ValueError('division by zero')` when the denominator is zero, and the targeted test `verifiers/calculator_check.py` passes successfully.",
+          "last_tool": "run_process",
+          "resume_status": "no-checkpoint",
+          "run_id": "run_20260719-010337-5d02b6",
+          "status": "completed",
+          "stop_reason": "final_answer_returned",
+          "task_id": "task_20260719-010337-ef0dd4",
+          "tool_steps": 7,
+          "user_request": "Fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises ValueError with message 'division by zero' when the denominator is zero. Run the targeted test before finishing."
+        },
+        "tool_steps": 7
+      },
+      "report_relpath": "safe_divide_contract\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010337-5d02b6\\report.json",
+      "run_dir_relpath": "safe_divide_contract\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010337-5d02b6",
+      "run_id": "run_20260719-010337-5d02b6",
+      "status": "pass",
+      "step_budget": 10,
+      "stop_reason": "final_answer_returned",
+      "task_state": {
+        "attempts": 8,
+        "checkpoint_id": "ckpt_c1c539f1",
+        "final_answer": "The fix is complete. `miniapp/calculator.py` now raises `ValueError('division by zero')` when the denominator is zero, and the targeted test `verifiers/calculator_check.py` passes successfully.",
+        "last_tool": "run_process",
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010337-5d02b6",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-010337-ef0dd4",
+        "tool_steps": 7,
+        "user_request": "Fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises ValueError with message 'division by zero' when the denominator is zero. Run the targeted test before finishing."
+      },
+      "task_state_relpath": "safe_divide_contract\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010337-5d02b6\\task_state.json",
+      "tool_steps": 7,
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/calculator_check.py"
+      ],
+      "verifier_exit_code": 0,
+      "verifier_passed": true,
+      "verifier_stderr": "",
+      "verifier_stdout": ".                                                                        [100%]\n1 passed in 0.06s\n",
+      "verifier_timed_out": false,
+      "within_budget": true,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-02"
+    },
+    {
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "artifact_digest": "sha256:01a45cdf2c64c438d74a673d908e6a913a4fff2fdf68e7c8574b15601ff4d0b5",
+      "artifact_exists": true,
+      "artifact_path": "miniapp/parser.py",
+      "attempts": 6,
+      "category": "bug-fix",
+      "duration_seconds": 24.565766,
+      "expected_artifact": "miniapp/parser.py normalizes CSV fields",
+      "expected_artifact_exists": true,
+      "failure_category": null,
+      "final_answer": "The function has been fixed and the targeted test passes. It now trims whitespace, discards empty fields, and returns an empty list for blank lines.",
+      "fixture_copy_relpath": "csv_field_normalization\\real_model_bench_repo",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "id": "csv_field_normalization",
+      "initial_episodic_notes_empty": true,
+      "initial_history_empty": true,
+      "initial_memory_empty": true,
+      "initial_task_summary_empty": true,
+      "non_failure_stop_reason": true,
+      "passed": true,
+      "prompt": "Fix parse_csv_line in miniapp/parser.py. It must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. Run the targeted test before finishing.",
+      "repetition": 2,
+      "report": {
+        "attempts": 6,
+        "checkpoint_id": "ckpt_0a15eb22",
+        "durable_promotions": [],
+        "durable_rejections": [],
+        "durable_superseded": [],
+        "final_answer": "The function has been fixed and the targeted test passes. It now trims whitespace, discards empty fields, and returns an empty list for blank lines.",
+        "prompt_metadata": {
+          "budget_reductions": [],
+          "cache_hit": true,
+          "cache_miss_tokens": 334,
+          "cache_telemetry_available": true,
+          "cached_tokens": 1664,
+          "current_request": {
+            "raw_chars": 184,
+            "rendered_chars": 184,
+            "section_chars": 206,
+            "text": "Fix parse_csv_line in miniapp/parser.py. It must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. Run the targeted test before finishing."
+          },
+          "history": {
+            "collapsed_duplicate_reads": 0,
+            "older_entries_count": 0,
+            "raw_chars": 2940,
+            "rendered_chars": 2786,
+            "reused_file_summary_count": 0,
+            "summarized_tool_count": 0
+          },
+          "history_chars": 2799,
+          "input_tokens": 1998,
+          "memory_chars": 405,
+          "model": "deepseek-v4-flash",
+          "output_tokens": 82,
+          "prefix_changed": false,
+          "prefix_chars": 6325,
+          "prefix_hash": "228924e712bbbeb23097988506ba90373a3d1d346793b2aecefaa86568eb8fc6",
+          "prompt_budget_chars": 12000,
+          "prompt_cache_key": "228924e712bbbeb23097988506ba90373a3d1d346793b2aecefaa86568eb8fc6",
+          "prompt_cache_mode": "automatic_prefix",
+          "prompt_cache_retention": null,
+          "prompt_cache_supported": true,
+          "prompt_chars": 7141,
+          "prompt_over_budget": false,
+          "provider": "deepseek",
+          "recent_commits": 5,
+          "reduction_order": [
+            "relevant_memory",
+            "history",
+            "memory",
+            "prefix"
+          ],
+          "relevant_memory": {
+            "limit": 3,
+            "query_features": {
+              "ascii_token_count": 29,
+              "cjk_bigram_count": 0,
+              "cjk_trigram_count": 0,
+              "concepts": [
+                "testing"
+              ],
+              "identifier_count": 1,
+              "normalized": "fix parse_csv_line in miniapp/parser.py. it must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. run the targeted test before finishing.",
+              "path_count": 3
+            },
+            "raw_chars": 136,
+            "rendered_chars": 136,
+            "rendered_count": 2,
+            "rendered_notes": [
+              "1: def parse_csv_line(line): | 2:     return line.split(\",\")",
+              "1: from miniapp.parser import parse_csv_line | 2: | 3:"
+            ],
+            "selected_count": 2,
+            "selected_details": [
+              {
+                "kind": "episodic",
+                "rank": 1,
+                "score": 18.398649,
+                "signals": [
+                  "tag:exact=miniapp/parser.py",
+                  "source:exact=miniapp/parser.py",
+                  "text:ascii=0.649",
+                  "text:identifier=2.250",
+                  "tag:ascii=0.750",
+                  "source:ascii=0.750"
+                ],
+                "source": "miniapp/parser.py",
+                "text": "1: def parse_csv_line(line): | 2:     return line.split(\",\")",
+                "topic": ""
+              },
+              {
+                "kind": "episodic",
+                "rank": 2,
+                "score": 3.988928,
+                "signals": [
+                  "text:ascii=0.769",
+                  "text:identifier=2.250",
+                  "tag:ascii=0.485",
+                  "source:ascii=0.485"
+                ],
+                "source": "verifiers/parser_check.py",
+                "text": "1: from miniapp.parser import parse_csv_line | 2: | 3:",
+                "topic": ""
+              }
+            ],
+            "selected_durable_count": 0,
+            "selected_kinds": [
+              "episodic",
+              "episodic"
+            ],
+            "selected_notes": [
+              "1: def parse_csv_line(line): | 2:     return line.split(\",\")",
+              "1: from miniapp.parser import parse_csv_line | 2: | 3:"
+            ],
+            "selected_sources": [
+              "miniapp/parser.py",
+              "verifiers/parser_check.py"
+            ]
+          },
+          "request_chars": 184,
+          "resume_status": "full-valid",
+          "runtime_identity_mismatch_fields": [],
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ],
+          "section_budgets": {
+            "current_request": null,
+            "history": 5200,
+            "memory": 1600,
+            "prefix": 3600,
+            "relevant_memory": 1200
+          },
+          "section_order": [
+            "prefix",
+            "memory",
+            "relevant_memory",
+            "history",
+            "current_request"
+          ],
+          "sections": {
+            "current_request": {
+              "budget_chars": null,
+              "raw_chars": 206,
+              "rendered_chars": 206
+            },
+            "history": {
+              "budget_chars": 5200,
+              "raw_chars": 2940,
+              "rendered_chars": 2786
+            },
+            "memory": {
+              "budget_chars": 1600,
+              "raw_chars": 405,
+              "rendered_chars": 405
+            },
+            "prefix": {
+              "budget_chars": 3600,
+              "raw_chars": 6877,
+              "rendered_chars": 3600
+            },
+            "relevant_memory": {
+              "budget_chars": 1200,
+              "raw_chars": 136,
+              "rendered_chars": 136
+            }
+          },
+          "stale_paths": [],
+          "stale_summary_invalidations": 0,
+          "tool_count": 5,
+          "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+          "total_tokens": 2080,
+          "workspace_changed": false,
+          "workspace_chars": 3766,
+          "workspace_docs": 5,
+          "workspace_fingerprint": "b286861390db26f4183c2130d08b664fae29252f41f5f5e056b96bec97976f8f"
+        },
+        "redacted_env": {
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ]
+        },
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010404-4c2603",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-010404-b6237f",
+        "task_state": {
+          "attempts": 6,
+          "checkpoint_id": "ckpt_0a15eb22",
+          "final_answer": "The function has been fixed and the targeted test passes. It now trims whitespace, discards empty fields, and returns an empty list for blank lines.",
+          "last_tool": "run_process",
+          "resume_status": "no-checkpoint",
+          "run_id": "run_20260719-010404-4c2603",
+          "status": "completed",
+          "stop_reason": "final_answer_returned",
+          "task_id": "task_20260719-010404-b6237f",
+          "tool_steps": 5,
+          "user_request": "Fix parse_csv_line in miniapp/parser.py. It must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. Run the targeted test before finishing."
+        },
+        "tool_steps": 5
+      },
+      "report_relpath": "csv_field_normalization\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010404-4c2603\\report.json",
+      "run_dir_relpath": "csv_field_normalization\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010404-4c2603",
+      "run_id": "run_20260719-010404-4c2603",
+      "status": "pass",
+      "step_budget": 10,
+      "stop_reason": "final_answer_returned",
+      "task_state": {
+        "attempts": 6,
+        "checkpoint_id": "ckpt_0a15eb22",
+        "final_answer": "The function has been fixed and the targeted test passes. It now trims whitespace, discards empty fields, and returns an empty list for blank lines.",
+        "last_tool": "run_process",
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010404-4c2603",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-010404-b6237f",
+        "tool_steps": 5,
+        "user_request": "Fix parse_csv_line in miniapp/parser.py. It must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. Run the targeted test before finishing."
+      },
+      "task_state_relpath": "csv_field_normalization\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010404-4c2603\\task_state.json",
+      "tool_steps": 5,
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/parser_check.py"
+      ],
+      "verifier_exit_code": 0,
+      "verifier_passed": true,
+      "verifier_stderr": "",
+      "verifier_stdout": ".                                                                        [100%]\n1 passed in 0.06s\n",
+      "verifier_timed_out": false,
+      "within_budget": true,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-02"
+    },
+    {
+      "attempts": 0,
+      "category": "bug-fix",
+      "duration_seconds": 29.791954,
+      "error": "RuntimeError: DeepSeek error: could not extract text from response",
+      "failure_category": "runner_error",
+      "id": "retry_attempt_budget",
+      "passed": false,
+      "repetition": 2,
+      "report": {},
+      "status": "fail",
+      "tool_steps": 0,
+      "verifier_passed": false,
+      "within_budget": false,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-02"
+    },
+    {
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "artifact_digest": "sha256:8ca94a4e8af4b30fd1f5448dfe7aa53141380af2d0573aa5d0c927d63cbfa458",
+      "artifact_exists": true,
+      "artifact_path": "miniapp/cache.py",
+      "attempts": 8,
+      "category": "bug-fix",
+      "duration_seconds": 30.595457,
+      "expected_artifact": "miniapp/cache.py avoids shared mutable default state",
+      "expected_artifact_exists": true,
+      "failure_category": null,
+      "final_answer": "Done. Fixed `miniapp/cache.py` by changing the default `storage` parameter from a mutable `{}` to `None`, then initializing to a new empty dict inside `__init__`. The targeted test `verifiers/cache_check.py` passed.",
+      "fixture_copy_relpath": "cache_instance_isolation\\real_model_bench_repo",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "id": "cache_instance_isolation",
+      "initial_episodic_notes_empty": true,
+      "initial_history_empty": true,
+      "initial_memory_empty": true,
+      "initial_task_summary_empty": true,
+      "non_failure_stop_reason": true,
+      "passed": true,
+      "prompt": "Fix BucketCache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. Run the targeted test before finishing.",
+      "repetition": 2,
+      "report": {
+        "attempts": 8,
+        "checkpoint_id": "ckpt_a0ce930a",
+        "durable_promotions": [],
+        "durable_rejections": [],
+        "durable_superseded": [],
+        "final_answer": "Done. Fixed `miniapp/cache.py` by changing the default `storage` parameter from a mutable `{}` to `None`, then initializing to a new empty dict inside `__init__`. The targeted test `verifiers/cache_check.py` passed.",
+        "prompt_metadata": {
+          "budget_reductions": [],
+          "cache_hit": true,
+          "cache_miss_tokens": 1234,
+          "cache_telemetry_available": true,
+          "cached_tokens": 896,
+          "current_request": {
+            "raw_chars": 203,
+            "rendered_chars": 203,
+            "section_chars": 225,
+            "text": "Fix BucketCache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. Run the targeted test before finishing."
+          },
+          "history": {
+            "collapsed_duplicate_reads": 0,
+            "older_entries_count": 1,
+            "raw_chars": 3609,
+            "rendered_chars": 3135,
+            "reused_file_summary_count": 0,
+            "summarized_tool_count": 1
+          },
+          "history_chars": 3360,
+          "input_tokens": 2130,
+          "memory_chars": 417,
+          "model": "deepseek-v4-flash",
+          "output_tokens": 103,
+          "prefix_changed": false,
+          "prefix_chars": 6328,
+          "prefix_hash": "5085b295319fd0b72cf1ede64322902ea9d9f6ade01b18e65e260a663b2557ce",
+          "prompt_budget_chars": 12000,
+          "prompt_cache_key": "5085b295319fd0b72cf1ede64322902ea9d9f6ade01b18e65e260a663b2557ce",
+          "prompt_cache_mode": "automatic_prefix",
+          "prompt_cache_retention": null,
+          "prompt_cache_supported": true,
+          "prompt_chars": 7555,
+          "prompt_over_budget": false,
+          "provider": "deepseek",
+          "recent_commits": 5,
+          "reduction_order": [
+            "relevant_memory",
+            "history",
+            "memory",
+            "prefix"
+          ],
+          "relevant_memory": {
+            "limit": 3,
+            "query_features": {
+              "ascii_token_count": 31,
+              "cjk_bigram_count": 0,
+              "cjk_trigram_count": 0,
+              "concepts": [
+                "testing"
+              ],
+              "identifier_count": 0,
+              "normalized": "fix bucket cache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. run the targeted test before finishing.",
+              "path_count": 3
+            },
+            "raw_chars": 170,
+            "rendered_chars": 170,
+            "rendered_count": 2,
+            "rendered_notes": [
+              "1: class BucketCache: | 2:     def __init__(self, storage={}): | 3:         self.storage = storage",
+              "1: from miniapp.cache import BucketCache | 2: | 3:"
+            ],
+            "selected_count": 2,
+            "selected_details": [
+              {
+                "kind": "episodic",
+                "rank": 1,
+                "score": 15.850789,
+                "signals": [
+                  "tag:exact=miniapp/cache.py",
+                  "source:exact=miniapp/cache.py",
+                  "text:ascii=0.439",
+                  "tag:ascii=0.706",
+                  "source:ascii=0.706"
+                ],
+                "source": "miniapp/cache.py",
+                "text": "1: class BucketCache: | 2:     def __init__(self, storage={}): | 3:         self.storage = storage",
+                "topic": ""
+              },
+              {
+                "kind": "episodic",
+                "rank": 2,
+                "score": 1.375824,
+                "signals": [
+                  "text:ascii=0.462",
+                  "tag:ascii=0.457",
+                  "source:ascii=0.457"
+                ],
+                "source": "verifiers/cache_check.py",
+                "text": "1: from miniapp.cache import BucketCache | 2: | 3:",
+                "topic": ""
+              }
+            ],
+            "selected_durable_count": 0,
+            "selected_kinds": [
+              "episodic",
+              "episodic"
+            ],
+            "selected_notes": [
+              "1: class BucketCache: | 2:     def __init__(self, storage={}): | 3:         self.storage = storage",
+              "1: from miniapp.cache import BucketCache | 2: | 3:"
+            ],
+            "selected_sources": [
+              "miniapp/cache.py",
+              "verifiers/cache_check.py"
+            ]
+          },
+          "request_chars": 203,
+          "resume_status": "full-valid",
+          "runtime_identity_mismatch_fields": [],
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ],
+          "section_budgets": {
+            "current_request": null,
+            "history": 5200,
+            "memory": 1600,
+            "prefix": 3600,
+            "relevant_memory": 1200
+          },
+          "section_order": [
+            "prefix",
+            "memory",
+            "relevant_memory",
+            "history",
+            "current_request"
+          ],
+          "sections": {
+            "current_request": {
+              "budget_chars": null,
+              "raw_chars": 225,
+              "rendered_chars": 225
+            },
+            "history": {
+              "budget_chars": 5200,
+              "raw_chars": 3609,
+              "rendered_chars": 3135
+            },
+            "memory": {
+              "budget_chars": 1600,
+              "raw_chars": 417,
+              "rendered_chars": 417
+            },
+            "prefix": {
+              "budget_chars": 3600,
+              "raw_chars": 6897,
+              "rendered_chars": 3600
+            },
+            "relevant_memory": {
+              "budget_chars": 1200,
+              "raw_chars": 170,
+              "rendered_chars": 170
+            }
+          },
+          "stale_paths": [],
+          "stale_summary_invalidations": 0,
+          "tool_count": 5,
+          "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+          "total_tokens": 2233,
+          "workspace_changed": false,
+          "workspace_chars": 3769,
+          "workspace_docs": 5,
+          "workspace_fingerprint": "1a420d9466cbe417bfbe68869d7b9c7a3fcfabfa600e9388318e8e80c867dee2"
+        },
+        "redacted_env": {
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ]
+        },
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010458-22c567",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-010458-90b4cf",
+        "task_state": {
+          "attempts": 8,
+          "checkpoint_id": "ckpt_a0ce930a",
+          "final_answer": "Done. Fixed `miniapp/cache.py` by changing the default `storage` parameter from a mutable `{}` to `None`, then initializing to a new empty dict inside `__init__`. The targeted test `verifiers/cache_check.py` passed.",
+          "last_tool": "run_process",
+          "resume_status": "no-checkpoint",
+          "run_id": "run_20260719-010458-22c567",
+          "status": "completed",
+          "stop_reason": "final_answer_returned",
+          "task_id": "task_20260719-010458-90b4cf",
+          "tool_steps": 7,
+          "user_request": "Fix BucketCache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. Run the targeted test before finishing."
+        },
+        "tool_steps": 7
+      },
+      "report_relpath": "cache_instance_isolation\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010458-22c567\\report.json",
+      "run_dir_relpath": "cache_instance_isolation\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010458-22c567",
+      "run_id": "run_20260719-010458-22c567",
+      "status": "pass",
+      "step_budget": 10,
+      "stop_reason": "final_answer_returned",
+      "task_state": {
+        "attempts": 8,
+        "checkpoint_id": "ckpt_a0ce930a",
+        "final_answer": "Done. Fixed `miniapp/cache.py` by changing the default `storage` parameter from a mutable `{}` to `None`, then initializing to a new empty dict inside `__init__`. The targeted test `verifiers/cache_check.py` passed.",
+        "last_tool": "run_process",
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010458-22c567",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-010458-90b4cf",
+        "tool_steps": 7,
+        "user_request": "Fix BucketCache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. Run the targeted test before finishing."
+      },
+      "task_state_relpath": "cache_instance_isolation\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010458-22c567\\task_state.json",
+      "tool_steps": 7,
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/cache_check.py"
+      ],
+      "verifier_exit_code": 0,
+      "verifier_passed": true,
+      "verifier_stderr": "",
+      "verifier_stdout": ".                                                                        [100%]\n1 passed in 0.09s\n",
+      "verifier_timed_out": false,
+      "within_budget": true,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-02"
+    },
+    {
+      "attempts": 0,
+      "category": "cross-file",
+      "duration_seconds": 23.676872,
+      "error": "RuntimeError: DeepSeek error: could not extract text from response",
+      "failure_category": "runner_error",
+      "id": "centralized_timeout_default",
+      "passed": false,
+      "repetition": 2,
+      "report": {},
+      "status": "fail",
+      "tool_steps": 0,
+      "verifier_passed": false,
+      "within_budget": false,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-02"
+    },
+    {
+      "attempts": 0,
+      "category": "cross-file",
+      "duration_seconds": 34.511849,
+      "error": "RuntimeError: DeepSeek error: could not extract text from response",
+      "failure_category": "runner_error",
+      "id": "public_user_label",
+      "passed": false,
+      "repetition": 2,
+      "report": {},
+      "status": "fail",
+      "tool_steps": 0,
+      "verifier_passed": false,
+      "within_budget": false,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-02"
+    },
+    {
+      "attempts": 0,
+      "category": "test-driven",
+      "duration_seconds": 17.080693,
+      "error": "RuntimeError: DeepSeek error: could not extract text from response",
+      "failure_category": "runner_error",
+      "id": "stable_json_report",
+      "passed": false,
+      "repetition": 2,
+      "report": {},
+      "status": "fail",
+      "tool_steps": 0,
+      "verifier_passed": false,
+      "within_budget": false,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-02"
+    },
+    {
+      "attempts": 0,
+      "category": "test-driven",
+      "duration_seconds": 28.031762,
+      "error": "RuntimeError: DeepSeek error: could not extract text from response",
+      "failure_category": "runner_error",
+      "id": "casefold_user_deduplication",
+      "passed": false,
+      "repetition": 2,
+      "report": {},
+      "status": "fail",
+      "tool_steps": 0,
+      "verifier_passed": false,
+      "within_budget": false,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-02"
+    },
+    {
+      "attempts": 0,
+      "category": "robustness",
+      "duration_seconds": 26.547031,
+      "error": "RuntimeError: DeepSeek error: could not extract text from response",
+      "failure_category": "runner_error",
+      "id": "workspace_relative_path_guard",
+      "passed": false,
+      "repetition": 2,
+      "report": {},
+      "status": "fail",
+      "tool_steps": 0,
+      "verifier_passed": false,
+      "within_budget": false,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-02"
+    },
+    {
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "artifact_digest": "sha256:1d0d23354eafc3ab47f75427712954376d999444f9b6afa0f476557393e2fd84",
+      "artifact_exists": true,
+      "artifact_path": "miniapp/history.py",
+      "attempts": 7,
+      "category": "context-reasoning",
+      "duration_seconds": 25.969358,
+      "expected_artifact": "miniapp/history.py selects the latest event independently of input order",
+      "expected_artifact_exists": true,
+      "failure_category": null,
+      "final_answer": "Fixed `latest_event` to return the event with the greatest ISO-8601 timestamp without mutating the input, and return `None` for an empty sequence. The targeted test passes.",
+      "fixture_copy_relpath": "latest_event_selection\\real_model_bench_repo",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "id": "latest_event_selection",
+      "initial_episodic_notes_empty": true,
+      "initial_history_empty": true,
+      "initial_memory_empty": true,
+      "initial_task_summary_empty": true,
+      "non_failure_stop_reason": true,
+      "passed": true,
+      "prompt": "Fix latest_event in miniapp/history.py. Input events may be unsorted. Return the event with the greatest ISO-8601 timestamp without mutating the input, and return None for an empty sequence. Run the targeted test.",
+      "repetition": 2,
+      "report": {
+        "attempts": 7,
+        "checkpoint_id": "ckpt_739f69fc",
+        "durable_promotions": [],
+        "durable_rejections": [],
+        "durable_superseded": [],
+        "final_answer": "Fixed `latest_event` to return the event with the greatest ISO-8601 timestamp without mutating the input, and return `None` for an empty sequence. The targeted test passes.",
+        "prompt_metadata": {
+          "budget_reductions": [],
+          "cache_hit": true,
+          "cache_miss_tokens": 1254,
+          "cache_telemetry_available": true,
+          "cached_tokens": 896,
+          "current_request": {
+            "raw_chars": 213,
+            "rendered_chars": 213,
+            "section_chars": 235,
+            "text": "Fix latest_event in miniapp/history.py. Input events may be unsorted. Return the event with the greatest ISO-8601 timestamp without mutating the input, and return None for an empty sequence. Run the targeted test."
+          },
+          "history": {
+            "collapsed_duplicate_reads": 0,
+            "older_entries_count": 0,
+            "raw_chars": 3469,
+            "rendered_chars": 3178,
+            "reused_file_summary_count": 0,
+            "summarized_tool_count": 0
+          },
+          "history_chars": 3344,
+          "input_tokens": 2150,
+          "memory_chars": 436,
+          "model": "deepseek-v4-flash",
+          "output_tokens": 70,
+          "prefix_changed": false,
+          "prefix_chars": 6322,
+          "prefix_hash": "1f8a188a77bbed4a2f1014d16a21ad7fd89822c211ce130a2078f66663afc355",
+          "prompt_budget_chars": 12000,
+          "prompt_cache_key": "1f8a188a77bbed4a2f1014d16a21ad7fd89822c211ce130a2078f66663afc355",
+          "prompt_cache_mode": "automatic_prefix",
+          "prompt_cache_retention": null,
+          "prompt_cache_supported": true,
+          "prompt_chars": 7609,
+          "prompt_over_budget": false,
+          "provider": "deepseek",
+          "recent_commits": 5,
+          "reduction_order": [
+            "relevant_memory",
+            "history",
+            "memory",
+            "prefix"
+          ],
+          "relevant_memory": {
+            "limit": 3,
+            "query_features": {
+              "ascii_token_count": 30,
+              "cjk_bigram_count": 0,
+              "cjk_trigram_count": 0,
+              "concepts": [
+                "testing"
+              ],
+              "identifier_count": 1,
+              "normalized": "fix latest_event in miniapp/history.py. input events may be unsorted. return the event with the greatest iso-8601 timestamp without mutating the input, and return none for an empty sequence. run the targeted test.",
+              "path_count": 3
+            },
+            "raw_chars": 152,
+            "rendered_chars": 152,
+            "rendered_count": 2,
+            "rendered_notes": [
+              "1: def latest_event(events): | 2:     if not events: | 3:         return None",
+              "1: from miniapp.history import latest_event | 2: | 3:"
+            ],
+            "selected_count": 2,
+            "selected_details": [
+              {
+                "kind": "episodic",
+                "rank": 1,
+                "score": 18.436253,
+                "signals": [
+                  "tag:exact=miniapp/history.py",
+                  "source:exact=miniapp/history.py",
+                  "text:ascii=0.732",
+                  "text:identifier=2.250",
+                  "tag:ascii=0.727",
+                  "source:ascii=0.727"
+                ],
+                "source": "miniapp/history.py",
+                "text": "1: def latest_event(events): | 2:     if not events: | 3:         return None",
+                "topic": ""
+              },
+              {
+                "kind": "episodic",
+                "rank": 2,
+                "score": 3.806561,
+                "signals": [
+                  "text:ascii=0.615",
+                  "text:identifier=2.250",
+                  "tag:ascii=0.471",
+                  "source:ascii=0.471"
+                ],
+                "source": "verifiers/history_check.py",
+                "text": "1: from miniapp.history import latest_event | 2: | 3:",
+                "topic": ""
+              }
+            ],
+            "selected_durable_count": 0,
+            "selected_kinds": [
+              "episodic",
+              "episodic"
+            ],
+            "selected_notes": [
+              "1: def latest_event(events): | 2:     if not events: | 3:         return None",
+              "1: from miniapp.history import latest_event | 2: | 3:"
+            ],
+            "selected_sources": [
+              "miniapp/history.py",
+              "verifiers/history_check.py"
+            ]
+          },
+          "request_chars": 213,
+          "resume_status": "full-valid",
+          "runtime_identity_mismatch_fields": [],
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ],
+          "section_budgets": {
+            "current_request": null,
+            "history": 5200,
+            "memory": 1600,
+            "prefix": 3600,
+            "relevant_memory": 1200
+          },
+          "section_order": [
+            "prefix",
+            "memory",
+            "relevant_memory",
+            "history",
+            "current_request"
+          ],
+          "sections": {
+            "current_request": {
+              "budget_chars": null,
+              "raw_chars": 235,
+              "rendered_chars": 235
+            },
+            "history": {
+              "budget_chars": 5200,
+              "raw_chars": 3469,
+              "rendered_chars": 3178
+            },
+            "memory": {
+              "budget_chars": 1600,
+              "raw_chars": 436,
+              "rendered_chars": 436
+            },
+            "prefix": {
+              "budget_chars": 3600,
+              "raw_chars": 6905,
+              "rendered_chars": 3600
+            },
+            "relevant_memory": {
+              "budget_chars": 1200,
+              "raw_chars": 152,
+              "rendered_chars": 152
+            }
+          },
+          "stale_paths": [],
+          "stale_summary_invalidations": 0,
+          "tool_count": 5,
+          "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+          "total_tokens": 2220,
+          "workspace_changed": false,
+          "workspace_chars": 3763,
+          "workspace_docs": 5,
+          "workspace_fingerprint": "1704bd9edb67f334cc9d2613c0bafd7c87f3eb2f7f07a26e54f6063fb3177911"
+        },
+        "redacted_env": {
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ]
+        },
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010738-6f52f7",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-010738-a9935c",
+        "task_state": {
+          "attempts": 7,
+          "checkpoint_id": "ckpt_739f69fc",
+          "final_answer": "Fixed `latest_event` to return the event with the greatest ISO-8601 timestamp without mutating the input, and return `None` for an empty sequence. The targeted test passes.",
+          "last_tool": "run_process",
+          "resume_status": "no-checkpoint",
+          "run_id": "run_20260719-010738-6f52f7",
+          "status": "completed",
+          "stop_reason": "final_answer_returned",
+          "task_id": "task_20260719-010738-a9935c",
+          "tool_steps": 6,
+          "user_request": "Fix latest_event in miniapp/history.py. Input events may be unsorted. Return the event with the greatest ISO-8601 timestamp without mutating the input, and return None for an empty sequence. Run the targeted test."
+        },
+        "tool_steps": 6
+      },
+      "report_relpath": "latest_event_selection\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010738-6f52f7\\report.json",
+      "run_dir_relpath": "latest_event_selection\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010738-6f52f7",
+      "run_id": "run_20260719-010738-6f52f7",
+      "status": "pass",
+      "step_budget": 10,
+      "stop_reason": "final_answer_returned",
+      "task_state": {
+        "attempts": 7,
+        "checkpoint_id": "ckpt_739f69fc",
+        "final_answer": "Fixed `latest_event` to return the event with the greatest ISO-8601 timestamp without mutating the input, and return `None` for an empty sequence. The targeted test passes.",
+        "last_tool": "run_process",
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010738-6f52f7",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-010738-a9935c",
+        "tool_steps": 6,
+        "user_request": "Fix latest_event in miniapp/history.py. Input events may be unsorted. Return the event with the greatest ISO-8601 timestamp without mutating the input, and return None for an empty sequence. Run the targeted test."
+      },
+      "task_state_relpath": "latest_event_selection\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010738-6f52f7\\task_state.json",
+      "tool_steps": 6,
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/history_check.py"
+      ],
+      "verifier_exit_code": 0,
+      "verifier_passed": true,
+      "verifier_stderr": "",
+      "verifier_stdout": ".                                                                        [100%]\n1 passed in 0.06s\n",
+      "verifier_timed_out": false,
+      "within_budget": true,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-02"
+    },
+    {
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "artifact_digest": "sha256:d5c233e8f8c6b5ad6078bac8851fd11e955ba7b1f2f39a404c009ee945df23ac",
+      "artifact_exists": true,
+      "artifact_path": "miniapp/calculator.py",
+      "attempts": 8,
+      "category": "bug-fix",
+      "duration_seconds": 24.329896,
+      "expected_artifact": "miniapp/calculator.py implements the safe division contract",
+      "expected_artifact_exists": true,
+      "failure_category": null,
+      "final_answer": "The fix is complete. `miniapp/calculator.py` now raises `ValueError(\"division by zero\")` when the denominator is zero, and the targeted test `verifiers/calculator_check.py` passes successfully.",
+      "fixture_copy_relpath": "safe_divide_contract\\real_model_bench_repo",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "id": "safe_divide_contract",
+      "initial_episodic_notes_empty": true,
+      "initial_history_empty": true,
+      "initial_memory_empty": true,
+      "initial_task_summary_empty": true,
+      "non_failure_stop_reason": true,
+      "passed": true,
+      "prompt": "Fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises ValueError with message 'division by zero' when the denominator is zero. Run the targeted test before finishing.",
+      "repetition": 3,
+      "report": {
+        "attempts": 8,
+        "checkpoint_id": "ckpt_beb19298",
+        "durable_promotions": [],
+        "durable_rejections": [],
+        "durable_superseded": [],
+        "final_answer": "The fix is complete. `miniapp/calculator.py` now raises `ValueError(\"division by zero\")` when the denominator is zero, and the targeted test `verifiers/calculator_check.py` passes successfully.",
+        "prompt_metadata": {
+          "budget_reductions": [],
+          "cache_hit": true,
+          "cache_miss_tokens": 900,
+          "cache_telemetry_available": true,
+          "cached_tokens": 896,
+          "current_request": {
+            "raw_chars": 203,
+            "rendered_chars": 203,
+            "section_chars": 225,
+            "text": "Fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises ValueError with message 'division by zero' when the denominator is zero. Run the targeted test before finishing."
+          },
+          "history": {
+            "collapsed_duplicate_reads": 0,
+            "older_entries_count": 1,
+            "raw_chars": 2270,
+            "rendered_chars": 2058,
+            "reused_file_summary_count": 0,
+            "summarized_tool_count": 1
+          },
+          "history_chars": 2258,
+          "input_tokens": 1796,
+          "memory_chars": 451,
+          "model": "deepseek-v4-flash",
+          "output_tokens": 77,
+          "prefix_changed": false,
+          "prefix_chars": 6316,
+          "prefix_hash": "bcb679b589c9904ce9e71cc7bb74739f6930e1fd9f2fd9dfdf52d2e25db9a60e",
+          "prompt_budget_chars": 12000,
+          "prompt_cache_key": "bcb679b589c9904ce9e71cc7bb74739f6930e1fd9f2fd9dfdf52d2e25db9a60e",
+          "prompt_cache_mode": "automatic_prefix",
+          "prompt_cache_retention": null,
+          "prompt_cache_supported": true,
+          "prompt_chars": 6528,
+          "prompt_over_budget": false,
+          "provider": "deepseek",
+          "recent_commits": 5,
+          "reduction_order": [
+            "relevant_memory",
+            "history",
+            "memory",
+            "prefix"
+          ],
+          "relevant_memory": {
+            "limit": 3,
+            "query_features": {
+              "ascii_token_count": 30,
+              "cjk_bigram_count": 0,
+              "cjk_trigram_count": 0,
+              "concepts": [
+                "testing"
+              ],
+              "identifier_count": 1,
+              "normalized": "fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises value error with message 'division by zero' when the denominator is zero. run the targeted test before finishing.",
+              "path_count": 3
+            },
+            "raw_chars": 186,
+            "rendered_chars": 186,
+            "rendered_count": 2,
+            "rendered_notes": [
+              "1: def safe_divide(numerator, denominator): | 2:     if denominator == 0: | 3:         return 0",
+              "1: import pytest | 2: | 3: from miniapp.calculator import safe_divide"
+            ],
+            "selected_count": 2,
+            "selected_details": [
+              {
+                "kind": "episodic",
+                "rank": 1,
+                "score": 18.14357,
+                "signals": [
+                  "tag:exact=miniapp/calculator.py",
+                  "source:exact=miniapp/calculator.py",
+                  "text:ascii=0.439",
+                  "text:identifier=2.250",
+                  "tag:ascii=0.727",
+                  "source:ascii=0.727"
+                ],
+                "source": "miniapp/calculator.py",
+                "text": "1: def safe_divide(numerator, denominator): | 2:     if denominator == 0: | 3:         return 0",
+                "topic": ""
+              },
+              {
+                "kind": "episodic",
+                "rank": 2,
+                "score": 4.591176,
+                "signals": [
+                  "text:concept=testing:0.800",
+                  "text:ascii=0.600",
+                  "text:identifier=2.250",
+                  "tag:ascii=0.471",
+                  "source:ascii=0.471"
+                ],
+                "source": "verifiers/calculator_check.py",
+                "text": "1: import pytest | 2: | 3: from miniapp.calculator import safe_divide",
+                "topic": ""
+              }
+            ],
+            "selected_durable_count": 0,
+            "selected_kinds": [
+              "episodic",
+              "episodic"
+            ],
+            "selected_notes": [
+              "1: def safe_divide(numerator, denominator): | 2:     if denominator == 0: | 3:         return 0",
+              "1: import pytest | 2: | 3: from miniapp.calculator import safe_divide"
+            ],
+            "selected_sources": [
+              "miniapp/calculator.py",
+              "verifiers/calculator_check.py"
+            ]
+          },
+          "request_chars": 203,
+          "resume_status": "full-valid",
+          "runtime_identity_mismatch_fields": [],
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ],
+          "section_budgets": {
+            "current_request": null,
+            "history": 5200,
+            "memory": 1600,
+            "prefix": 3600,
+            "relevant_memory": 1200
+          },
+          "section_order": [
+            "prefix",
+            "memory",
+            "relevant_memory",
+            "history",
+            "current_request"
+          ],
+          "sections": {
+            "current_request": {
+              "budget_chars": null,
+              "raw_chars": 225,
+              "rendered_chars": 225
+            },
+            "history": {
+              "budget_chars": 5200,
+              "raw_chars": 2270,
+              "rendered_chars": 2058
+            },
+            "memory": {
+              "budget_chars": 1600,
+              "raw_chars": 451,
+              "rendered_chars": 451
+            },
+            "prefix": {
+              "budget_chars": 3600,
+              "raw_chars": 6895,
+              "rendered_chars": 3600
+            },
+            "relevant_memory": {
+              "budget_chars": 1200,
+              "raw_chars": 186,
+              "rendered_chars": 186
+            }
+          },
+          "stale_paths": [],
+          "stale_summary_invalidations": 0,
+          "tool_count": 5,
+          "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+          "total_tokens": 1873,
+          "workspace_changed": false,
+          "workspace_chars": 3757,
+          "workspace_docs": 5,
+          "workspace_fingerprint": "d1fe333b3a76910661b56a616eb3c480d3a65e79fe298f05695f8ddacebd914f"
+        },
+        "redacted_env": {
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ]
+        },
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010804-482919",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-010804-ea65dc",
+        "task_state": {
+          "attempts": 8,
+          "checkpoint_id": "ckpt_beb19298",
+          "final_answer": "The fix is complete. `miniapp/calculator.py` now raises `ValueError(\"division by zero\")` when the denominator is zero, and the targeted test `verifiers/calculator_check.py` passes successfully.",
+          "last_tool": "run_process",
+          "resume_status": "no-checkpoint",
+          "run_id": "run_20260719-010804-482919",
+          "status": "completed",
+          "stop_reason": "final_answer_returned",
+          "task_id": "task_20260719-010804-ea65dc",
+          "tool_steps": 7,
+          "user_request": "Fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises ValueError with message 'division by zero' when the denominator is zero. Run the targeted test before finishing."
+        },
+        "tool_steps": 7
+      },
+      "report_relpath": "safe_divide_contract\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010804-482919\\report.json",
+      "run_dir_relpath": "safe_divide_contract\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010804-482919",
+      "run_id": "run_20260719-010804-482919",
+      "status": "pass",
+      "step_budget": 10,
+      "stop_reason": "final_answer_returned",
+      "task_state": {
+        "attempts": 8,
+        "checkpoint_id": "ckpt_beb19298",
+        "final_answer": "The fix is complete. `miniapp/calculator.py` now raises `ValueError(\"division by zero\")` when the denominator is zero, and the targeted test `verifiers/calculator_check.py` passes successfully.",
+        "last_tool": "run_process",
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010804-482919",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-010804-ea65dc",
+        "tool_steps": 7,
+        "user_request": "Fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises ValueError with message 'division by zero' when the denominator is zero. Run the targeted test before finishing."
+      },
+      "task_state_relpath": "safe_divide_contract\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010804-482919\\task_state.json",
+      "tool_steps": 7,
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/calculator_check.py"
+      ],
+      "verifier_exit_code": 0,
+      "verifier_passed": true,
+      "verifier_stderr": "",
+      "verifier_stdout": ".                                                                        [100%]\n1 passed in 0.06s\n",
+      "verifier_timed_out": false,
+      "within_budget": true,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-03"
+    },
+    {
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "artifact_digest": "sha256:1730f5742c543dd4a005356e5df21cc679b69b67e52e0d3c17b82e67b58e93a7",
+      "artifact_exists": true,
+      "artifact_path": "miniapp/parser.py",
+      "attempts": 8,
+      "category": "bug-fix",
+      "duration_seconds": 29.562978,
+      "expected_artifact": "miniapp/parser.py normalizes CSV fields",
+      "expected_artifact_exists": true,
+      "failure_category": null,
+      "final_answer": "Done. The `parse_csv_line` function in `miniapp/parser.py` has been updated to trim whitespace around fields, discard empty fields (including from blank lines), and the targeted test in `verifiers/parser_check.py` passes.",
+      "fixture_copy_relpath": "csv_field_normalization\\real_model_bench_repo",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "id": "csv_field_normalization",
+      "initial_episodic_notes_empty": true,
+      "initial_history_empty": true,
+      "initial_memory_empty": true,
+      "initial_task_summary_empty": true,
+      "non_failure_stop_reason": true,
+      "passed": true,
+      "prompt": "Fix parse_csv_line in miniapp/parser.py. It must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. Run the targeted test before finishing.",
+      "repetition": 3,
+      "report": {
+        "attempts": 8,
+        "checkpoint_id": "ckpt_e7df5126",
+        "durable_promotions": [],
+        "durable_rejections": [],
+        "durable_superseded": [],
+        "final_answer": "Done. The `parse_csv_line` function in `miniapp/parser.py` has been updated to trim whitespace around fields, discard empty fields (including from blank lines), and the targeted test in `verifiers/parser_check.py` passes.",
+        "prompt_metadata": {
+          "budget_reductions": [],
+          "cache_hit": true,
+          "cache_miss_tokens": 1004,
+          "cache_telemetry_available": true,
+          "cached_tokens": 896,
+          "current_request": {
+            "raw_chars": 184,
+            "rendered_chars": 184,
+            "section_chars": 206,
+            "text": "Fix parse_csv_line in miniapp/parser.py. It must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. Run the targeted test before finishing."
+          },
+          "history": {
+            "collapsed_duplicate_reads": 0,
+            "older_entries_count": 1,
+            "raw_chars": 3039,
+            "rendered_chars": 2692,
+            "reused_file_summary_count": 0,
+            "summarized_tool_count": 1
+          },
+          "history_chars": 2898,
+          "input_tokens": 1900,
+          "memory_chars": 294,
+          "model": "deepseek-v4-flash",
+          "output_tokens": 94,
+          "prefix_changed": false,
+          "prefix_chars": 6325,
+          "prefix_hash": "dc764e605835fb19d4f57ba832549000fd4edca06a51753bfb7f82c85b23a668",
+          "prompt_budget_chars": 12000,
+          "prompt_cache_key": "dc764e605835fb19d4f57ba832549000fd4edca06a51753bfb7f82c85b23a668",
+          "prompt_cache_mode": "automatic_prefix",
+          "prompt_cache_retention": null,
+          "prompt_cache_supported": true,
+          "prompt_chars": 6879,
+          "prompt_over_budget": false,
+          "provider": "deepseek",
+          "recent_commits": 5,
+          "reduction_order": [
+            "relevant_memory",
+            "history",
+            "memory",
+            "prefix"
+          ],
+          "relevant_memory": {
+            "limit": 3,
+            "query_features": {
+              "ascii_token_count": 29,
+              "cjk_bigram_count": 0,
+              "cjk_trigram_count": 0,
+              "concepts": [
+                "testing"
+              ],
+              "identifier_count": 1,
+              "normalized": "fix parse_csv_line in miniapp/parser.py. it must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. run the targeted test before finishing.",
+              "path_count": 3
+            },
+            "raw_chars": 79,
+            "rendered_chars": 79,
+            "rendered_count": 1,
+            "rendered_notes": [
+              "1: def parse_csv_line(line): | 2:     return line.split(\",\")"
+            ],
+            "selected_count": 1,
+            "selected_details": [
+              {
+                "kind": "episodic",
+                "rank": 1,
+                "score": 18.398649,
+                "signals": [
+                  "tag:exact=miniapp/parser.py",
+                  "source:exact=miniapp/parser.py",
+                  "text:ascii=0.649",
+                  "text:identifier=2.250",
+                  "tag:ascii=0.750",
+                  "source:ascii=0.750"
+                ],
+                "source": "miniapp/parser.py",
+                "text": "1: def parse_csv_line(line): | 2:     return line.split(\",\")",
+                "topic": ""
+              }
+            ],
+            "selected_durable_count": 0,
+            "selected_kinds": [
+              "episodic"
+            ],
+            "selected_notes": [
+              "1: def parse_csv_line(line): | 2:     return line.split(\",\")"
+            ],
+            "selected_sources": [
+              "miniapp/parser.py"
+            ]
+          },
+          "request_chars": 184,
+          "resume_status": "full-valid",
+          "runtime_identity_mismatch_fields": [],
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ],
+          "section_budgets": {
+            "current_request": null,
+            "history": 5200,
+            "memory": 1600,
+            "prefix": 3600,
+            "relevant_memory": 1200
+          },
+          "section_order": [
+            "prefix",
+            "memory",
+            "relevant_memory",
+            "history",
+            "current_request"
+          ],
+          "sections": {
+            "current_request": {
+              "budget_chars": null,
+              "raw_chars": 206,
+              "rendered_chars": 206
+            },
+            "history": {
+              "budget_chars": 5200,
+              "raw_chars": 3039,
+              "rendered_chars": 2692
+            },
+            "memory": {
+              "budget_chars": 1600,
+              "raw_chars": 294,
+              "rendered_chars": 294
+            },
+            "prefix": {
+              "budget_chars": 3600,
+              "raw_chars": 6850,
+              "rendered_chars": 3600
+            },
+            "relevant_memory": {
+              "budget_chars": 1200,
+              "raw_chars": 79,
+              "rendered_chars": 79
+            }
+          },
+          "stale_paths": [],
+          "stale_summary_invalidations": 0,
+          "tool_count": 5,
+          "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+          "total_tokens": 1994,
+          "workspace_changed": false,
+          "workspace_chars": 3766,
+          "workspace_docs": 5,
+          "workspace_fingerprint": "e76125d1e3b6db1b9191a24fbbf8bb6b63d9a17f57b3cee0fa8518d6813b1f2a"
+        },
+        "redacted_env": {
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ]
+        },
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010829-84fa84",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-010829-383758",
+        "task_state": {
+          "attempts": 8,
+          "checkpoint_id": "ckpt_e7df5126",
+          "final_answer": "Done. The `parse_csv_line` function in `miniapp/parser.py` has been updated to trim whitespace around fields, discard empty fields (including from blank lines), and the targeted test in `verifiers/parser_check.py` passes.",
+          "last_tool": "run_process",
+          "resume_status": "no-checkpoint",
+          "run_id": "run_20260719-010829-84fa84",
+          "status": "completed",
+          "stop_reason": "final_answer_returned",
+          "task_id": "task_20260719-010829-383758",
+          "tool_steps": 7,
+          "user_request": "Fix parse_csv_line in miniapp/parser.py. It must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. Run the targeted test before finishing."
+        },
+        "tool_steps": 7
+      },
+      "report_relpath": "csv_field_normalization\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010829-84fa84\\report.json",
+      "run_dir_relpath": "csv_field_normalization\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010829-84fa84",
+      "run_id": "run_20260719-010829-84fa84",
+      "status": "pass",
+      "step_budget": 10,
+      "stop_reason": "final_answer_returned",
+      "task_state": {
+        "attempts": 8,
+        "checkpoint_id": "ckpt_e7df5126",
+        "final_answer": "Done. The `parse_csv_line` function in `miniapp/parser.py` has been updated to trim whitespace around fields, discard empty fields (including from blank lines), and the targeted test in `verifiers/parser_check.py` passes.",
+        "last_tool": "run_process",
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010829-84fa84",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-010829-383758",
+        "tool_steps": 7,
+        "user_request": "Fix parse_csv_line in miniapp/parser.py. It must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. Run the targeted test before finishing."
+      },
+      "task_state_relpath": "csv_field_normalization\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010829-84fa84\\task_state.json",
+      "tool_steps": 7,
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/parser_check.py"
+      ],
+      "verifier_exit_code": 0,
+      "verifier_passed": true,
+      "verifier_stderr": "",
+      "verifier_stdout": ".                                                                        [100%]\n1 passed in 0.06s\n",
+      "verifier_timed_out": false,
+      "within_budget": true,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-03"
+    },
+    {
+      "attempts": 0,
+      "category": "bug-fix",
+      "duration_seconds": 20.507369,
+      "error": "RuntimeError: DeepSeek error: could not extract text from response",
+      "failure_category": "runner_error",
+      "id": "retry_attempt_budget",
+      "passed": false,
+      "repetition": 3,
+      "report": {},
+      "status": "fail",
+      "tool_steps": 0,
+      "verifier_passed": false,
+      "within_budget": false,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-03"
+    },
+    {
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "artifact_digest": "sha256:d0d065126bd2f0998e4e64626cb259879e7431285a440116f4714f85823da86b",
+      "artifact_exists": true,
+      "artifact_path": "miniapp/cache.py",
+      "attempts": 7,
+      "category": "bug-fix",
+      "duration_seconds": 27.90355,
+      "expected_artifact": "miniapp/cache.py avoids shared mutable default state",
+      "expected_artifact_exists": true,
+      "failure_category": null,
+      "final_answer": "Done. The fix changes the default `storage` from `{}` (mutable default shared across instances) to `None`, creating a fresh dict per instance when no explicit storage is passed. The test `test_default_storage_is_isolated_but_explicit_storage_is_shared` passes.",
+      "fixture_copy_relpath": "cache_instance_isolation\\real_model_bench_repo",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "id": "cache_instance_isolation",
+      "initial_episodic_notes_empty": true,
+      "initial_history_empty": true,
+      "initial_memory_empty": true,
+      "initial_task_summary_empty": true,
+      "non_failure_stop_reason": true,
+      "passed": true,
+      "prompt": "Fix BucketCache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. Run the targeted test before finishing.",
+      "repetition": 3,
+      "report": {
+        "attempts": 7,
+        "checkpoint_id": "ckpt_541ac7e4",
+        "durable_promotions": [],
+        "durable_rejections": [],
+        "durable_superseded": [],
+        "final_answer": "Done. The fix changes the default `storage` from `{}` (mutable default shared across instances) to `None`, creating a fresh dict per instance when no explicit storage is passed. The test `test_default_storage_is_isolated_but_explicit_storage_is_shared` passes.",
+        "prompt_metadata": {
+          "budget_reductions": [],
+          "cache_hit": true,
+          "cache_miss_tokens": 1346,
+          "cache_telemetry_available": true,
+          "cached_tokens": 896,
+          "current_request": {
+            "raw_chars": 203,
+            "rendered_chars": 203,
+            "section_chars": 225,
+            "text": "Fix BucketCache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. Run the targeted test before finishing."
+          },
+          "history": {
+            "collapsed_duplicate_reads": 0,
+            "older_entries_count": 0,
+            "raw_chars": 3911,
+            "rendered_chars": 3506,
+            "reused_file_summary_count": 0,
+            "summarized_tool_count": 0
+          },
+          "history_chars": 3662,
+          "input_tokens": 2242,
+          "memory_chars": 417,
+          "model": "deepseek-v4-flash",
+          "output_tokens": 135,
+          "prefix_changed": false,
+          "prefix_chars": 6328,
+          "prefix_hash": "c90bafb960507c7c79cbb99a90ae2ed219008287f7d88815500d6df834d93735",
+          "prompt_budget_chars": 12000,
+          "prompt_cache_key": "c90bafb960507c7c79cbb99a90ae2ed219008287f7d88815500d6df834d93735",
+          "prompt_cache_mode": "automatic_prefix",
+          "prompt_cache_retention": null,
+          "prompt_cache_supported": true,
+          "prompt_chars": 7926,
+          "prompt_over_budget": false,
+          "provider": "deepseek",
+          "recent_commits": 5,
+          "reduction_order": [
+            "relevant_memory",
+            "history",
+            "memory",
+            "prefix"
+          ],
+          "relevant_memory": {
+            "limit": 3,
+            "query_features": {
+              "ascii_token_count": 31,
+              "cjk_bigram_count": 0,
+              "cjk_trigram_count": 0,
+              "concepts": [
+                "testing"
+              ],
+              "identifier_count": 0,
+              "normalized": "fix bucket cache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. run the targeted test before finishing.",
+              "path_count": 3
+            },
+            "raw_chars": 170,
+            "rendered_chars": 170,
+            "rendered_count": 2,
+            "rendered_notes": [
+              "1: class BucketCache: | 2:     def __init__(self, storage={}): | 3:         self.storage = storage",
+              "1: from miniapp.cache import BucketCache | 2: | 3:"
+            ],
+            "selected_count": 2,
+            "selected_details": [
+              {
+                "kind": "episodic",
+                "rank": 1,
+                "score": 15.850789,
+                "signals": [
+                  "tag:exact=miniapp/cache.py",
+                  "source:exact=miniapp/cache.py",
+                  "text:ascii=0.439",
+                  "tag:ascii=0.706",
+                  "source:ascii=0.706"
+                ],
+                "source": "miniapp/cache.py",
+                "text": "1: class BucketCache: | 2:     def __init__(self, storage={}): | 3:         self.storage = storage",
+                "topic": ""
+              },
+              {
+                "kind": "episodic",
+                "rank": 2,
+                "score": 1.375824,
+                "signals": [
+                  "text:ascii=0.462",
+                  "tag:ascii=0.457",
+                  "source:ascii=0.457"
+                ],
+                "source": "verifiers/cache_check.py",
+                "text": "1: from miniapp.cache import BucketCache | 2: | 3:",
+                "topic": ""
+              }
+            ],
+            "selected_durable_count": 0,
+            "selected_kinds": [
+              "episodic",
+              "episodic"
+            ],
+            "selected_notes": [
+              "1: class BucketCache: | 2:     def __init__(self, storage={}): | 3:         self.storage = storage",
+              "1: from miniapp.cache import BucketCache | 2: | 3:"
+            ],
+            "selected_sources": [
+              "miniapp/cache.py",
+              "verifiers/cache_check.py"
+            ]
+          },
+          "request_chars": 203,
+          "resume_status": "full-valid",
+          "runtime_identity_mismatch_fields": [],
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ],
+          "section_budgets": {
+            "current_request": null,
+            "history": 5200,
+            "memory": 1600,
+            "prefix": 3600,
+            "relevant_memory": 1200
+          },
+          "section_order": [
+            "prefix",
+            "memory",
+            "relevant_memory",
+            "history",
+            "current_request"
+          ],
+          "sections": {
+            "current_request": {
+              "budget_chars": null,
+              "raw_chars": 225,
+              "rendered_chars": 225
+            },
+            "history": {
+              "budget_chars": 5200,
+              "raw_chars": 3911,
+              "rendered_chars": 3506
+            },
+            "memory": {
+              "budget_chars": 1600,
+              "raw_chars": 417,
+              "rendered_chars": 417
+            },
+            "prefix": {
+              "budget_chars": 3600,
+              "raw_chars": 6897,
+              "rendered_chars": 3600
+            },
+            "relevant_memory": {
+              "budget_chars": 1200,
+              "raw_chars": 170,
+              "rendered_chars": 170
+            }
+          },
+          "stale_paths": [],
+          "stale_summary_invalidations": 0,
+          "tool_count": 5,
+          "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+          "total_tokens": 2377,
+          "workspace_changed": false,
+          "workspace_chars": 3769,
+          "workspace_docs": 5,
+          "workspace_fingerprint": "2df6b98e819a8c00a8e97aad7044663d68a0a26c488ba6af99babcac9797d9a6"
+        },
+        "redacted_env": {
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ]
+        },
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010919-4aafdf",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-010919-35021b",
+        "task_state": {
+          "attempts": 7,
+          "checkpoint_id": "ckpt_541ac7e4",
+          "final_answer": "Done. The fix changes the default `storage` from `{}` (mutable default shared across instances) to `None`, creating a fresh dict per instance when no explicit storage is passed. The test `test_default_storage_is_isolated_but_explicit_storage_is_shared` passes.",
+          "last_tool": "run_process",
+          "resume_status": "no-checkpoint",
+          "run_id": "run_20260719-010919-4aafdf",
+          "status": "completed",
+          "stop_reason": "final_answer_returned",
+          "task_id": "task_20260719-010919-35021b",
+          "tool_steps": 6,
+          "user_request": "Fix BucketCache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. Run the targeted test before finishing."
+        },
+        "tool_steps": 6
+      },
+      "report_relpath": "cache_instance_isolation\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010919-4aafdf\\report.json",
+      "run_dir_relpath": "cache_instance_isolation\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010919-4aafdf",
+      "run_id": "run_20260719-010919-4aafdf",
+      "status": "pass",
+      "step_budget": 10,
+      "stop_reason": "final_answer_returned",
+      "task_state": {
+        "attempts": 7,
+        "checkpoint_id": "ckpt_541ac7e4",
+        "final_answer": "Done. The fix changes the default `storage` from `{}` (mutable default shared across instances) to `None`, creating a fresh dict per instance when no explicit storage is passed. The test `test_default_storage_is_isolated_but_explicit_storage_is_shared` passes.",
+        "last_tool": "run_process",
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010919-4aafdf",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-010919-35021b",
+        "tool_steps": 6,
+        "user_request": "Fix BucketCache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. Run the targeted test before finishing."
+      },
+      "task_state_relpath": "cache_instance_isolation\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010919-4aafdf\\task_state.json",
+      "tool_steps": 6,
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/cache_check.py"
+      ],
+      "verifier_exit_code": 0,
+      "verifier_passed": true,
+      "verifier_stderr": "",
+      "verifier_stdout": ".                                                                        [100%]\n1 passed in 0.06s\n",
+      "verifier_timed_out": false,
+      "within_budget": true,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-03"
+    },
+    {
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "artifact_digest": "sha256:9aaf31f0b6870288d1a3c61d33c756cfe66ed9a928b9b762aed7f07402597583",
+      "artifact_exists": true,
+      "artifact_path": "miniapp/runtime.py",
+      "attempts": 12,
+      "category": "cross-file",
+      "duration_seconds": 44.637009,
+      "expected_artifact": "config and runtime share one default timeout constant",
+      "expected_artifact_exists": true,
+      "failure_category": "failure_stop_reason",
+      "final_answer": "Stopped after reaching the step limit without a final answer.",
+      "fixture_copy_relpath": "centralized_timeout_default\\real_model_bench_repo",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "id": "centralized_timeout_default",
+      "initial_episodic_notes_empty": true,
+      "initial_history_empty": true,
+      "initial_memory_empty": true,
+      "initial_task_summary_empty": true,
+      "non_failure_stop_reason": false,
+      "passed": false,
+      "prompt": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test.",
+      "repetition": 3,
+      "report": {
+        "attempts": 12,
+        "checkpoint_id": "ckpt_56292ed7",
+        "durable_promotions": [],
+        "durable_rejections": [],
+        "durable_superseded": [],
+        "final_answer": "Stopped after reaching the step limit without a final answer.",
+        "prompt_metadata": {
+          "budget_reductions": [],
+          "cache_hit": true,
+          "cache_miss_tokens": 585,
+          "cache_telemetry_available": true,
+          "cached_tokens": 1024,
+          "current_request": {
+            "raw_chars": 256,
+            "rendered_chars": 256,
+            "section_chars": 278,
+            "text": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test."
+          },
+          "history": {
+            "collapsed_duplicate_reads": 0,
+            "older_entries_count": 5,
+            "raw_chars": 2323,
+            "rendered_chars": 1592,
+            "reused_file_summary_count": 0,
+            "summarized_tool_count": 5
+          },
+          "history_chars": 2228,
+          "input_tokens": 1609,
+          "memory_chars": 386,
+          "model": "deepseek-v4-flash",
+          "output_tokens": 205,
+          "prefix_changed": false,
+          "prefix_chars": 6337,
+          "prefix_hash": "271a1c3490b36a9a8b05de72ff2bf0c1d194718aec48d31d19c0e3ade27801ec",
+          "prompt_budget_chars": 12000,
+          "prompt_cache_key": "271a1c3490b36a9a8b05de72ff2bf0c1d194718aec48d31d19c0e3ade27801ec",
+          "prompt_cache_mode": "automatic_prefix",
+          "prompt_cache_retention": null,
+          "prompt_cache_supported": true,
+          "prompt_chars": 6018,
+          "prompt_over_budget": false,
+          "provider": "deepseek",
+          "recent_commits": 5,
+          "reduction_order": [
+            "relevant_memory",
+            "history",
+            "memory",
+            "prefix"
+          ],
+          "relevant_memory": {
+            "limit": 3,
+            "query_features": {
+              "ascii_token_count": 34,
+              "cjk_bigram_count": 0,
+              "cjk_trigram_count": 0,
+              "concepts": [
+                "dependency-facts",
+                "testing"
+              ],
+              "identifier_count": 0,
+              "normalized": "the default request timeout must be 45 seconds everywhere. make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. preserve explicit timeout overrides and run the targeted test.",
+              "path_count": 6
+            },
+            "raw_chars": 154,
+            "rendered_chars": 154,
+            "rendered_count": 2,
+            "rendered_notes": [
+              "1: def request_options(timeout=None): | 2:     return {\"timeout\": 30 if timeout is None else timeout}",
+              "1: DEFAULT_REQUEST_TIMEOUT = 30"
+            ],
+            "selected_count": 2,
+            "selected_details": [
+              {
+                "kind": "episodic",
+                "rank": 1,
+                "score": 20.558167,
+                "signals": [
+                  "tag:exact=miniapp/runtime.py",
+                  "source:exact=miniapp/runtime.py",
+                  "tag:concept=dependency-facts:5.000",
+                  "text:ascii=0.261",
+                  "tag:ascii=0.649",
+                  "source:ascii=0.649"
+                ],
+                "source": "miniapp/runtime.py",
+                "text": "1: def request_options(timeout=None): | 2:     return {\"timeout\": 30 if timeout is None else timeout}",
+                "topic": ""
+              },
+              {
+                "kind": "episodic",
+                "rank": 2,
+                "score": 15.758836,
+                "signals": [
+                  "tag:exact=miniapp/config.py",
+                  "source:exact=miniapp/config.py",
+                  "text:ascii=0.462",
+                  "tag:ascii=0.649",
+                  "source:ascii=0.649"
+                ],
+                "source": "miniapp/config.py",
+                "text": "1: DEFAULT_REQUEST_TIMEOUT = 30",
+                "topic": ""
+              }
+            ],
+            "selected_durable_count": 0,
+            "selected_kinds": [
+              "episodic",
+              "episodic"
+            ],
+            "selected_notes": [
+              "1: def request_options(timeout=None): | 2:     return {\"timeout\": 30 if timeout is None else timeout}",
+              "1: DEFAULT_REQUEST_TIMEOUT = 30"
+            ],
+            "selected_sources": [
+              "miniapp/runtime.py",
+              "miniapp/config.py"
+            ]
+          },
+          "request_chars": 256,
+          "resume_status": "full-valid",
+          "runtime_identity_mismatch_fields": [],
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ],
+          "section_budgets": {
+            "current_request": null,
+            "history": 5200,
+            "memory": 1600,
+            "prefix": 3600,
+            "relevant_memory": 1200
+          },
+          "section_order": [
+            "prefix",
+            "memory",
+            "relevant_memory",
+            "history",
+            "current_request"
+          ],
+          "sections": {
+            "current_request": {
+              "budget_chars": null,
+              "raw_chars": 278,
+              "rendered_chars": 278
+            },
+            "history": {
+              "budget_chars": 5200,
+              "raw_chars": 2323,
+              "rendered_chars": 1592
+            },
+            "memory": {
+              "budget_chars": 1600,
+              "raw_chars": 386,
+              "rendered_chars": 386
+            },
+            "prefix": {
+              "budget_chars": 3600,
+              "raw_chars": 6950,
+              "rendered_chars": 3600
+            },
+            "relevant_memory": {
+              "budget_chars": 1200,
+              "raw_chars": 154,
+              "rendered_chars": 154
+            }
+          },
+          "stale_paths": [],
+          "stale_summary_invalidations": 0,
+          "tool_count": 5,
+          "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+          "total_tokens": 1814,
+          "workspace_changed": false,
+          "workspace_chars": 3778,
+          "workspace_docs": 5,
+          "workspace_fingerprint": "28c3dc87ea9149767fccb7f8524e7e08bfb1faa2badd05d53fa1399cda137d37"
+        },
+        "redacted_env": {
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ]
+        },
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010947-a51c56",
+        "status": "stopped",
+        "stop_reason": "step_limit_reached",
+        "task_id": "task_20260719-010947-5d62c7",
+        "task_state": {
+          "attempts": 12,
+          "checkpoint_id": "ckpt_56292ed7",
+          "final_answer": "Stopped after reaching the step limit without a final answer.",
+          "last_tool": "search",
+          "resume_status": "no-checkpoint",
+          "run_id": "run_20260719-010947-a51c56",
+          "status": "stopped",
+          "stop_reason": "step_limit_reached",
+          "task_id": "task_20260719-010947-5d62c7",
+          "tool_steps": 12,
+          "user_request": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test."
+        },
+        "tool_steps": 12
+      },
+      "report_relpath": "centralized_timeout_default\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010947-a51c56\\report.json",
+      "run_dir_relpath": "centralized_timeout_default\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010947-a51c56",
+      "run_id": "run_20260719-010947-a51c56",
+      "status": "fail",
+      "step_budget": 12,
+      "stop_reason": "step_limit_reached",
+      "task_state": {
+        "attempts": 12,
+        "checkpoint_id": "ckpt_56292ed7",
+        "final_answer": "Stopped after reaching the step limit without a final answer.",
+        "last_tool": "search",
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-010947-a51c56",
+        "status": "stopped",
+        "stop_reason": "step_limit_reached",
+        "task_id": "task_20260719-010947-5d62c7",
+        "tool_steps": 12,
+        "user_request": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test."
+      },
+      "task_state_relpath": "centralized_timeout_default\\real_model_bench_repo\\.apricity\\runs\\run_20260719-010947-a51c56\\task_state.json",
+      "tool_steps": 12,
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/runtime_check.py"
+      ],
+      "verifier_exit_code": 0,
+      "verifier_passed": true,
+      "verifier_stderr": "",
+      "verifier_stdout": "..                                                                       [100%]\n2 passed in 0.06s\n",
+      "verifier_timed_out": false,
+      "within_budget": true,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-03"
+    },
+    {
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "write_file",
+        "run_process"
+      ],
+      "artifact_digest": "sha256:49f3b6d700b11cef58f0c162cbd7e9de3ac23b3ed188fb10410e4e1cfcdaf79e",
+      "artifact_exists": true,
+      "artifact_path": "miniapp/presentation.py",
+      "attempts": 9,
+      "category": "cross-file",
+      "duration_seconds": 32.035644,
+      "expected_artifact": "presentation reuses user-name normalization",
+      "expected_artifact_exists": true,
+      "failure_category": null,
+      "final_answer": "Implemented `public_user_label` in `miniapp/presentation.py` by reusing `normalize_display_name` from `miniapp/users.py`. The function returns `\"@\" + normalize_display_name(value)`, so blank names produce `\"@anonymous\"`. The targeted test `verifiers/presentation_check.py` passed (2/2).",
+      "fixture_copy_relpath": "public_user_label\\real_model_bench_repo",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "id": "public_user_label",
+      "initial_episodic_notes_empty": true,
+      "initial_history_empty": true,
+      "initial_memory_empty": true,
+      "initial_task_summary_empty": true,
+      "non_failure_stop_reason": true,
+      "passed": true,
+      "prompt": "Implement public_user_label in miniapp/presentation.py by reusing normalize_display_name from miniapp/users.py. The result must be '@' followed by the normalized name, and blank names must produce '@anonymous'. Do not duplicate the normalization rules. Run the targeted test.",
+      "repetition": 3,
+      "report": {
+        "attempts": 9,
+        "checkpoint_id": "ckpt_0532f492",
+        "durable_promotions": [],
+        "durable_rejections": [],
+        "durable_superseded": [],
+        "final_answer": "Implemented `public_user_label` in `miniapp/presentation.py` by reusing `normalize_display_name` from `miniapp/users.py`. The function returns `\"@\" + normalize_display_name(value)`, so blank names produce `\"@anonymous\"`. The targeted test `verifiers/presentation_check.py` passed (2/2).",
+        "prompt_metadata": {
+          "budget_reductions": [],
+          "cache_hit": true,
+          "cache_miss_tokens": 806,
+          "cache_telemetry_available": true,
+          "cached_tokens": 1024,
+          "current_request": {
+            "raw_chars": 275,
+            "rendered_chars": 275,
+            "section_chars": 297,
+            "text": "Implement public_user_label in miniapp/presentation.py by reusing normalize_display_name from miniapp/users.py. The result must be '@' followed by the normalized name, and blank names must produce '@anonymous'. Do not duplicate the normalization rules. Run the targeted test."
+          },
+          "history": {
+            "collapsed_duplicate_reads": 0,
+            "older_entries_count": 2,
+            "raw_chars": 2781,
+            "rendered_chars": 2157,
+            "reused_file_summary_count": 0,
+            "summarized_tool_count": 2
+          },
+          "history_chars": 2589,
+          "input_tokens": 1830,
+          "memory_chars": 560,
+          "model": "deepseek-v4-flash",
+          "output_tokens": 228,
+          "prefix_changed": false,
+          "prefix_chars": 6384,
+          "prefix_hash": "5582300f242dc08f486a50250effc01836a56a9014dd87793e616d9b269eb6fb",
+          "prompt_budget_chars": 12000,
+          "prompt_cache_key": "5582300f242dc08f486a50250effc01836a56a9014dd87793e616d9b269eb6fb",
+          "prompt_cache_mode": "automatic_prefix",
+          "prompt_cache_retention": null,
+          "prompt_cache_supported": true,
+          "prompt_chars": 6841,
+          "prompt_over_budget": false,
+          "provider": "deepseek",
+          "recent_commits": 5,
+          "reduction_order": [
+            "relevant_memory",
+            "history",
+            "memory",
+            "prefix"
+          ],
+          "relevant_memory": {
+            "limit": 3,
+            "query_features": {
+              "ascii_token_count": 34,
+              "cjk_bigram_count": 0,
+              "cjk_trigram_count": 0,
+              "concepts": [
+                "testing"
+              ],
+              "identifier_count": 2,
+              "normalized": "implement public_user_label in miniapp/presentation.py by reusing normalize_display_name from miniapp/users.py. the result must be '@' followed by the normalized name, and blank names must produce '@anonymous'. do not duplicate the normalization rules. run the targeted test.",
+              "path_count": 6
+            },
+            "raw_chars": 219,
+            "rendered_chars": 219,
+            "rendered_count": 2,
+            "rendered_notes": [
+              "1: def normalize_display_name(value): | 2:     normalized = \" \".join(str(value).split()) | 3:     return normalized or \"anonymous\"",
+              "1: def public_user_label(value): | 2:     raise NotImplementedError"
+            ],
+            "selected_count": 2,
+            "selected_details": [
+              {
+                "kind": "episodic",
+                "rank": 1,
+                "score": 17.409542,
+                "signals": [
+                  "tag:exact=miniapp/users.py",
+                  "source:exact=miniapp/users.py",
+                  "text:ascii=0.612",
+                  "text:identifier=1.500",
+                  "tag:ascii=0.649",
+                  "source:ascii=0.649"
+                ],
+                "source": "miniapp/users.py",
+                "text": "1: def normalize_display_name(value): | 2:     normalized = \" \".join(str(value).split()) | 3:     return normalized or \"anonymous\"",
+                "topic": ""
+              },
+              {
+                "kind": "episodic",
+                "rank": 2,
+                "score": 17.330631,
+                "signals": [
+                  "tag:exact=miniapp/presentation.py",
+                  "source:exact=miniapp/presentation.py",
+                  "text:ascii=0.533",
+                  "text:identifier=1.500",
+                  "tag:ascii=0.649",
+                  "source:ascii=0.649"
+                ],
+                "source": "miniapp/presentation.py",
+                "text": "1: def public_user_label(value): | 2:     raise NotImplementedError",
+                "topic": ""
+              }
+            ],
+            "selected_durable_count": 0,
+            "selected_kinds": [
+              "episodic",
+              "episodic"
+            ],
+            "selected_notes": [
+              "1: def normalize_display_name(value): | 2:     normalized = \" \".join(str(value).split()) | 3:     return normalized or \"anonymous\"",
+              "1: def public_user_label(value): | 2:     raise NotImplementedError"
+            ],
+            "selected_sources": [
+              "miniapp/users.py",
+              "miniapp/presentation.py"
+            ]
+          },
+          "request_chars": 275,
+          "resume_status": "full-valid",
+          "runtime_identity_mismatch_fields": [],
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ],
+          "section_budgets": {
+            "current_request": null,
+            "history": 5200,
+            "memory": 1600,
+            "prefix": 3600,
+            "relevant_memory": 1200
+          },
+          "section_order": [
+            "prefix",
+            "memory",
+            "relevant_memory",
+            "history",
+            "current_request"
+          ],
+          "sections": {
+            "current_request": {
+              "budget_chars": null,
+              "raw_chars": 297,
+              "rendered_chars": 297
+            },
+            "history": {
+              "budget_chars": 5200,
+              "raw_chars": 2781,
+              "rendered_chars": 2157
+            },
+            "memory": {
+              "budget_chars": 1600,
+              "raw_chars": 560,
+              "rendered_chars": 560
+            },
+            "prefix": {
+              "budget_chars": 3600,
+              "raw_chars": 7025,
+              "rendered_chars": 3600
+            },
+            "relevant_memory": {
+              "budget_chars": 1200,
+              "raw_chars": 219,
+              "rendered_chars": 219
+            }
+          },
+          "stale_paths": [],
+          "stale_summary_invalidations": 0,
+          "tool_count": 6,
+          "tool_signature": "ccfa8d99b285cdca532a1974c93cc12c7e001e638a353674df2d85952502cc1a",
+          "total_tokens": 2058,
+          "workspace_changed": false,
+          "workspace_chars": 3748,
+          "workspace_docs": 5,
+          "workspace_fingerprint": "b5d6fb1da45b22d6a4d3016a45b6292b52dd2f39bae1267dd9af1f78512d906b"
+        },
+        "redacted_env": {
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ]
+        },
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-011031-47c82e",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-011031-f4b15f",
+        "task_state": {
+          "attempts": 9,
+          "checkpoint_id": "ckpt_0532f492",
+          "final_answer": "Implemented `public_user_label` in `miniapp/presentation.py` by reusing `normalize_display_name` from `miniapp/users.py`. The function returns `\"@\" + normalize_display_name(value)`, so blank names produce `\"@anonymous\"`. The targeted test `verifiers/presentation_check.py` passed (2/2).",
+          "last_tool": "run_process",
+          "resume_status": "no-checkpoint",
+          "run_id": "run_20260719-011031-47c82e",
+          "status": "completed",
+          "stop_reason": "final_answer_returned",
+          "task_id": "task_20260719-011031-f4b15f",
+          "tool_steps": 8,
+          "user_request": "Implement public_user_label in miniapp/presentation.py by reusing normalize_display_name from miniapp/users.py. The result must be '@' followed by the normalized name, and blank names must produce '@anonymous'. Do not duplicate the normalization rules. Run the targeted test."
+        },
+        "tool_steps": 8
+      },
+      "report_relpath": "public_user_label\\real_model_bench_repo\\.apricity\\runs\\run_20260719-011031-47c82e\\report.json",
+      "run_dir_relpath": "public_user_label\\real_model_bench_repo\\.apricity\\runs\\run_20260719-011031-47c82e",
+      "run_id": "run_20260719-011031-47c82e",
+      "status": "pass",
+      "step_budget": 12,
+      "stop_reason": "final_answer_returned",
+      "task_state": {
+        "attempts": 9,
+        "checkpoint_id": "ckpt_0532f492",
+        "final_answer": "Implemented `public_user_label` in `miniapp/presentation.py` by reusing `normalize_display_name` from `miniapp/users.py`. The function returns `\"@\" + normalize_display_name(value)`, so blank names produce `\"@anonymous\"`. The targeted test `verifiers/presentation_check.py` passed (2/2).",
+        "last_tool": "run_process",
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-011031-47c82e",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-011031-f4b15f",
+        "tool_steps": 8,
+        "user_request": "Implement public_user_label in miniapp/presentation.py by reusing normalize_display_name from miniapp/users.py. The result must be '@' followed by the normalized name, and blank names must produce '@anonymous'. Do not duplicate the normalization rules. Run the targeted test."
+      },
+      "task_state_relpath": "public_user_label\\real_model_bench_repo\\.apricity\\runs\\run_20260719-011031-47c82e\\task_state.json",
+      "tool_steps": 8,
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/presentation_check.py"
+      ],
+      "verifier_exit_code": 0,
+      "verifier_passed": true,
+      "verifier_stderr": "",
+      "verifier_stdout": "..                                                                       [100%]\n2 passed in 0.06s\n",
+      "verifier_timed_out": false,
+      "within_budget": true,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-03"
+    },
+    {
+      "attempts": 0,
+      "category": "test-driven",
+      "duration_seconds": 26.017744,
+      "error": "RuntimeError: DeepSeek error: could not extract text from response",
+      "failure_category": "runner_error",
+      "id": "stable_json_report",
+      "passed": false,
+      "repetition": 3,
+      "report": {},
+      "status": "fail",
+      "tool_steps": 0,
+      "verifier_passed": false,
+      "within_budget": false,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-03"
+    },
+    {
+      "attempts": 0,
+      "category": "test-driven",
+      "duration_seconds": 17.684919,
+      "error": "RuntimeError: DeepSeek error: could not extract text from response",
+      "failure_category": "runner_error",
+      "id": "casefold_user_deduplication",
+      "passed": false,
+      "repetition": 3,
+      "report": {},
+      "status": "fail",
+      "tool_steps": 0,
+      "verifier_passed": false,
+      "within_budget": false,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-03"
+    },
+    {
+      "attempts": 0,
+      "category": "robustness",
+      "duration_seconds": 25.272301,
+      "error": "RuntimeError: DeepSeek error: could not extract text from response",
+      "failure_category": "runner_error",
+      "id": "workspace_relative_path_guard",
+      "passed": false,
+      "repetition": 3,
+      "report": {},
+      "status": "fail",
+      "tool_steps": 0,
+      "verifier_passed": false,
+      "within_budget": false,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-03"
+    },
+    {
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "artifact_digest": "sha256:b6ed6c849385190dc96bcbacac87891ca474a3c417402efce29e8aa361e4b2ab",
+      "artifact_exists": true,
+      "artifact_path": "miniapp/history.py",
+      "attempts": 7,
+      "category": "context-reasoning",
+      "duration_seconds": 28.350085,
+      "expected_artifact": "miniapp/history.py selects the latest event independently of input order",
+      "expected_artifact_exists": true,
+      "failure_category": null,
+      "final_answer": "The function `latest_event` in `miniapp/history.py` has been fixed. It now uses `max` with a timestamp key to handle unsorted events without mutating the input, and returns `None` for an empty list. The targeted test passes.",
+      "fixture_copy_relpath": "latest_event_selection\\real_model_bench_repo",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "id": "latest_event_selection",
+      "initial_episodic_notes_empty": true,
+      "initial_history_empty": true,
+      "initial_memory_empty": true,
+      "initial_task_summary_empty": true,
+      "non_failure_stop_reason": true,
+      "passed": true,
+      "prompt": "Fix latest_event in miniapp/history.py. Input events may be unsorted. Return the event with the greatest ISO-8601 timestamp without mutating the input, and return None for an empty sequence. Run the targeted test.",
+      "repetition": 3,
+      "report": {
+        "attempts": 7,
+        "checkpoint_id": "ckpt_3d09cd5c",
+        "durable_promotions": [],
+        "durable_rejections": [],
+        "durable_superseded": [],
+        "final_answer": "The function `latest_event` in `miniapp/history.py` has been fixed. It now uses `max` with a timestamp key to handle unsorted events without mutating the input, and returns `None` for an empty list. The targeted test passes.",
+        "prompt_metadata": {
+          "budget_reductions": [],
+          "cache_hit": true,
+          "cache_miss_tokens": 1066,
+          "cache_telemetry_available": true,
+          "cached_tokens": 896,
+          "current_request": {
+            "raw_chars": 213,
+            "rendered_chars": 213,
+            "section_chars": 235,
+            "text": "Fix latest_event in miniapp/history.py. Input events may be unsorted. Return the event with the greatest ISO-8601 timestamp without mutating the input, and return None for an empty sequence. Run the targeted test."
+          },
+          "history": {
+            "collapsed_duplicate_reads": 0,
+            "older_entries_count": 0,
+            "raw_chars": 2871,
+            "rendered_chars": 2580,
+            "reused_file_summary_count": 0,
+            "summarized_tool_count": 0
+          },
+          "history_chars": 2746,
+          "input_tokens": 1962,
+          "memory_chars": 436,
+          "model": "deepseek-v4-flash",
+          "output_tokens": 168,
+          "prefix_changed": false,
+          "prefix_chars": 6322,
+          "prefix_hash": "66250d0e4b0a44ef343fccea46218a26ea5a11391753a1e6431ba5ed287095b3",
+          "prompt_budget_chars": 12000,
+          "prompt_cache_key": "66250d0e4b0a44ef343fccea46218a26ea5a11391753a1e6431ba5ed287095b3",
+          "prompt_cache_mode": "automatic_prefix",
+          "prompt_cache_retention": null,
+          "prompt_cache_supported": true,
+          "prompt_chars": 7011,
+          "prompt_over_budget": false,
+          "provider": "deepseek",
+          "recent_commits": 5,
+          "reduction_order": [
+            "relevant_memory",
+            "history",
+            "memory",
+            "prefix"
+          ],
+          "relevant_memory": {
+            "limit": 3,
+            "query_features": {
+              "ascii_token_count": 30,
+              "cjk_bigram_count": 0,
+              "cjk_trigram_count": 0,
+              "concepts": [
+                "testing"
+              ],
+              "identifier_count": 1,
+              "normalized": "fix latest_event in miniapp/history.py. input events may be unsorted. return the event with the greatest iso-8601 timestamp without mutating the input, and return none for an empty sequence. run the targeted test.",
+              "path_count": 3
+            },
+            "raw_chars": 152,
+            "rendered_chars": 152,
+            "rendered_count": 2,
+            "rendered_notes": [
+              "1: def latest_event(events): | 2:     if not events: | 3:         return None",
+              "1: from miniapp.history import latest_event | 2: | 3:"
+            ],
+            "selected_count": 2,
+            "selected_details": [
+              {
+                "kind": "episodic",
+                "rank": 1,
+                "score": 18.436253,
+                "signals": [
+                  "tag:exact=miniapp/history.py",
+                  "source:exact=miniapp/history.py",
+                  "text:ascii=0.732",
+                  "text:identifier=2.250",
+                  "tag:ascii=0.727",
+                  "source:ascii=0.727"
+                ],
+                "source": "miniapp/history.py",
+                "text": "1: def latest_event(events): | 2:     if not events: | 3:         return None",
+                "topic": ""
+              },
+              {
+                "kind": "episodic",
+                "rank": 2,
+                "score": 3.806561,
+                "signals": [
+                  "text:ascii=0.615",
+                  "text:identifier=2.250",
+                  "tag:ascii=0.471",
+                  "source:ascii=0.471"
+                ],
+                "source": "verifiers/history_check.py",
+                "text": "1: from miniapp.history import latest_event | 2: | 3:",
+                "topic": ""
+              }
+            ],
+            "selected_durable_count": 0,
+            "selected_kinds": [
+              "episodic",
+              "episodic"
+            ],
+            "selected_notes": [
+              "1: def latest_event(events): | 2:     if not events: | 3:         return None",
+              "1: from miniapp.history import latest_event | 2: | 3:"
+            ],
+            "selected_sources": [
+              "miniapp/history.py",
+              "verifiers/history_check.py"
+            ]
+          },
+          "request_chars": 213,
+          "resume_status": "full-valid",
+          "runtime_identity_mismatch_fields": [],
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ],
+          "section_budgets": {
+            "current_request": null,
+            "history": 5200,
+            "memory": 1600,
+            "prefix": 3600,
+            "relevant_memory": 1200
+          },
+          "section_order": [
+            "prefix",
+            "memory",
+            "relevant_memory",
+            "history",
+            "current_request"
+          ],
+          "sections": {
+            "current_request": {
+              "budget_chars": null,
+              "raw_chars": 235,
+              "rendered_chars": 235
+            },
+            "history": {
+              "budget_chars": 5200,
+              "raw_chars": 2871,
+              "rendered_chars": 2580
+            },
+            "memory": {
+              "budget_chars": 1600,
+              "raw_chars": 436,
+              "rendered_chars": 436
+            },
+            "prefix": {
+              "budget_chars": 3600,
+              "raw_chars": 6905,
+              "rendered_chars": 3600
+            },
+            "relevant_memory": {
+              "budget_chars": 1200,
+              "raw_chars": 152,
+              "rendered_chars": 152
+            }
+          },
+          "stale_paths": [],
+          "stale_summary_invalidations": 0,
+          "tool_count": 5,
+          "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+          "total_tokens": 2130,
+          "workspace_changed": false,
+          "workspace_chars": 3763,
+          "workspace_docs": 5,
+          "workspace_fingerprint": "86f0ea39821c6e6fa2b62bb5da05dd570612d044db745a895d0deb7589f90417"
+        },
+        "redacted_env": {
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ]
+        },
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-011213-2f6188",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-011213-4003d7",
+        "task_state": {
+          "attempts": 7,
+          "checkpoint_id": "ckpt_3d09cd5c",
+          "final_answer": "The function `latest_event` in `miniapp/history.py` has been fixed. It now uses `max` with a timestamp key to handle unsorted events without mutating the input, and returns `None` for an empty list. The targeted test passes.",
+          "last_tool": "run_process",
+          "resume_status": "no-checkpoint",
+          "run_id": "run_20260719-011213-2f6188",
+          "status": "completed",
+          "stop_reason": "final_answer_returned",
+          "task_id": "task_20260719-011213-4003d7",
+          "tool_steps": 6,
+          "user_request": "Fix latest_event in miniapp/history.py. Input events may be unsorted. Return the event with the greatest ISO-8601 timestamp without mutating the input, and return None for an empty sequence. Run the targeted test."
+        },
+        "tool_steps": 6
+      },
+      "report_relpath": "latest_event_selection\\real_model_bench_repo\\.apricity\\runs\\run_20260719-011213-2f6188\\report.json",
+      "run_dir_relpath": "latest_event_selection\\real_model_bench_repo\\.apricity\\runs\\run_20260719-011213-2f6188",
+      "run_id": "run_20260719-011213-2f6188",
+      "status": "pass",
+      "step_budget": 10,
+      "stop_reason": "final_answer_returned",
+      "task_state": {
+        "attempts": 7,
+        "checkpoint_id": "ckpt_3d09cd5c",
+        "final_answer": "The function `latest_event` in `miniapp/history.py` has been fixed. It now uses `max` with a timestamp key to handle unsorted events without mutating the input, and returns `None` for an empty list. The targeted test passes.",
+        "last_tool": "run_process",
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260719-011213-2f6188",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260719-011213-4003d7",
+        "tool_steps": 6,
+        "user_request": "Fix latest_event in miniapp/history.py. Input events may be unsorted. Return the event with the greatest ISO-8601 timestamp without mutating the input, and return None for an empty sequence. Run the targeted test."
+      },
+      "task_state_relpath": "latest_event_selection\\real_model_bench_repo\\.apricity\\runs\\run_20260719-011213-2f6188\\task_state.json",
+      "tool_steps": 6,
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/history_check.py"
+      ],
+      "verifier_exit_code": 0,
+      "verifier_passed": true,
+      "verifier_stderr": "",
+      "verifier_stdout": ".                                                                        [100%]\n1 passed in 0.05s\n",
+      "verifier_timed_out": false,
+      "within_budget": true,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-03"
+    }
+  ],
+  "runtime": {
+    "branch": "main",
+    "commit_sha": "99c7c1d58e1fc150cd2164f87149a867ca4704d5",
+    "dirty": true
+  },
+  "schema_version": 1,
+  "status": "completed",
+  "summary": {
+    "avg_attempts": 4.0,
+    "avg_duration_seconds": 26.85070986666667,
+    "avg_tool_steps": 3.533333333333333,
+    "cache_telemetry_run_count": 14,
+    "cached_tokens": 13696,
+    "categories": {
+      "bug-fix": {
+        "avg_duration_seconds": 24.48617333333333,
+        "avg_tool_steps": 4.0,
+        "pass_rate": 0.5833333333333334,
+        "passed": 7,
+        "runs": 12
+      },
+      "context-reasoning": {
+        "avg_duration_seconds": 28.242329,
+        "avg_tool_steps": 6.666666666666667,
+        "pass_rate": 1.0,
+        "passed": 3,
+        "runs": 3
+      },
+      "cross-file": {
+        "avg_duration_seconds": 35.17407333333333,
+        "avg_tool_steps": 6.333333333333333,
+        "pass_rate": 0.5,
+        "passed": 3,
+        "runs": 6
+      },
+      "robustness": {
+        "avg_duration_seconds": 24.318597333333333,
+        "avg_tool_steps": 0.0,
+        "pass_rate": 0.0,
+        "passed": 0,
+        "runs": 3
+      },
+      "test-driven": {
+        "avg_duration_seconds": 23.82666616666667,
+        "avg_tool_steps": 0.0,
+        "pass_rate": 0.0,
+        "passed": 0,
+        "runs": 6
+      }
+    },
+    "failed_runs": 17,
+    "failure_category_counts": {
+      "failure_stop_reason": 1,
+      "runner_error": 16
+    },
+    "input_tokens": 27416,
+    "output_tokens": 1727,
+    "pass_at_1": 0.4,
+    "pass_rate": 0.43333333333333335,
+    "passed_runs": 13,
+    "repetitions": 3,
+    "stable_pass_rate": 0.2,
+    "task_count": 10,
+    "total_runs": 30,
+    "total_tokens": 29143,
+    "verifier_pass_rate": 0.4666666666666667,
+    "within_budget_rate": 0.4666666666666667
+  }
+}

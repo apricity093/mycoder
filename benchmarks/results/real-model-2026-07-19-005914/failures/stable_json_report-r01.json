@@ -1,0 +1,16 @@
+{
+  "attempts": 0,
+  "category": "test-driven",
+  "duration_seconds": 23.965836,
+  "error": "RuntimeError: DeepSeek error: could not extract text from response",
+  "failure_category": "runner_error",
+  "id": "stable_json_report",
+  "passed": false,
+  "repetition": 1,
+  "report": {},
+  "status": "fail",
+  "tool_steps": 0,
+  "verifier_passed": false,
+  "within_budget": false,
+  "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-01"
+}

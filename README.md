@@ -224,4 +224,58 @@ uv run pytest tests -q
 uv run ruff check apricity tests scripts
 ```
 
+## Benchmark
+
+Apricity 将两种评测口径分开保存：
+
+- `benchmarks/coding_tasks.json` 是 deterministic harness regression，使用脚本模型验证工具解析、预算、checkpoint、memory contract 和 verifier 链路是否稳定。
+- `benchmarks/real_model_tasks.json` 是小型真实模型评测，包含 10 个 verifier-scored Python 任务，用来观察真实 provider 的端到端代码修改能力。
+
+真实模型任务覆盖 bug fix、跨文件修改、测试驱动实现、路径安全和上下文推理。每次运行都会复制全新的 `tests/fixtures/real_model_bench_repo/`，并只用目标任务自己的测试判分，避免任务之间相互污染。
+
+先在 `.env` 配置 active provider，然后运行：
+
+```bash
+uv run python scripts/run_real_model_benchmark.py \
+  --provider deepseek \
+  --repetitions 3
+```
+
+使用 `learn_claude` 环境时，也可以运行：
+
+```powershell
+D:\anaconda3\envs\learn_claude\python.exe scripts\run_real_model_benchmark.py `
+  --provider deepseek `
+  --repetitions 3
+```
+
+默认结果目录带时间戳，包含：
+
+```text
+benchmarks/results/real-model-YYYY-MM-DD-HHMMSS/
+├── real-model-benchmark.json
+├── real-model-report.md
+└── failures/
+```
+
+报告记录：
+
+- pass rate、pass@1 和 stable pass rate
+- verifier 与预算内完成率
+- 平均工具步数、attempts 和耗时
+- provider 返回时可用的 token/cache telemetry
+- 按任务类别汇总的数据和失败分类
+
+运行过程中每完成一次任务就会更新 JSON 并打印进度。真实模型评测不会覆盖 deterministic regression 的结果，也不应把小型任务通过率表述为 SWE-bench 或生产流量指标。
+
+如果运行被中断，可以对同一个输出目录继续执行，已完成的 `(task, repetition)` 不会重复调用模型：
+
+```bash
+uv run python scripts/run_real_model_benchmark.py \
+  --provider deepseek \
+  --repetitions 3 \
+  --output benchmarks/results/real-model-YYYY-MM-DD-HHMMSS \
+  --resume
+```
+
 内部代码现在按较轻的边界拆分：`apricity/evaluation/` 放 benchmark 和 metrics，`apricity/providers/` 放模型 provider client，`apricity/features/` 放可选运行时能力。新代码应直接使用这些包路径；旧的 `apricity.evaluator`、`apricity.metrics`、`apricity.models` 和 `apricity.memory` import 不再作为公共入口保留。

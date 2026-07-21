@@ -1,5 +1,6 @@
 from apricity.task_state import (
     STOP_REASON_FINAL_ANSWER_RETURNED,
+    STOP_REASON_INVALID_TOOL_LIMIT_REACHED,
     STOP_REASON_RETRY_LIMIT_REACHED,
     STOP_REASON_STEP_LIMIT_REACHED,
     TaskState,
@@ -15,6 +16,7 @@ def test_task_state_starts_running_with_empty_progress():
     assert state.status == "running"
     assert state.tool_steps == 0
     assert state.attempts == 0
+    assert state.invalid_tool_attempts == 0
     assert state.last_tool == ""
     assert state.stop_reason == ""
     assert state.final_answer == ""
@@ -50,6 +52,17 @@ def test_task_state_records_retry_limit_stop_reason():
 
     assert state.status == "stopped"
     assert state.stop_reason == STOP_REASON_RETRY_LIMIT_REACHED
+
+
+def test_task_state_records_invalid_tool_attempts_and_limit():
+    state = TaskState.create(run_id="run_invalid", task_id="task_invalid", user_request="Try again.")
+
+    state.record_invalid_tool()
+    state.stop_invalid_tool_limit()
+
+    assert state.invalid_tool_attempts == 1
+    assert state.stop_reason == STOP_REASON_INVALID_TOOL_LIMIT_REACHED
+    assert state.to_dict()["invalid_tool_attempts"] == 1
 
 
 def test_task_state_snapshot_keeps_final_answer():

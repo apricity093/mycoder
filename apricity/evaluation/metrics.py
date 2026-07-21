@@ -4,18 +4,13 @@ from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 
-from ..config import load_project_env
 from ..features.memory import LayeredMemory
 from .evaluator import run_fixed_benchmark
 from ..providers.clients import (
-    AnthropicCompatibleModelClient,
-    DeepSeekModelClient,
     FakeModelClient,
-    OllamaModelClient,
-    OpenAICompatibleModelClient,
-    is_deepseek_anthropic_base_url,
 )
-from ..providers.config import PROVIDER_DEFAULTS, resolve_runtime_config
+from ..providers.config import PROVIDER_DEFAULTS, RuntimeConfig
+from ..providers.factory import create_model_client, load_provider_config
 from ..runtime import Apricity, SessionStore
 from ..workspace import WorkspaceContext
 
@@ -801,9 +796,8 @@ def _provider_summary_from_artifact(payload):
 
 
 def _provider_profile(provider=None):
-    load_project_env(Path.cwd())
     try:
-        config = resolve_runtime_config(provider=provider)
+        config = load_provider_config(provider=provider, start=Path.cwd())
     except ValueError as exc:
         return {
             "provider": str(provider or "").strip() or "unknown",
@@ -820,35 +814,13 @@ def _provider_profile(provider=None):
 
 
 def _client_from_profile(profile, temperature, timeout):
-    if profile["provider"] == "openai":
-        return OpenAICompatibleModelClient(
-            model=profile["model"],
-            base_url=profile["base_url"],
-            api_key=profile["api_key"],
-            temperature=temperature,
-            timeout=timeout,
-        )
-    if profile["provider"] == "ollama":
-        return OllamaModelClient(
-            model=profile["model"],
-            base_url=profile["base_url"],
-            temperature=temperature,
-            top_p=0.9,
-            timeout=timeout,
-        )
-    client_class = AnthropicCompatibleModelClient
-    if profile["provider"] == "deepseek" and not is_deepseek_anthropic_base_url(profile["base_url"]):
-        client_class = DeepSeekModelClient
-    client = client_class(
+    config = RuntimeConfig(
+        provider=profile["provider"],
         model=profile["model"],
         base_url=profile["base_url"],
-        api_key=profile["api_key"],
-        temperature=temperature,
-        timeout=timeout,
+        api_key=profile.get("api_key", ""),
     )
-    if profile["provider"] == "deepseek":
-        client.provider = "deepseek"
-    return client
+    return create_model_client(config, temperature=temperature, timeout=timeout)
 
 
 def _make_provider_client(provider=None):

@@ -15,6 +15,7 @@ OPENAI_COMPATIBLE_USER_AGENT = "apricity/0.1"
 PROMPT_CACHE_NONE = "none"
 PROMPT_CACHE_EXPLICIT_KEY = "explicit_key"
 PROMPT_CACHE_AUTOMATIC_PREFIX = "automatic_prefix"
+DEEPSEEK_EMPTY_CONTENT_RETRY_MIN_TOKENS = 2048
 
 
 class FakeModelClient:
@@ -409,15 +410,6 @@ class DeepSeekModelClient:
         # DeepSeek 按请求内容的相同前缀自动缓存；本地 prefix hash 只用于 trace
         # 关联，不能作为请求字段发送给 DeepSeek。
         self.last_completion_metadata = {}
-        payload = {
-            "model": self.model,
-            "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": max_new_tokens,
-            "stream": False,
-        }
-        if self.temperature is not None:
-            payload["temperature"] = self.temperature
-
         headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
@@ -426,53 +418,110 @@ class DeepSeekModelClient:
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
 
-        request = urllib.request.Request(
-            self.base_url + "/chat/completions",
-            data=json.dumps(payload).encode("utf-8"),
-            headers=headers,
-            method="POST",
-        )
-        attempts = 3
-        for attempt in range(attempts):
-            try:
-                with urllib.request.urlopen(request, timeout=self.timeout) as response:
-                    body_text = response.read().decode("utf-8")
-                break
-            except urllib.error.HTTPError as exc:
-                body = exc.read().decode("utf-8", errors="replace")
-                if exc.code >= 500 and attempt < attempts - 1:
-                    time.sleep(0.5 * (attempt + 1))
-                    continue
-                raise RuntimeError(f"DeepSeek request failed with HTTP {exc.code}: {body}") from exc
-            except (urllib.error.URLError, RemoteDisconnected) as exc:
-                if attempt < attempts - 1:
-                    time.sleep(0.5 * (attempt + 1))
-                    continue
-                raise RuntimeError(
-                    "Could not reach DeepSeek.\n"
-                    f"Base URL: {self.base_url}\n"
-                    f"Model: {self.model}"
-                ) from exc
-
-        try:
-            data = json.loads(body_text)
-        except json.JSONDecodeError as exc:
-            raise RuntimeError("DeepSeek error: backend returned non-JSON content") from exc
-        if data.get("error"):
-            raise RuntimeError(f"DeepSeek error: {data['error']}")
-
-        self.last_completion_metadata = {
-            "provider": "deepseek",
-            "model": self.model,
-            "prompt_cache_supported": True,
-            "prompt_cache_key": prompt_cache_key,
-            "prompt_cache_retention": None,
-            **_extract_usage_cache_details(data, self.prompt_cache_mode),
+        usage_totals = {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "cached_tokens": 0,
+            "cache_miss_tokens": 0,
         }
-        text = _extract_openai_text(data)
-        if text:
-            return text
-        raise RuntimeError("DeepSeek error: could not extract text from response")
+        cache_telemetry_available = False
+        request_max_tokens = int(max_new_tokens)
+        empty_content_retries = 0
+        last_diagnostics = {}
+
+        # HTTP 200 does not always mean a usable completion. Reasoning-capable
+        # DeepSeek models can occasionally return an empty content field. Treat
+        # that as a bounded semantic retry, but never execute reasoning_content.
+        for semantic_attempt in range(2):
+            payload = {
+                "model": self.model,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": request_max_tokens,
+                "stream": False,
+            }
+            if self.temperature is not None:
+                payload["temperature"] = self.temperature
+
+            request = urllib.request.Request(
+                self.base_url + "/chat/completions",
+                data=json.dumps(payload).encode("utf-8"),
+                headers=headers,
+                method="POST",
+            )
+            attempts = 3
+            for attempt in range(attempts):
+                try:
+                    with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                        body_text = response.read().decode("utf-8")
+                    break
+                except urllib.error.HTTPError as exc:
+                    body = exc.read().decode("utf-8", errors="replace")
+                    if exc.code >= 500 and attempt < attempts - 1:
+                        time.sleep(0.5 * (attempt + 1))
+                        continue
+                    raise RuntimeError(f"DeepSeek request failed with HTTP {exc.code}: {body}") from exc
+                except (urllib.error.URLError, RemoteDisconnected) as exc:
+                    if attempt < attempts - 1:
+                        time.sleep(0.5 * (attempt + 1))
+                        continue
+                    raise RuntimeError(
+                        "Could not reach DeepSeek.\n"
+                        f"Base URL: {self.base_url}\n"
+                        f"Model: {self.model}"
+                    ) from exc
+
+            try:
+                data = json.loads(body_text)
+            except json.JSONDecodeError as exc:
+                raise RuntimeError("DeepSeek error: backend returned non-JSON content") from exc
+            if data.get("error"):
+                raise RuntimeError(f"DeepSeek error: {data['error']}")
+
+            usage = _extract_usage_cache_details(data, self.prompt_cache_mode)
+            for key in usage_totals:
+                usage_totals[key] += int(usage.get(key, 0) or 0)
+            cache_telemetry_available = cache_telemetry_available or bool(
+                usage.get("cache_telemetry_available")
+            )
+            choice = (data.get("choices") or [{}])[0]
+            message = choice.get("message") or {}
+            completion_details = (data.get("usage") or {}).get("completion_tokens_details") or {}
+            last_diagnostics = {
+                "finish_reason": choice.get("finish_reason"),
+                "reasoning_tokens": int(completion_details.get("reasoning_tokens", 0) or 0),
+                "reasoning_content_chars": len(message.get("reasoning_content") or ""),
+                "requested_max_tokens": request_max_tokens,
+            }
+            self.last_completion_metadata = {
+                "provider": "deepseek",
+                "model": self.model,
+                "prompt_cache_supported": True,
+                "prompt_cache_key": prompt_cache_key,
+                "prompt_cache_retention": None,
+                **usage_totals,
+                "cache_hit": usage_totals["cached_tokens"] > 0,
+                "cache_telemetry_available": cache_telemetry_available,
+                "prompt_cache_mode": self.prompt_cache_mode,
+                "empty_content_retry_count": empty_content_retries,
+                **last_diagnostics,
+            }
+            text = _extract_openai_text(data)
+            if text and text.strip():
+                return text
+            if semantic_attempt == 0:
+                empty_content_retries += 1
+                request_max_tokens = min(
+                    max(request_max_tokens * 2, DEEPSEEK_EMPTY_CONTENT_RETRY_MIN_TOKENS),
+                    4096,
+                )
+                continue
+
+        diagnostics = ", ".join(f"{key}={value}" for key, value in last_diagnostics.items())
+        raise RuntimeError(
+            "DeepSeek error: empty message.content after semantic retry"
+            + (f" ({diagnostics})" if diagnostics else "")
+        )
 
 
 def _extract_anthropic_text(data):

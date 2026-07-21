@@ -5,6 +5,7 @@ from collections import Counter
 
 import pytest
 
+from apricity.providers.clients import FakeModelClient
 from apricity.evaluation.evaluator import (
     BenchmarkEvaluator,
     load_benchmark,
@@ -51,6 +52,68 @@ def test_load_benchmark_rejects_missing_required_task_fields(tmp_path):
 
     with pytest.raises(ValueError, match="required"):
         load_benchmark(benchmark_path)
+
+
+def test_load_real_model_benchmark_accepts_explicit_artifacts_and_timeouts():
+    benchmark = load_benchmark(Path("benchmarks/real_model_tasks.json"))
+
+    assert len(benchmark["tasks"]) == 10
+    assert {task["category"] for task in benchmark["tasks"]} >= {
+        "bug-fix",
+        "cross-file",
+        "test-driven",
+        "robustness",
+    }
+    for task in benchmark["tasks"]:
+        assert task["artifact_path"]
+        assert task["verifier_timeout_seconds"] == 30
+
+
+def test_verifier_uses_utf8_on_windows_and_preserves_unicode_output(tmp_path):
+    fixture = tmp_path / "tests" / "fixtures" / "unicode_repo"
+    fixture.mkdir(parents=True)
+    (fixture / "sample.txt").write_text("ready\n", encoding="utf-8")
+    benchmark_dir = tmp_path / "benchmarks"
+    benchmark_dir.mkdir()
+    benchmark_path = benchmark_dir / "unicode.json"
+    benchmark_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "tasks": [
+                    {
+                        "id": "unicode_verifier",
+                        "prompt": "Finish without changing the fixture.",
+                        "fixture_repo": "tests/fixtures/unicode_repo",
+                        "allowed_tools": ["read_file"],
+                        "step_budget": 1,
+                        "expected_artifact": "sample.txt remains available",
+                        "artifact_path": "sample.txt",
+                        "verifier": [
+                            "python3",
+                            "-c",
+                            "print('验证输出：中文'); raise SystemExit(1)",
+                        ],
+                        "category": "encoding",
+                    }
+                ],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    evaluator = BenchmarkEvaluator(
+        benchmark_path=benchmark_path,
+        artifact_path=tmp_path / "artifact.json",
+        workspace_root=tmp_path / "workspaces",
+        model_client_factory=lambda task, workspace: FakeModelClient(["<final>Done.</final>"]),
+    )
+
+    row = evaluator.run_task(evaluator.load()["tasks"][0])
+
+    assert row["status"] == "fail"
+    assert row["failure_category"] == "verifier_failed"
+    assert row["verifier_stdout"] == "验证输出：中文\n"
 
 
 def test_run_fixed_benchmark_uses_fresh_fixture_copy_and_fresh_run_directory(tmp_path):

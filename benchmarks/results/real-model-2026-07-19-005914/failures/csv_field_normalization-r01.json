@@ -1,0 +1,16 @@
+{
+  "attempts": 0,
+  "category": "bug-fix",
+  "duration_seconds": 8.888227,
+  "error": "PermissionError: [WinError 5] \u62d2\u7edd\u8bbf\u95ee\u3002: 'D:\\\\Pythonprojects\\\\yan_1\\\\agent\\\\mypico\\\\artifacts\\\\real-model-workspaces\\\\deepseek\\\\repetition-01\\\\csv_field_normalization\\\\real_model_bench_repo\\\\.apricity\\\\runs\\\\run_20260719-005946-62f094\\\\task_state.json.p18u0u3x.tmp' -> 'artifacts\\\\real-model-workspaces\\\\deepseek\\\\repetition-01\\\\csv_field_normalization\\\\real_model_bench_repo\\\\.apricity\\\\runs\\\\run_20260719-005946-62f094\\\\task_state.json'",
+  "failure_category": "runner_error",
+  "id": "csv_field_normalization",
+  "passed": false,
+  "repetition": 1,
+  "report": {},
+  "status": "fail",
+  "tool_steps": 0,
+  "verifier_passed": false,
+  "within_budget": false,
+  "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces\\deepseek\\repetition-01"
+}

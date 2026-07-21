@@ -1,0 +1,273 @@
+{
+  "allowed_tools": [
+    "list_files",
+    "read_file",
+    "search",
+    "patch_file",
+    "run_process"
+  ],
+  "artifact_digest": "sha256:9aaf31f0b6870288d1a3c61d33c756cfe66ed9a928b9b762aed7f07402597583",
+  "artifact_exists": true,
+  "artifact_path": "miniapp/runtime.py",
+  "attempts": 12,
+  "category": "cross-file",
+  "duration_seconds": 42.398475,
+  "expected_artifact": "config and runtime share one default timeout constant",
+  "expected_artifact_exists": true,
+  "failure_category": "failure_stop_reason",
+  "final_answer": "Stopped after reaching the step limit without a final answer.",
+  "fixture_copy_relpath": "centralized_timeout_default\\real_model_bench_repo",
+  "fixture_repo": "tests/fixtures/real_model_bench_repo",
+  "id": "centralized_timeout_default",
+  "initial_episodic_notes_empty": true,
+  "initial_history_empty": true,
+  "initial_memory_empty": true,
+  "initial_task_summary_empty": true,
+  "non_failure_stop_reason": false,
+  "passed": false,
+  "prompt": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test.",
+  "repetition": 3,
+  "report": {
+    "attempts": 12,
+    "checkpoint_id": "ckpt_c46a05da",
+    "durable_promotions": [],
+    "durable_rejections": [],
+    "durable_superseded": [],
+    "final_answer": "Stopped after reaching the step limit without a final answer.",
+    "prompt_metadata": {
+      "budget_reductions": [],
+      "cache_hit": true,
+      "cache_miss_tokens": 891,
+      "cache_telemetry_available": true,
+      "cached_tokens": 896,
+      "current_request": {
+        "raw_chars": 256,
+        "rendered_chars": 256,
+        "section_chars": 278,
+        "text": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test."
+      },
+      "empty_content_retry_count": 0,
+      "finish_reason": "stop",
+      "history": {
+        "collapsed_duplicate_reads": 0,
+        "older_entries_count": 5,
+        "raw_chars": 2913,
+        "rendered_chars": 2171,
+        "reused_file_summary_count": 0,
+        "summarized_tool_count": 5
+      },
+      "history_chars": 2831,
+      "input_tokens": 1787,
+      "memory_chars": 386,
+      "model": "deepseek-v4-flash",
+      "output_tokens": 118,
+      "prefix_changed": false,
+      "prefix_chars": 6615,
+      "prefix_hash": "6737a4f46157d882fe0f13a90b96a26233e7813b246fa53869013369ba5bbe24",
+      "prompt_budget_chars": 12000,
+      "prompt_cache_key": "6737a4f46157d882fe0f13a90b96a26233e7813b246fa53869013369ba5bbe24",
+      "prompt_cache_mode": "automatic_prefix",
+      "prompt_cache_retention": null,
+      "prompt_cache_supported": true,
+      "prompt_chars": 6597,
+      "prompt_over_budget": false,
+      "provider": "deepseek",
+      "reasoning_content_chars": 389,
+      "reasoning_tokens": 94,
+      "recent_commits": 5,
+      "reduction_order": [
+        "relevant_memory",
+        "history",
+        "memory",
+        "prefix"
+      ],
+      "relevant_memory": {
+        "limit": 3,
+        "query_features": {
+          "ascii_token_count": 34,
+          "cjk_bigram_count": 0,
+          "cjk_trigram_count": 0,
+          "concepts": [
+            "dependency-facts",
+            "testing"
+          ],
+          "identifier_count": 0,
+          "normalized": "the default request timeout must be 45 seconds everywhere. make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. preserve explicit timeout overrides and run the targeted test.",
+          "path_count": 6
+        },
+        "raw_chars": 154,
+        "rendered_chars": 154,
+        "rendered_count": 2,
+        "rendered_notes": [
+          "1: def request_options(timeout=None): | 2:     return {\"timeout\": 30 if timeout is None else timeout}",
+          "1: DEFAULT_REQUEST_TIMEOUT = 30"
+        ],
+        "selected_count": 2,
+        "selected_details": [
+          {
+            "kind": "episodic",
+            "rank": 1,
+            "score": 20.558167,
+            "signals": [
+              "tag:exact=miniapp/runtime.py",
+              "source:exact=miniapp/runtime.py",
+              "tag:concept=dependency-facts:5.000",
+              "text:ascii=0.261",
+              "tag:ascii=0.649",
+              "source:ascii=0.649"
+            ],
+            "source": "miniapp/runtime.py",
+            "text": "1: def request_options(timeout=None): | 2:     return {\"timeout\": 30 if timeout is None else timeout}",
+            "topic": ""
+          },
+          {
+            "kind": "episodic",
+            "rank": 2,
+            "score": 15.758836,
+            "signals": [
+              "tag:exact=miniapp/config.py",
+              "source:exact=miniapp/config.py",
+              "text:ascii=0.462",
+              "tag:ascii=0.649",
+              "source:ascii=0.649"
+            ],
+            "source": "miniapp/config.py",
+            "text": "1: DEFAULT_REQUEST_TIMEOUT = 30",
+            "topic": ""
+          }
+        ],
+        "selected_durable_count": 0,
+        "selected_kinds": [
+          "episodic",
+          "episodic"
+        ],
+        "selected_notes": [
+          "1: def request_options(timeout=None): | 2:     return {\"timeout\": 30 if timeout is None else timeout}",
+          "1: DEFAULT_REQUEST_TIMEOUT = 30"
+        ],
+        "selected_sources": [
+          "miniapp/runtime.py",
+          "miniapp/config.py"
+        ]
+      },
+      "request_chars": 256,
+      "requested_max_tokens": 512,
+      "resume_status": "full-valid",
+      "runtime_identity_mismatch_fields": [],
+      "secret_env_count": 1,
+      "secret_env_names": [
+        "APRICITY_API_KEY"
+      ],
+      "section_budgets": {
+        "current_request": null,
+        "history": 5200,
+        "memory": 1600,
+        "prefix": 3600,
+        "relevant_memory": 1200
+      },
+      "section_order": [
+        "prefix",
+        "memory",
+        "relevant_memory",
+        "history",
+        "current_request"
+      ],
+      "sections": {
+        "current_request": {
+          "budget_chars": null,
+          "raw_chars": 278,
+          "rendered_chars": 278
+        },
+        "history": {
+          "budget_chars": 5200,
+          "raw_chars": 2913,
+          "rendered_chars": 2171
+        },
+        "memory": {
+          "budget_chars": 1600,
+          "raw_chars": 386,
+          "rendered_chars": 386
+        },
+        "prefix": {
+          "budget_chars": 3600,
+          "raw_chars": 7232,
+          "rendered_chars": 3600
+        },
+        "relevant_memory": {
+          "budget_chars": 1200,
+          "raw_chars": 154,
+          "rendered_chars": 154
+        }
+      },
+      "stale_paths": [],
+      "stale_summary_invalidations": 0,
+      "tool_count": 5,
+      "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+      "total_tokens": 1905,
+      "workspace_changed": false,
+      "workspace_chars": 4056,
+      "workspace_docs": 5,
+      "workspace_fingerprint": "a526158b9eb00d7f84d01850ceb7c862019235c0a6571a3578dca3c5fb0a50c0"
+    },
+    "redacted_env": {
+      "secret_env_count": 1,
+      "secret_env_names": [
+        "APRICITY_API_KEY"
+      ]
+    },
+    "resume_status": "no-checkpoint",
+    "run_id": "run_20260719-021238-9881c8",
+    "status": "stopped",
+    "stop_reason": "step_limit_reached",
+    "task_id": "task_20260719-021238-21d467",
+    "task_state": {
+      "attempts": 12,
+      "checkpoint_id": "ckpt_c46a05da",
+      "final_answer": "Stopped after reaching the step limit without a final answer.",
+      "last_tool": "read_file",
+      "resume_status": "no-checkpoint",
+      "run_id": "run_20260719-021238-9881c8",
+      "status": "stopped",
+      "stop_reason": "step_limit_reached",
+      "task_id": "task_20260719-021238-21d467",
+      "tool_steps": 12,
+      "user_request": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test."
+    },
+    "tool_steps": 12
+  },
+  "report_relpath": "centralized_timeout_default\\real_model_bench_repo\\.apricity\\runs\\run_20260719-021238-9881c8\\report.json",
+  "run_dir_relpath": "centralized_timeout_default\\real_model_bench_repo\\.apricity\\runs\\run_20260719-021238-9881c8",
+  "run_id": "run_20260719-021238-9881c8",
+  "status": "fail",
+  "step_budget": 12,
+  "stop_reason": "step_limit_reached",
+  "task_state": {
+    "attempts": 12,
+    "checkpoint_id": "ckpt_c46a05da",
+    "final_answer": "Stopped after reaching the step limit without a final answer.",
+    "last_tool": "read_file",
+    "resume_status": "no-checkpoint",
+    "run_id": "run_20260719-021238-9881c8",
+    "status": "stopped",
+    "stop_reason": "step_limit_reached",
+    "task_id": "task_20260719-021238-21d467",
+    "tool_steps": 12,
+    "user_request": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test."
+  },
+  "task_state_relpath": "centralized_timeout_default\\real_model_bench_repo\\.apricity\\runs\\run_20260719-021238-9881c8\\task_state.json",
+  "tool_steps": 12,
+  "verifier": [
+    "python3",
+    "-m",
+    "pytest",
+    "-q",
+    "verifiers/runtime_check.py"
+  ],
+  "verifier_exit_code": 0,
+  "verifier_passed": true,
+  "verifier_stderr": "",
+  "verifier_stdout": "..                                                                       [100%]\n2 passed in 0.07s\n",
+  "verifier_timed_out": false,
+  "within_budget": true,
+  "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces-postfix\\deepseek\\repetition-03"
+}

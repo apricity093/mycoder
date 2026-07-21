@@ -5,8 +5,13 @@ session.json 负责保存“可恢复的会话状态”；RunStore 负责保存�
 """
 
 import json
+import os
 import tempfile
+import time
 from pathlib import Path
+
+
+ATOMIC_REPLACE_RETRY_DELAYS = (0.01, 0.02, 0.04, 0.08)
 
 
 def _run_id(value):
@@ -17,7 +22,7 @@ def _run_id(value):
 
 class RunStore:
     def __init__(self, root):
-        self.root = Path(root)
+        self.root = Path(root).resolve()
         self.root.mkdir(parents=True, exist_ok=True)
 
     def run_dir(self, run_id):
@@ -71,15 +76,37 @@ class RunStore:
     def _write_json_atomic(self, path, payload):
         # 原子写：先写临时文件，再 replace。
         # 这样即使中途异常，也不容易留下半截 JSON。
-        with tempfile.NamedTemporaryFile(
-            "w",
-            encoding="utf-8",
-            delete=False,
-            dir=str(path.parent),
-            prefix=path.name + ".",
-            suffix=".tmp",
-        ) as handle:
-            json.dump(payload, handle, indent=2, sort_keys=True)
-            handle.write("\n")
-            temp_name = handle.name
-        Path(temp_name).replace(path)
+        path = Path(path).resolve()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                "w",
+                encoding="utf-8",
+                delete=False,
+                dir=str(path.parent),
+                prefix=path.name + ".",
+                suffix=".tmp",
+            ) as handle:
+                json.dump(payload, handle, indent=2, sort_keys=True)
+                handle.write("\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+                temp_path = Path(handle.name).resolve()
+
+            attempts = len(ATOMIC_REPLACE_RETRY_DELAYS) + 1
+            for attempt in range(attempts):
+                try:
+                    os.replace(temp_path, path)
+                    temp_path = None
+                    return
+                except PermissionError as exc:
+                    if attempt >= len(ATOMIC_REPLACE_RETRY_DELAYS):
+                        raise PermissionError(
+                            f"atomic replace failed after {attempts} attempts: "
+                            f"{temp_path} -> {path}"
+                        ) from exc
+                    time.sleep(ATOMIC_REPLACE_RETRY_DELAYS[attempt])
+        finally:
+            if temp_path is not None:
+                temp_path.unlink(missing_ok=True)

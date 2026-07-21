@@ -1,0 +1,16 @@
+{
+  "attempts": 0,
+  "category": "cross-file",
+  "duration_seconds": 46.574846,
+  "error": "RuntimeError: DeepSeek error: empty message.content after semantic retry (finish_reason=length, reasoning_tokens=1024, reasoning_content_chars=4412, requested_max_tokens=1024)",
+  "failure_category": "runner_error",
+  "id": "centralized_timeout_default",
+  "passed": false,
+  "repetition": 1,
+  "report": {},
+  "status": "fail",
+  "tool_steps": 0,
+  "verifier_passed": false,
+  "within_budget": false,
+  "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\real-model-workspaces-postfix\\deepseek\\repetition-01"
+}
