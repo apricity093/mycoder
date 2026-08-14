@@ -48,6 +48,10 @@ docs/*
 !docs/review-pack/README.md
 !docs/architecture/
 !docs/architecture/agent-harness-v1-overview.md
+!docs/requirements/
+!docs/requirements/resilient-harness-prd.md
+!docs/adr/
+!docs/adr/0001-typed-recovery-seam.md
 
 # OS files
 .DS_Store

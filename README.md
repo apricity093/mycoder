@@ -18,11 +18,38 @@
 - 模块入口是 `python -m apricity`
 - 会话保存在 `.apricity/sessions/`
 - 每次运行的工件保存在 `.apricity/runs/<run_id>/`
+- 可选 `resilient` 模式：统一处理 provider retry、context recovery、tool-result spill 和 protocol correction
 - 支持四类模型后端：
   - Ollama
   - OpenAI 兼容 Responses API
   - Anthropic 兼容 Messages API
-  - DeepSeek Anthropic 兼容 API
+  - DeepSeek 原生 Chat Completions API
+
+## 项目亮点：可验证的 Harness 恢复能力
+
+这个项目不只实现“模型调用工具”的基础循环，还把恢复策略放在一个类型化生命周期 seam 后面。`AgentLoop` 只执行 `retry_model`、`rebuild_context`、`correct_protocol` 或 `stop` 决策，不直接判断具体策略；provider adapter 只执行一次传输请求，重试预算由 harness 统一拥有。
+
+确定性实验对同一批任务分别运行 compatibility、resilient 和单策略消融组，并把故障注入、策略介入、verifier 结果和最终 stop reason 分开记录。当前 3 个任务、5 种条件的首轮结果：
+
+| Variant | Pass rate | Recovery rate | False interventions | Duplicate side effects |
+| --- | ---: | ---: | ---: | ---: |
+| compatibility | 80.00% | 75.00% | 0.00% | 0.00% |
+| resilient | 100.00% | 100.00% | 0.00% | 0.00% |
+
+这是 90 次本地脚本模型运行得到的控制流实验，不代表生产可靠性。恢复率提高 `25` 个百分点；no-fault 耗时开销观测值为 `-9.30%`，但只有 3 次正常运行，不作为稳定性能结论。provider retry、context recovery 和 protocol correction 的消融产生了可见差异；当前 fixture 不依赖超大结果的尾部信息，因此关闭 spill 尚未改变 pass rate，这一限制保留在报告中，不把它包装成收益。
+
+设计与实验材料：
+
+- [Resilient Harness PRD](docs/requirements/resilient-harness-prd.md)
+- [架构说明](docs/architecture/resilient-harness.md)
+- [Typed recovery seam ADR](docs/adr/0001-typed-recovery-seam.md)
+- [90 次确定性消融报告](benchmarks/results/recovery-policy-2026-08-14/recovery-policy-experiment-v1.md)
+
+启用恢复策略：
+
+```bash
+uv run apricity --recovery-mode resilient
+```
 
 ## 使用截图
 

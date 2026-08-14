@@ -18,3 +18,7 @@ Agent Harness v1 is Apricity's current runtime shape: a local control loop aroun
 - `task_state.json` records attempts, tool steps, status, stop reason, and final answer.
 - `trace.jsonl` records the event timeline for prompt, model, tool, checkpoint, and finish phases.
 - `report.json` records the review summary, prompt metadata, durable memory changes, and execution metadata.
+
+## Recovery Seam
+
+The optional resilient mode routes provider failures, protocol failures, and raw tool results through a typed `RecoveryEngine`. See [Resilient Harness Architecture](resilient-harness.md) and the [PRD](../requirements/resilient-harness-prd.md).

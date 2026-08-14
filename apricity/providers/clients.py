@@ -6,10 +6,11 @@ runtime 只关心一件事：给我一个 prompt，我拿回一段文本。
 """
 
 import json
-import time
 from http.client import RemoteDisconnected
 import urllib.error
 import urllib.request
+
+from ..recovery import FAILURE_TRANSIENT_PROVIDER, ProviderRequestError, provider_http_error
 
 OPENAI_COMPATIBLE_USER_AGENT = "apricity/0.1"
 PROMPT_CACHE_NONE = "none"
@@ -73,17 +74,18 @@ class OllamaModelClient:
                 data = json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace")
-            raise RuntimeError(f"Ollama request failed with HTTP {exc.code}: {body}") from exc
+            raise provider_http_error("Ollama", exc.code, body) from exc
         except urllib.error.URLError as exc:
-            raise RuntimeError(
+            raise ProviderRequestError(
                 "Could not reach Ollama.\n"
                 "Make sure `ollama serve` is running and the model is available.\n"
                 f"Base URL: {self.base_url}\n"
-                f"Model: {self.model}"
+                f"Model: {self.model}",
+                kind=FAILURE_TRANSIENT_PROVIDER,
             ) from exc
 
         if data.get("error"):
-            raise RuntimeError(f"Ollama error: {data['error']}")
+            raise provider_http_error("Ollama", 400, str(data["error"]))
         return data.get("response", "")
 
 
@@ -330,7 +332,7 @@ class OpenAICompatibleModelClient:
             headers=headers,
             method="POST",
         )
-        attempts = 3
+        attempts = 1
         for attempt in range(attempts):
             try:
                 with urllib.request.urlopen(request, timeout=self.timeout) as response:
@@ -340,18 +342,13 @@ class OpenAICompatibleModelClient:
                 break
             except urllib.error.HTTPError as exc:
                 body = exc.read().decode("utf-8", errors="replace")
-                if exc.code >= 500 and attempt < attempts - 1:
-                    time.sleep(0.5 * (attempt + 1))
-                    continue
-                raise RuntimeError(f"OpenAI-compatible request failed with HTTP {exc.code}: {body}") from exc
+                raise provider_http_error("OpenAI-compatible", exc.code, body) from exc
             except (urllib.error.URLError, RemoteDisconnected) as exc:
-                if attempt < attempts - 1:
-                    time.sleep(0.5 * (attempt + 1))
-                    continue
-                raise RuntimeError(
+                raise ProviderRequestError(
                     "Could not reach the OpenAI-compatible backend.\n"
                     f"Base URL: {self.base_url}\n"
-                    f"Model: {self.model}"
+                    f"Model: {self.model}",
+                    kind=FAILURE_TRANSIENT_PROVIDER,
                 ) from exc
 
         # 有些兼容后端返回普通 JSON，有些返回 SSE。
@@ -449,7 +446,7 @@ class DeepSeekModelClient:
                 headers=headers,
                 method="POST",
             )
-            attempts = 3
+            attempts = 1
             for attempt in range(attempts):
                 try:
                     with urllib.request.urlopen(request, timeout=self.timeout) as response:
@@ -457,26 +454,21 @@ class DeepSeekModelClient:
                     break
                 except urllib.error.HTTPError as exc:
                     body = exc.read().decode("utf-8", errors="replace")
-                    if exc.code >= 500 and attempt < attempts - 1:
-                        time.sleep(0.5 * (attempt + 1))
-                        continue
-                    raise RuntimeError(f"DeepSeek request failed with HTTP {exc.code}: {body}") from exc
+                    raise provider_http_error("DeepSeek", exc.code, body) from exc
                 except (urllib.error.URLError, RemoteDisconnected) as exc:
-                    if attempt < attempts - 1:
-                        time.sleep(0.5 * (attempt + 1))
-                        continue
-                    raise RuntimeError(
+                    raise ProviderRequestError(
                         "Could not reach DeepSeek.\n"
                         f"Base URL: {self.base_url}\n"
-                        f"Model: {self.model}"
+                        f"Model: {self.model}",
+                        kind=FAILURE_TRANSIENT_PROVIDER,
                     ) from exc
 
             try:
                 data = json.loads(body_text)
             except json.JSONDecodeError as exc:
-                raise RuntimeError("DeepSeek error: backend returned non-JSON content") from exc
+                raise ProviderRequestError("DeepSeek error: backend returned non-JSON content") from exc
             if data.get("error"):
-                raise RuntimeError(f"DeepSeek error: {data['error']}")
+                raise provider_http_error("DeepSeek", 400, str(data["error"]))
 
             usage = _extract_usage_cache_details(data, self.prompt_cache_mode)
             for key in usage_totals:
@@ -581,7 +573,7 @@ class AnthropicCompatibleModelClient:
             headers=headers,
             method="POST",
         )
-        attempts = 3
+        attempts = 1
         for attempt in range(attempts):
             try:
                 with urllib.request.urlopen(request, timeout=self.timeout) as response:
@@ -589,28 +581,23 @@ class AnthropicCompatibleModelClient:
                 break
             except urllib.error.HTTPError as exc:
                 body = exc.read().decode("utf-8", errors="replace")
-                if exc.code >= 500 and attempt < attempts - 1:
-                    time.sleep(0.5 * (attempt + 1))
-                    continue
-                raise RuntimeError(f"Anthropic-compatible request failed with HTTP {exc.code}: {body}") from exc
+                raise provider_http_error("Anthropic-compatible", exc.code, body) from exc
             except (urllib.error.URLError, RemoteDisconnected) as exc:
-                if attempt < attempts - 1:
-                    time.sleep(0.5 * (attempt + 1))
-                    continue
-                raise RuntimeError(
+                raise ProviderRequestError(
                     "Could not reach the Anthropic-compatible backend.\n"
                     f"Base URL: {self.base_url}\n"
-                    f"Model: {self.model}"
+                    f"Model: {self.model}",
+                    kind=FAILURE_TRANSIENT_PROVIDER,
                 ) from exc
 
         try:
             data = json.loads(body_text)
         except json.JSONDecodeError as exc:
-            raise RuntimeError(
+            raise ProviderRequestError(
                 "Anthropic-compatible error: backend returned non-JSON content that could not be parsed"
             ) from exc
         if data.get("error"):
-            raise RuntimeError(f"Anthropic-compatible error: {data['error']}")
+            raise provider_http_error("Anthropic-compatible", 400, str(data["error"]))
         self.last_completion_metadata = {
             "provider": self.provider,
             "model": self.model,

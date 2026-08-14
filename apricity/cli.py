@@ -202,6 +202,8 @@ def build_agent(args):
             max_steps=args.max_steps,
             max_new_tokens=args.max_new_tokens,
             secret_env_names=configured_secret_names,
+            recovery_mode=getattr(args, "recovery_mode", "compatible"),
+            disabled_recovery_policies=getattr(args, "disabled_recovery_policies", ()),
         )
     return Apricity(
         model_client=model,
@@ -211,6 +213,8 @@ def build_agent(args):
         max_steps=args.max_steps,
         max_new_tokens=args.max_new_tokens,
         secret_env_names=configured_secret_names,
+        recovery_mode=getattr(args, "recovery_mode", "compatible"),
+        disabled_recovery_policies=getattr(args, "disabled_recovery_policies", ()),
     )
 
 
@@ -242,6 +246,20 @@ def build_arg_parser():
     parser.add_argument("--openai-timeout", type=int, default=300, help="OpenAI-compatible request timeout in seconds.")
     parser.add_argument("--resume", default=None, help="Session id to resume or 'latest'.")
     parser.add_argument("--approval", choices=("ask", "auto", "never"), default="ask", help="Approval policy for risky tools.")
+    parser.add_argument(
+        "--recovery-mode",
+        choices=("compatible", "resilient"),
+        default="compatible",
+        help="Use compatibility behavior or enable bounded lifecycle recovery policies.",
+    )
+    parser.add_argument(
+        "--disable-recovery-policy",
+        dest="disabled_recovery_policies",
+        action="append",
+        default=[],
+        choices=("provider_retry", "context_recovery", "protocol_correction", "tool_result_spill"),
+        help="Disable one resilient recovery policy for an ablation run.",
+    )
     parser.add_argument(
         "--secret-env-name",
         dest="secret_env_names",

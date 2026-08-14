@@ -22,6 +22,11 @@ BASE_TOOL_SPECS = {
         "risky": False,
         "description": "Read a UTF-8 file by line range.",
     },
+    "read_spill": {
+        "schema": {"spill_id": "str", "page": "int=1"},
+        "risky": False,
+        "description": "Read one bounded page from a spilled tool result in the current run.",
+    },
     "search": {
         "schema": {"pattern": "str", "path": "str='.'"},
         "risky": False,
@@ -62,6 +67,7 @@ def legal_tool_names():
 TOOL_EXAMPLES = {
     "list_files": '<tool>{"name":"list_files","args":{"path":"."}}</tool>',
     "read_file": '<tool>{"name":"read_file","args":{"path":"README.md","start":1,"end":80}}</tool>',
+    "read_spill": '<tool>{"name":"read_spill","args":{"spill_id":"0123456789abcdef","page":1}}</tool>',
     "search": '<tool>{"name":"search","args":{"pattern":"binary_search","path":"."}}</tool>',
     "run_shell": '<tool>{"name":"run_shell","args":{"command":"uv run --with pytest python -m pytest -q","timeout":20}}</tool>',
     "run_process": '<tool>{"name":"run_process","args":{"program":"python","args":["-m","pytest","-q"],"timeout":20}}</tool>',
@@ -77,6 +83,7 @@ def build_tool_registry(context):
     tools = {
         name: {**spec, "run": partial(_TOOL_RUNNERS[name], context)}
         for name, spec in BASE_TOOL_SPECS.items()
+        if name != "read_spill" or getattr(context, "spill_reader", None) is not None
     }
     # 子 agent 是刻意做成受限能力的：一旦深度耗尽，
     # 就连 delegate 这个工具都不再暴露给模型。
@@ -122,6 +129,15 @@ def validate_tool(context, name, args):
         timeout = int(args.get("timeout", 20))
         if timeout < 1 or timeout > 120:
             raise ValueError("timeout must be in [1, 120]")
+        return
+
+    if name == "read_spill":
+        spill_id = str(args.get("spill_id", "")).strip()
+        page = int(args.get("page", 1))
+        if not spill_id:
+            raise ValueError("spill_id must not be empty")
+        if page < 1 or page > 3:
+            raise ValueError("spill page must be between 1 and 3")
         return
 
     if name == "run_process":
@@ -198,6 +214,10 @@ def tool_read_file(context, args):
     lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
     body = "\n".join(f"{number:>4}: {line}" for number, line in enumerate(lines[start - 1:end], start=start))
     return f"# {path.relative_to(context.root)}\n{body}"
+
+
+def tool_read_spill(context, args):
+    return context.read_spill(args["spill_id"], int(args.get("page", 1)))
 
 
 def tool_search(context, args):
@@ -317,6 +337,7 @@ def tool_delegate(context, args):
 _TOOL_RUNNERS = {
     "list_files": tool_list_files,
     "read_file": tool_read_file,
+    "read_spill": tool_read_spill,
     "search": tool_search,
     "run_shell": tool_run_shell,
     "run_process": tool_run_process,

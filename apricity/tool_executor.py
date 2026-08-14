@@ -3,9 +3,6 @@
 from dataclasses import dataclass
 import re
 
-from .workspace import clip
-
-
 @dataclass(frozen=True)
 class ToolExecutionResult:
     content: str
@@ -112,7 +109,7 @@ class ToolExecutor:
         before_snapshot = agent.capture_workspace_snapshot() if tool["risky"] else {}
         after_snapshot = before_snapshot
         try:
-            content = clip(tool["run"](args))
+            content = str(tool["run"](args))
             after_snapshot = agent.capture_workspace_snapshot() if tool["risky"] else before_snapshot
             affected_paths, diff_summary = agent.diff_workspace_snapshots(before_snapshot, after_snapshot)
             workspace_changed = bool(affected_paths)
@@ -127,7 +124,6 @@ class ToolExecutor:
                 elif exit_code != 0:
                     tool_status = "error"
                     tool_error_code = "tool_failed"
-            agent.update_memory_after_tool(name, args, content)
             metadata = _metadata(
                 tool_status,
                 tool_error_code=tool_error_code,
@@ -138,6 +134,10 @@ class ToolExecutor:
                 workspace_fingerprint=agent.workspace.fingerprint(),
                 diff_summary=diff_summary,
             )
+            finalized = agent.finalize_tool_result(content, metadata)
+            content = finalized.content
+            metadata = finalized.metadata
+            agent.update_memory_after_tool(name, args, content)
             agent.record_process_note_for_tool(name, metadata)
             return ToolExecutionResult(content=content, metadata=metadata)
         except Exception as exc:

@@ -53,6 +53,11 @@ def _prompt_usage(row):
 
 def _summarize(rows, tasks, repetitions):
     passed_rows = [row for row in rows if row.get("passed")]
+    faulted_rows = [row for row in rows if (row.get("fault_injection") or {}).get("injected")]
+    recovered_rows = [row for row in faulted_rows if row.get("passed")]
+    no_fault_rows = [
+        row for row in rows if (row.get("fault_injection") or {}).get("planned") == "none"
+    ]
     category_rows = defaultdict(list)
     task_rows = defaultdict(list)
     for row in rows:
@@ -96,6 +101,18 @@ def _summarize(rows, tasks, repetitions):
         "verifier_pass_rate": _ratio(sum(1 for row in rows if row.get("verifier_passed")), len(rows)),
         "avg_tool_steps": _mean(int(row.get("tool_steps", 0)) for row in rows),
         "avg_attempts": _mean(int(row.get("attempts", 0)) for row in rows),
+        "avg_recovery_actions": _mean(int(row.get("recovery_actions", 0)) for row in rows),
+        "faulted_runs": len(faulted_rows),
+        "recovered_runs": len(recovered_rows),
+        "recovery_rate": _ratio(len(recovered_rows), len(faulted_rows)),
+        "false_intervention_rate": _ratio(
+            sum(1 for row in no_fault_rows if int(row.get("recovery_actions", 0)) > 0),
+            len(no_fault_rows),
+        ),
+        "duplicate_side_effect_rate": _ratio(
+            sum(1 for row in rows if int(row.get("duplicate_side_effects", 0)) > 0),
+            len(rows),
+        ),
         "avg_duration_seconds": _mean(float(row.get("duration_seconds", 0.0)) for row in rows),
         "input_tokens": sum(usage["input_tokens"] for usage in usage_rows),
         "output_tokens": sum(usage["output_tokens"] for usage in usage_rows),
@@ -189,6 +206,9 @@ def run_real_model_benchmark(
     provider_config=None,
     progress=None,
     resume=False,
+    recovery_mode="compatible",
+    fault_plan=None,
+    disabled_recovery_policies=(),
 ):
     """Run all tasks repeatedly, persist artifacts, and return one aggregate result.
 
@@ -233,12 +253,19 @@ def run_real_model_benchmark(
         existing = json.loads(artifact_path.read_text(encoding="utf-8"))
         existing_provider = existing.get("provider") or {}
         existing_benchmark = existing.get("benchmark") or {}
+        existing_runtime = existing.get("runtime") or {}
         if existing_provider.get("name") != config.provider or existing_provider.get("model") != config.model:
             raise ValueError("cannot resume: provider or model differs from the existing artifact")
         if existing_benchmark.get("sha256") != benchmark_sha256:
             raise ValueError("cannot resume: benchmark content differs from the existing artifact")
         if int(existing.get("total_runs", total_runs)) != total_runs:
             raise ValueError("cannot resume: repetition count differs from the existing artifact")
+        if existing_runtime.get("recovery_mode", "compatible") != recovery_mode:
+            raise ValueError("cannot resume: recovery mode differs from the existing artifact")
+        if existing_runtime.get("fault_type", "none") != getattr(fault_plan, "kind", "none"):
+            raise ValueError("cannot resume: fault plan differs from the existing artifact")
+        if existing_runtime.get("disabled_recovery_policies", []) != sorted(disabled_recovery_policies):
+            raise ValueError("cannot resume: disabled recovery policies differ from the existing artifact")
         rows = list(existing.get("rows") or [])
         captured_at = str(existing.get("captured_at") or captured_at)
 
@@ -261,6 +288,9 @@ def run_real_model_benchmark(
             "commit_sha": _git_value(repo_root, "rev-parse", "HEAD"),
             "branch": _git_value(repo_root, "branch", "--show-current"),
             "dirty": bool(_git_value(repo_root, "status", "--porcelain")),
+            "recovery_mode": recovery_mode,
+            "fault_type": getattr(fault_plan, "kind", "none"),
+            "disabled_recovery_policies": sorted(disabled_recovery_policies),
         },
     }
 
@@ -279,6 +309,9 @@ def run_real_model_benchmark(
             model_version=config.model,
             max_new_tokens=int(max_new_tokens),
             model_client_factory=model_client_factory,
+            recovery_mode=recovery_mode,
+            fault_plan=fault_plan,
+            disabled_recovery_policies=disabled_recovery_policies,
         )
         for task in benchmark["tasks"]:
             if (task["id"], repetition) in completed_keys:

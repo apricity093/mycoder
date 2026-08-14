@@ -77,6 +77,15 @@ class ContextManager:
         self.section_floors = self._compute_section_floors()
         self.reduction_order = tuple(reduction_order or DEFAULT_REDUCTION_ORDER)
 
+    def tighten_for_recovery(self, ratio=0.75):
+        """Shrink dynamic sections after an explicit provider context overflow."""
+        before = dict(self.section_budgets)
+        for section in ("relevant_memory", "history", "memory"):
+            current = int(self.section_budgets.get(section, 0))
+            self.section_budgets[section] = max(20, int(current * float(ratio)))
+        self.section_floors = self._compute_section_floors()
+        return {"before": before, "after": dict(self.section_budgets)}
+
     def build(self, user_message):
         """按预算组装一轮完整 prompt。
 

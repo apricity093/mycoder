@@ -18,6 +18,13 @@ from ..run_store import RunStore
 from ..task_state import STOP_REASON_FINAL_ANSWER_RETURNED
 from ..tools import legal_tool_names
 from ..workspace import WorkspaceContext
+from .faults import (
+    FAULT_NONE,
+    FaultInjectingModelClient,
+    FaultPlan,
+    ToolOutputFaultInjector,
+    inject_context_pressure,
+)
 
 BENCHMARK_SCHEMA_VERSION = 1
 DEFAULT_BENCHMARK_PATH = Path("benchmarks/coding_tasks.json")
@@ -434,6 +441,9 @@ class BenchmarkEvaluator:
         max_new_tokens=DEFAULT_MAX_NEW_TOKENS,
         timezone_name=DEFAULT_TIMEZONE,
         model_client_factory=None,
+        recovery_mode="compatible",
+        fault_plan=None,
+        disabled_recovery_policies=(),
     ):
         self.benchmark_path = Path(benchmark_path)
         self.artifact_path = Path(artifact_path)
@@ -447,6 +457,9 @@ class BenchmarkEvaluator:
         self.max_new_tokens = max_new_tokens
         self.timezone_name = timezone_name
         self.model_client_factory = model_client_factory
+        self.recovery_mode = str(recovery_mode)
+        self.fault_plan = fault_plan or FaultPlan(kind=FAULT_NONE)
+        self.disabled_recovery_policies = tuple(str(value) for value in disabled_recovery_policies)
         self.repo_root = self.benchmark_path.resolve().parent.parent
 
     def load(self):
@@ -507,8 +520,9 @@ class BenchmarkEvaluator:
             model_client = self.model_client_factory(task=task, workspace=workspace)
         else:
             model_client = FakeModelClient(_scripted_outputs_for_task(task))
+        model_faults = FaultInjectingModelClient(model_client, self.fault_plan)
         agent = Apricity(
-            model_client=model_client,
+            model_client=model_faults,
             workspace=workspace,
             session_store=session_store,
             run_store=run_store,
@@ -516,8 +530,14 @@ class BenchmarkEvaluator:
             max_steps=int(task["step_budget"]),
             max_new_tokens=self.max_new_tokens,
             allowed_tools=task["allowed_tools"],
+            recovery_mode=self.recovery_mode,
+            recovery_backoff=(0, 0),
+            disabled_recovery_policies=self.disabled_recovery_policies,
         )
         _apply_task_setup(agent, task, fixture_copy_root)
+        inject_context_pressure(agent, self.fault_plan)
+        tool_faults = ToolOutputFaultInjector(self.fault_plan)
+        tool_faults.wrap_registry(agent.tools)
 
         initial_history_empty = len(agent.session["history"]) == 0
         initial_memory_state = agent.memory.to_dict()
@@ -531,6 +551,23 @@ class BenchmarkEvaluator:
         task_state_path = agent.run_store.task_state_path(task_state)
         report_path = agent.run_store.report_path(task_state)
         report = agent.run_store.load_report(task_state.run_id)
+        fault_events = list(model_faults.events) + list(tool_faults.events)
+        trace_events = [
+            json.loads(line)
+            for line in agent.run_store.trace_path(task_state).read_text(encoding="utf-8").splitlines()
+        ]
+        side_effect_calls = set()
+        duplicate_side_effects = 0
+        for event in trace_events:
+            if event.get("event") != "tool_executed" or not event.get("workspace_changed"):
+                continue
+            identity = (
+                str(event.get("name", "")),
+                json.dumps(event.get("args") or {}, sort_keys=True),
+            )
+            if identity in side_effect_calls:
+                duplicate_side_effects += 1
+            side_effect_calls.add(identity)
 
         artifact_path = _artifact_path_for_task(task)
         artifact_file = fixture_copy_root / artifact_path
@@ -604,6 +641,16 @@ class BenchmarkEvaluator:
             "non_failure_stop_reason": non_failure_stop_reason,
             "tool_steps": task_state.tool_steps,
             "attempts": task_state.attempts,
+            "recovery_mode": self.recovery_mode,
+            "recovery_actions": task_state.recovery_actions,
+            "recovery_counts": dict(task_state.recovery_counts),
+            "fault_injection": {
+                "planned": self.fault_plan.kind,
+                "injected": bool(fault_events),
+                "events": fault_events,
+            },
+            "recovered": bool(fault_events) and passed,
+            "duplicate_side_effects": duplicate_side_effects,
             "final_answer": final_answer,
             "stop_reason": task_state.stop_reason,
             "initial_history_empty": initial_history_empty,

@@ -4,7 +4,7 @@
 这个对象会被不断写入 task_state.json，供运行中观察和运行后复盘。
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import uuid4
 
@@ -18,6 +18,11 @@ STOP_REASON_STEP_LIMIT_REACHED = "step_limit_reached"
 STOP_REASON_RETRY_LIMIT_REACHED = "retry_limit_reached"
 STOP_REASON_INVALID_TOOL_LIMIT_REACHED = "invalid_tool_limit_reached"
 STOP_REASON_MODEL_ERROR = "model_error"
+STOP_REASON_PROVIDER_RETRY_EXHAUSTED = "provider_retry_exhausted"
+STOP_REASON_CONTEXT_RECOVERY_EXHAUSTED = "context_recovery_exhausted"
+STOP_REASON_CONTEXT_RECOVERY_NO_PROGRESS = "context_recovery_no_progress"
+STOP_REASON_PROTOCOL_CORRECTION_EXHAUSTED = "protocol_correction_exhausted"
+STOP_REASON_RECOVERY_BUDGET_EXHAUSTED = "recovery_budget_exhausted"
 STOP_REASON_TOOL_TIMEOUT = "tool_timeout"
 STOP_REASON_APPROVAL_DENIED = "approval_denied"
 STOP_REASON_DELEGATE_FAILED = "delegate_failed"
@@ -34,6 +39,8 @@ class TaskState:
     tool_steps: int = 0
     attempts: int = 0
     invalid_tool_attempts: int = 0
+    recovery_actions: int = 0
+    recovery_counts: dict = field(default_factory=dict)
     last_tool: str = ""
     stop_reason: str = ""
     final_answer: str = ""
@@ -56,6 +63,8 @@ class TaskState:
             tool_steps=int(data.get("tool_steps", 0)),
             attempts=int(data.get("attempts", 0)),
             invalid_tool_attempts=int(data.get("invalid_tool_attempts", 0)),
+            recovery_actions=int(data.get("recovery_actions", 0)),
+            recovery_counts={str(key): int(value) for key, value in (data.get("recovery_counts") or {}).items()},
             last_tool=str(data.get("last_tool", "")),
             stop_reason=str(data.get("stop_reason", "")),
             final_answer=str(data.get("final_answer", "")),
@@ -76,6 +85,12 @@ class TaskState:
 
     def record_invalid_tool(self):
         self.invalid_tool_attempts += 1
+        return self
+
+    def record_recovery(self, policy):
+        policy = str(policy)
+        self.recovery_actions += 1
+        self.recovery_counts[policy] = int(self.recovery_counts.get(policy, 0)) + 1
         return self
 
     def stop(self, stop_reason, status=STATUS_STOPPED, final_answer=""):
@@ -113,6 +128,8 @@ class TaskState:
             "tool_steps": self.tool_steps,
             "attempts": self.attempts,
             "invalid_tool_attempts": self.invalid_tool_attempts,
+            "recovery_actions": self.recovery_actions,
+            "recovery_counts": dict(sorted(self.recovery_counts.items())),
             "last_tool": self.last_tool,
             "stop_reason": self.stop_reason,
             "final_answer": self.final_answer,

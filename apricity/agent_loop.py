@@ -3,7 +3,15 @@
 import time
 
 from .checkpoint import CHECKPOINT_NONE_STATUS, CHECKPOINT_PARTIAL_STALE_STATUS, CHECKPOINT_WORKSPACE_MISMATCH_STATUS
-from .task_state import TaskState
+from .recovery import (
+    DECISION_CORRECT_PROTOCOL,
+    DECISION_REBUILD_CONTEXT,
+    DECISION_RETRY_MODEL,
+    FAILURE_PROTOCOL,
+    Failure,
+    failure_from_exception,
+)
+from .task_state import STATUS_FAILED, TaskState
 from .workspace import clip, now
 
 
@@ -29,6 +37,28 @@ class AgentLoop:
         return "pytest" in command_text or "unittest" in command_text
 
     @staticmethod
+    def _record_recovery(agent, task_state, lifecycle_point, failure, decision):
+        if decision.intervention:
+            task_state.record_recovery(decision.policy)
+            agent.run_store.write_task_state(task_state)
+        agent.emit_trace(
+            task_state,
+            "recovery_decided",
+            {
+                "lifecycle_point": lifecycle_point,
+                "failure_type": failure.kind,
+                "failure_message": failure.message,
+                "policy": decision.policy,
+                "decision": decision.action,
+                "reason": decision.reason,
+                "delay_seconds": decision.delay_seconds,
+                "recovery_actions": task_state.recovery_actions,
+                "remaining_recovery_budget": max(0, 4 - task_state.recovery_actions),
+                **dict(decision.details),
+            },
+        )
+
+    @staticmethod
     def _persist_model_failure(
         agent,
         task_state,
@@ -37,6 +67,7 @@ class AgentLoop:
         error,
         model_started_at,
         run_started_at,
+        stop_reason="model_error",
     ):
         completion_metadata = dict(getattr(agent.model_client, "last_completion_metadata", {}) or {})
         if completion_metadata:
@@ -45,7 +76,10 @@ class AgentLoop:
         agent.last_prompt_metadata = prompt_metadata
         error_text = agent.redact_artifact(f"{type(error).__name__}: {error}")
         final = f"Stopped because the model provider failed: {error_text}"
-        task_state.stop_model_error(final)
+        if stop_reason == "model_error":
+            task_state.stop_model_error(final)
+        else:
+            task_state.stop(stop_reason, status=STATUS_FAILED, final_answer=final)
         agent.record({"role": "assistant", "content": final, "created_at": now()})
         agent.run_store.write_task_state(task_state)
         agent.emit_trace(
@@ -107,6 +141,7 @@ class AgentLoop:
         max_attempts = max(agent.max_steps * 3, agent.max_steps + 4)
         invalid_tool_attempts = 0
         finalization_attempted = False
+        forced_stop_reason = ""
 
         # 这是 agent 的主循环，可以按“感知 -> 决策 -> 行动 -> 记录”来理解：
         # 1. 感知：重新组 prompt，把当前状态整理给模型看
@@ -219,6 +254,48 @@ class AgentLoop:
                     prompt_cache_retention=prompt_cache_retention,
                 )
             except Exception as exc:
+                failure = failure_from_exception(exc)
+                decision = agent.recovery_engine.handle_failure(
+                    failure,
+                    agent.recovery_snapshot(
+                        "model_request_failed",
+                        prompt_chars=len(prompt),
+                        finalization_only=final_only,
+                    ),
+                )
+                self._record_recovery(agent, task_state, "model_request_failed", failure, decision)
+                if decision.action == DECISION_RETRY_MODEL:
+                    if decision.delay_seconds:
+                        time.sleep(decision.delay_seconds)
+                    continue
+                if decision.action == DECISION_REBUILD_CONTEXT:
+                    before_chars = len(prompt)
+                    agent.context_manager.tighten_for_recovery(ratio=0.25)
+                    rebuilt_prompt, rebuilt_metadata = agent._build_prompt_and_metadata(user_message)
+                    after_chars = len(rebuilt_prompt)
+                    reduction_ratio = (before_chars - after_chars) / before_chars if before_chars else 0.0
+                    agent.emit_trace(
+                        task_state,
+                        "context_rebuilt",
+                        {
+                            "before_chars": before_chars,
+                            "after_chars": after_chars,
+                            "reduction_ratio": reduction_ratio,
+                            "prompt_metadata": rebuilt_metadata,
+                        },
+                    )
+                    if reduction_ratio >= float(decision.details.get("minimum_reduction_ratio", 0.20)):
+                        continue
+                    return self._persist_model_failure(
+                        agent,
+                        task_state,
+                        user_message,
+                        prompt_metadata,
+                        exc,
+                        model_started_at,
+                        run_started_at,
+                        stop_reason="context_recovery_no_progress",
+                    )
                 return self._persist_model_failure(
                     agent,
                     task_state,
@@ -227,6 +304,7 @@ class AgentLoop:
                     exc,
                     model_started_at,
                     run_started_at,
+                    stop_reason=decision.reason if decision.reason.endswith("_exhausted") else "model_error",
                 )
             completion_metadata = dict(getattr(agent.model_client, "last_completion_metadata", {}) or {})
             if completion_metadata:
@@ -290,6 +368,36 @@ class AgentLoop:
                         **dict(tool_result.metadata or {}),
                     },
                 )
+                protocol_decision = None
+                tool_error_code = str((tool_result.metadata or {}).get("tool_error_code", ""))
+                if tool_status == "rejected" and tool_error_code in {
+                    "unknown_tool",
+                    "invalid_arguments",
+                    "repeated_identical_call",
+                }:
+                    failure = Failure(
+                        kind=FAILURE_PROTOCOL,
+                        message=(
+                            f"Runtime notice: tool call rejected ({tool_error_code}). "
+                            "Correct the tool name or arguments before continuing."
+                        ),
+                        error_code=tool_error_code,
+                    )
+                    protocol_decision = agent.recovery_engine.handle_failure(
+                        failure,
+                        agent.recovery_snapshot("model_response_rejected"),
+                    )
+                    self._record_recovery(
+                        agent,
+                        task_state,
+                        "model_response_rejected",
+                        failure,
+                        protocol_decision,
+                    )
+                    if protocol_decision.action == DECISION_CORRECT_PROTOCOL and protocol_decision.intervention:
+                        agent.record(
+                            {"role": "assistant", "content": protocol_decision.notice, "created_at": now()}
+                        )
                 if self._is_successful_test_run(name, args, result, tool_result.metadata):
                     notice = (
                         "Runtime notice: the verification command succeeded with exit_code 0. "
@@ -312,10 +420,26 @@ class AgentLoop:
                         "trigger": "tool_executed",
                     },
                 )
+                if protocol_decision is not None and protocol_decision.action != DECISION_CORRECT_PROTOCOL:
+                    forced_stop_reason = protocol_decision.reason
+                    break
                 continue
 
             if kind == "retry":
-                agent.record({"role": "assistant", "content": payload, "created_at": now()})
+                failure = Failure(kind=FAILURE_PROTOCOL, message=str(payload), error_code="malformed_response")
+                decision = agent.recovery_engine.handle_failure(
+                    failure,
+                    agent.recovery_snapshot(
+                        "model_response_rejected",
+                        prompt_chars=len(prompt),
+                        finalization_only=final_only,
+                    ),
+                )
+                self._record_recovery(agent, task_state, "model_response_rejected", failure, decision)
+                if decision.action != DECISION_CORRECT_PROTOCOL:
+                    forced_stop_reason = decision.reason
+                    break
+                agent.record({"role": "assistant", "content": decision.notice or payload, "created_at": now()})
                 agent.run_store.write_task_state(task_state)
                 if final_only:
                     break
@@ -348,7 +472,10 @@ class AgentLoop:
             agent.run_store.write_report(task_state, agent.redact_artifact(agent.build_report(task_state)))
             return final
 
-        if invalid_tool_attempts >= self.MAX_INVALID_TOOL_ATTEMPTS:
+        if forced_stop_reason:
+            final = f"Stopped by recovery policy: {forced_stop_reason}."
+            task_state.stop(forced_stop_reason, final_answer=final)
+        elif invalid_tool_attempts >= self.MAX_INVALID_TOOL_ATTEMPTS:
             final = "Stopped after too many invalid or rejected tool calls."
             task_state.stop_invalid_tool_limit(final)
         elif attempts >= max_attempts and tool_steps < agent.max_steps:

@@ -9,6 +9,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from apricity.evaluation.real_model_benchmark import run_real_model_benchmark  # noqa: E402
+from apricity.evaluation.faults import FAULT_KINDS, FaultPlan  # noqa: E402
 from apricity.providers.config import PROVIDER_CHOICES  # noqa: E402
 
 
@@ -24,6 +25,15 @@ def build_arg_parser():
     parser.add_argument("--max-new-tokens", type=int, default=512)
     parser.add_argument("--request-timeout-seconds", type=int, default=300)
     parser.add_argument("--resume", action="store_true", help="Resume an interrupted artifact in --output.")
+    parser.add_argument("--recovery-mode", choices=("compatible", "resilient"), default="compatible")
+    parser.add_argument("--fault", choices=sorted(FAULT_KINDS), default="none")
+    parser.add_argument(
+        "--disable-recovery-policy",
+        dest="disabled_recovery_policies",
+        action="append",
+        default=[],
+        choices=("provider_retry", "context_recovery", "protocol_correction", "tool_result_spill"),
+    )
     return parser
 
 
@@ -49,6 +59,9 @@ def main(argv=None):
         request_timeout_seconds=args.request_timeout_seconds,
         progress=_print_progress,
         resume=args.resume,
+        recovery_mode=args.recovery_mode,
+        fault_plan=FaultPlan(kind=args.fault),
+        disabled_recovery_policies=args.disabled_recovery_policies,
     )
     summary = payload["summary"]
     print(f"Results: {Path(payload['artifact_path']).resolve()}")

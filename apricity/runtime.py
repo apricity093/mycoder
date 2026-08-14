@@ -19,6 +19,13 @@ from .context_manager import ContextManager
 from .checkpoint import CHECKPOINT_NONE_STATUS
 from .prompt_prefix import build_prompt_prefix, tool_signature
 from .run_store import RunStore
+from .recovery import (
+    RECOVERY_MODE_COMPATIBLE,
+    RecoveryEngine,
+    RunSnapshot,
+    SpillStore,
+    ToolResultCandidate,
+)
 from .security import REDACTED_VALUE
 from .session_store import SessionStore
 from .tool_context import ToolContext
@@ -84,6 +91,9 @@ class Apricity:
         secret_env_names=None,
         feature_flags=None,
         allowed_tools=None,
+        recovery_mode=RECOVERY_MODE_COMPATIBLE,
+        recovery_backoff=(0.5, 1.0),
+        disabled_recovery_policies=(),
     ):
         self.model_client = model_client
         self.workspace = workspace
@@ -102,6 +112,11 @@ class Apricity:
             self.feature_flags.update({str(key): bool(value) for key, value in feature_flags.items()})
         self.allowed_tools = self._normalize_allowed_tools(allowed_tools)
         self.run_store = run_store or RunStore(Path(workspace.repo_root) / ".apricity" / "runs")
+        self.recovery_engine = RecoveryEngine(
+            mode=recovery_mode,
+            backoff=recovery_backoff,
+            disabled_policies=disabled_recovery_policies,
+        )
         self.session = session or {
             "id": datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:6],
             "created_at": now(),
@@ -526,6 +541,48 @@ class Apricity:
         self._last_tool_result_metadata = dict(result.metadata)
         return result
 
+    def recovery_snapshot(self, phase, *, prompt_chars=0, finalization_only=False):
+        state = self.current_task_state
+        return RunSnapshot(
+            run_id=str(getattr(state, "run_id", "")),
+            phase=str(phase),
+            model_attempts=int(getattr(state, "attempts", 0)),
+            tool_steps=int(getattr(state, "tool_steps", 0)),
+            recovery_actions=int(getattr(state, "recovery_actions", 0)),
+            recovery_counts=dict(getattr(state, "recovery_counts", {}) or {}),
+            prompt_chars=int(prompt_chars or 0),
+            prompt_budget=int(getattr(self.context_manager, "total_budget", 0)),
+            finalization_only=bool(finalization_only),
+        )
+
+    def finalize_tool_result(self, content, metadata):
+        result = self.recovery_engine.finalize_tool_result(
+            ToolResultCandidate(content=str(content), metadata=dict(metadata or {})),
+            self.recovery_snapshot("tool_result_ready"),
+            run_dir=self.current_run_dir,
+            redactor=self.redact_artifact,
+        )
+        if result.intervention and self.current_task_state is not None:
+            self.current_task_state.record_recovery(result.policy)
+            self.run_store.write_task_state(self.current_task_state)
+            self.emit_trace(
+                self.current_task_state,
+                "recovery_intervened",
+                {
+                    "lifecycle_point": "tool_result_ready",
+                    "policy": result.policy,
+                    "decision": "spill_tool_result",
+                    "recovery_actions": self.current_task_state.recovery_actions,
+                    **dict(result.metadata),
+                },
+            )
+        return result
+
+    def read_spill(self, spill_id, page=1):
+        if self.current_run_dir is None:
+            raise ValueError("no active run spill store")
+        return SpillStore(self.current_run_dir, self.redact_artifact).read(spill_id, page=page)
+
     def run_tool(self, name, args):
         """执行一次工具调用，并在执行前后套上完整护栏。
 
@@ -575,6 +632,11 @@ class Apricity:
             "final_answer": task_state.final_answer,
             "tool_steps": task_state.tool_steps,
             "attempts": task_state.attempts,
+            "model_attempts": task_state.attempts,
+            "recovery_mode": self.recovery_engine.mode,
+            "disabled_recovery_policies": sorted(self.recovery_engine.disabled_policies),
+            "recovery_actions": task_state.recovery_actions,
+            "recovery_counts": dict(sorted(task_state.recovery_counts.items())),
             "checkpoint_id": task_state.checkpoint_id,
             "resume_status": task_state.resume_status,
             "task_state": task_state.to_dict(),
@@ -600,6 +662,7 @@ class Apricity:
             depth=self.depth,
             max_depth=self.max_depth,
             spawn_delegate=self.spawn_delegate,
+            spill_reader=self.read_spill if self.recovery_engine.mode != RECOVERY_MODE_COMPATIBLE else None,
         )
 
     def spawn_delegate(self, args):
@@ -617,6 +680,9 @@ class Apricity:
             read_only=True,
             secret_env_names=self.secret_env_names,
             shell_env_allowlist=self.shell_env_allowlist,
+            recovery_mode=self.recovery_engine.mode,
+            recovery_backoff=self.recovery_engine.backoff,
+            disabled_recovery_policies=self.recovery_engine.disabled_policies,
         )
         # 委派的目标是“调查”，不是“放权执行”。
         # 子 agent 以只读方式运行、步数更少，最后只把结论文本返回给父 agent。
