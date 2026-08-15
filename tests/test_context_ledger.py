@@ -174,6 +174,12 @@ def test_tool_pairing_is_preserved_after_pruning_replacement(tmp_path):
 
     assert ledger.surface.seqs == [0, 1, 3]
     assert ledger.surface_generation == 1
+    restored = SessionLedger(
+        session_id="session_001",
+        workspace_root=str(tmp_path),
+        events=ledger.events(),
+    )
+    assert restored.surface.seqs == [0, 1, 3]
 
 
 def test_orphan_tool_result_rejected_on_load(tmp_path):

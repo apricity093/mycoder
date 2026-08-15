@@ -858,7 +858,18 @@ class Apricity:
             return None
 
         body = match.group("body")
+        # ``call_id`` is provider protocol metadata. The runtime generates
+        # its own durable call id and must not pass this field to the tool.
+        attrs.pop("call_id", None)
         args = dict(attrs)
+        if "<args>" in body:
+            try:
+                nested_args = json.loads(Apricity.extract_raw(body, "args"))
+            except (TypeError, json.JSONDecodeError):
+                return None
+            if not isinstance(nested_args, dict):
+                return None
+            args.update(nested_args)
         for key in ("content", "old_text", "new_text", "command", "task", "pattern", "path"):
             if f"<{key}>" in body:
                 args[key] = Apricity.extract_raw(body, key)

@@ -176,6 +176,31 @@ def test_b_tool_call_result_pair_removed_as_atomic_unit():
     assert any(sorted(unit) == [0, 1] for unit in units)
 
 
+def test_b_removal_summary_stays_standalone_after_nonmonotonic_replacement():
+    policy = token_policy(effective_input_budget=700, retained_recent_steps=0)
+    ledger, engine = make_engine(policy, seed_units=0)
+    ledger.append("user/message", {"content": "old request"})
+    ledger.append("assistant/message", {"content": "old response " + ("x" * 4000)})
+    ledger.append("user/message", {"content": "Current request"})
+    ledger.append(
+        "context/summary",
+        {
+            "rendered": "[context-summary] older history removed.",
+            "removed": True,
+            "kind": "removal",
+        },
+        surface_op={"op": "replace", "start": 0, "end": 0},
+        source_event_seqs=(0,),
+    )
+
+    units = engine._retained_unit_plan()
+    assert [3] in units
+    assert [1] in units
+    request = engine._build_request("Current request")
+    assert engine._remove_old_units("Current request", request, engine.meter.count_request(request)) is True
+    assert any(node.seq == 3 for node in ledger.surface.nodes)
+
+
 def test_b_current_request_never_removed_even_under_extreme_pressure():
     policy = token_policy(effective_input_budget=500)
     ledger, engine = make_engine(policy, seed_units=4)

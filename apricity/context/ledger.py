@@ -397,6 +397,7 @@ class SessionLedger:
                         f"pruned result without an open call at seq {node.seq}",
                         code="orphan_tool_result",
                     )
+                del open_calls[call_id]
         if open_calls:
             raise ContextPreparationError(
                 f"surface has open tool calls without results: {sorted(open_calls)}",

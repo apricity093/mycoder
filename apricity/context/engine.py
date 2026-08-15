@@ -841,13 +841,16 @@ class ReplayableContextEngine:
                     units.append(current)
                 current = [node.seq]
                 continue
-            if node.event_type == "tool/result" and current:
-                # A completed call/result pair must stay one atomic unit.
-                previous_event = self.ledger.event_by_seq(current[-1]) if current else None
+            if node.event_type in {"tool/result", "context/pruned-tool-result"} and current:
+                # A completed call/result pair must stay one atomic unit. A
+                # pruned result has a newer event seq than its source result,
+                # so pairing must follow Surface order rather than numeric seq
+                # adjacency.
+                previous_node = nodes[index - 1] if index else None
                 if (
-                    previous_event is not None
-                    and previous_event["type"] == "tool/call"
-                    and current[-1] == node.seq - 1
+                    previous_node is not None
+                    and previous_node.event_type == "tool/call"
+                    and current == [previous_node.seq]
                 ):
                     current.append(node.seq)
                     units.append(current)
@@ -860,7 +863,11 @@ class ReplayableContextEngine:
             if node.event_type in {"context/pruned-tool-result", "context/summary"}:
                 if current:
                     units.append(current)
-                current = [node.seq]
+                # Replacements occupy their original Surface position while
+                # carrying a newer ledger seq. Keep them as standalone units
+                # so a later node cannot create a numerically reversed span.
+                units.append([node.seq])
+                current = []
                 continue
             if node.event_type == "user/message":
                 # The current user request is preserved by the caller; a
@@ -979,24 +986,26 @@ class ReplayableContextEngine:
             return False
         # Shadow each removed unit with a bounded removal notice Surface node,
         # one atomic span per unit, so the replacement never splits a pair.
-        removed_sorted = sorted(removed_seqs)
         for unit in removable:
             unit_set = set(unit)
             if not (unit_set & removed_seqs):
                 continue
-            unit_seq_list = sorted(unit)
-            start_seq = unit_seq_list[0]
-            end_seq = unit_seq_list[-1]
+            # ``unit`` is in Surface order, which can differ from event-seq
+            # order after a replacement. Surface endpoints drive the span;
+            # source citations remain sorted for the ledger envelope.
+            start_seq = unit[0]
+            end_seq = unit[-1]
+            unit_source_seqs = sorted(unit)
             self.ledger.append(
                 "context/summary",
                 {
                     "rendered": "[context-summary] older history units removed deterministically under token pressure.",
-                    "removed_unit_seqs": unit_seq_list,
+                    "removed_unit_seqs": unit_source_seqs,
                     "removed": True,
                     "kind": "removal",
                 },
                 surface_op={"op": "replace", "start": start_seq, "end": end_seq},
-                source_event_seqs=tuple(unit_seq_list),
+                source_event_seqs=tuple(unit_source_seqs),
             )
         return True
 
@@ -1131,7 +1140,7 @@ class ReplayableContextEngine:
                 "generation": self.ledger.surface_generation,
             },
             surface_op={"op": "replace", "start": start_seq, "end": end_seq},
-            source_event_seqs=tuple(range_seqs),
+            source_event_seqs=tuple(sorted(range_seqs)),
         )
         self.ledger.append(
             "compaction/end",

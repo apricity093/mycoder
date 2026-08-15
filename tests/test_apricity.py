@@ -72,6 +72,19 @@ def test_parse_deepseek_dsml_uses_first_invoke_and_rejects_incomplete_envelope()
     assert Apricity.parse("<\uff5cDSML\uff5ctool_calls><\uff5cDSML\uff5cinvoke name=\"RunProcess\">")[0] == "retry"
 
 
+def test_parse_xml_tool_decodes_nested_args_and_ignores_provider_call_id():
+    raw = (
+        '<tool name="run_process" call_id="provider-call-1">'
+        '<args>{"program":"python","args":["-m","pytest","-q"]}</args>'
+        "</tool>"
+    )
+
+    assert Apricity.parse(raw) == (
+        "tool",
+        {"name": "run_process", "args": {"program": "python", "args": ["-m", "pytest", "-q"]}},
+    )
+
+
 def test_agent_runs_tool_then_final(tmp_path):
     (tmp_path / "hello.txt").write_text("alpha\nbeta\n", encoding="utf-8")
     agent = build_agent(
