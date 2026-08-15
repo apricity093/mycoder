@@ -227,7 +227,13 @@ class ContextCompactionRunner:
                 "stderr": f"public verifier timed out\n{exc.stderr or ''}",
             }
 
-    def artifact_result_for(self, task, workspace_copy_root: Path) -> dict:
+    def artifact_result_for(
+        self,
+        task,
+        workspace_copy_root: Path,
+        events: list[dict] | None = None,
+        surface_text: str = "",
+    ) -> dict:
         """Run public + hidden artifact verifiers and produce the three-layer
         artifact result. When artifact verification is disabled (deterministic
         gate), the dimension is recorded as not evaluated."""
@@ -242,6 +248,8 @@ class ContextCompactionRunner:
             task=task,
             hidden_verifier=hidden,
             public_verifier_result=public,
+            events=events,
+            surface_text=surface_text,
         )
 
     # ------------------------------------------------------------------

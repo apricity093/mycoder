@@ -63,7 +63,9 @@ class RealAgentLoop:
         self.budget = int(budget)
         self.repetition = int(repetition)
         self.workspace_copy_root = Path(workspace_copy_root)
-        self.artifact_verifier = artifact_verifier or (lambda task, root: {"artifact_pass": None, "skipped": True})
+        self.artifact_verifier = artifact_verifier or (
+            lambda task, root, events=None, surface_text="": {"artifact_pass": None, "skipped": True}
+        )
         self.seed_root = Path(seed_root)
         self.model_client_factory = model_client_factory
         self.provider = provider
@@ -297,7 +299,12 @@ class RealAgentLoop:
         }
 
     def _artifact_result(self) -> dict:
-        return self.artifact_verifier(self.task, self.fixture_root)
+        return self.artifact_verifier(
+            self.task,
+            self.fixture_root,
+            self.ledger.events(),
+            self.ledger.surface_rendering(),
+        )
 
     def _rebuild_context(self, turn_message: str) -> bool:
         """Rebuild context after a typed failure; require token progress."""

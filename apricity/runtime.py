@@ -745,6 +745,15 @@ class Apricity:
         进入平台控制流的第一道结构化关口。
         """
         raw = str(raw)
+        # DeepSeek may emit its native DSML envelope even when the request
+        # uses the text-only compatibility protocol. Parse the first invoke
+        # as one runtime step; subsequent invokes remain in the raw assistant
+        # message and can be handled by later turns.
+        dsml_payload = Apricity.parse_dsml_tool(raw)
+        if dsml_payload is not None:
+            return "tool", dsml_payload
+        if "\uff5cDSML\uff5c" in raw:
+            return "retry", Apricity.retry_notice("model returned malformed DSML tool output")
         # 这里支持两种工具格式：
         # 1. <tool>...</tool> 里包 JSON，适合简短调用
         # 2. XML 风格属性/子标签，适合写文件这类多行内容
@@ -778,6 +787,53 @@ class Apricity:
         if raw:
             return "final", raw
         return "retry", Apricity.retry_notice("model returned an empty response")
+
+    @staticmethod
+    def parse_dsml_tool(raw):
+        """Parse DeepSeek's ``<｜DSML｜invoke>`` compatibility output."""
+        marker = r"\uFF5CDSML\uFF5C"
+        invoke = re.search(
+            rf"<{marker}invoke\b(?P<attrs>[^>]*)>(?P<body>.*?)</{marker}invoke>",
+            str(raw),
+            re.S,
+        )
+        if not invoke:
+            return None
+        attrs = Apricity.parse_attrs(invoke.group("attrs"))
+        raw_name = str(attrs.get("name", "")).strip()
+        if not raw_name:
+            return None
+        compact_name = re.sub(r"[^A-Za-z0-9]+", "", raw_name).lower()
+        aliases = {
+            "listfiles": "list_files",
+            "readfile": "read_file",
+            "readspill": "read_spill",
+            "search": "search",
+            "runshell": "run_shell",
+            "runprocess": "run_process",
+            "writefile": "write_file",
+            "patchfile": "patch_file",
+            "delegate": "delegate",
+        }
+        name = aliases.get(compact_name)
+        if name is None:
+            name = re.sub(r"(?<!^)(?=[A-Z])", "_", raw_name).lower()
+        args = {}
+        parameter_pattern = (
+            rf"<{marker}parameter\b(?P<attrs>[^>]*)>(?P<value>.*?)"
+            rf"</{marker}parameter>"
+        )
+        for parameter in re.finditer(parameter_pattern, invoke.group("body"), re.S):
+            parameter_attrs = Apricity.parse_attrs(parameter.group("attrs"))
+            key = str(parameter_attrs.get("name", "")).strip()
+            if not key:
+                continue
+            value = parameter.group("value").strip()
+            try:
+                args[key] = json.loads(value)
+            except (TypeError, json.JSONDecodeError):
+                args[key] = value
+        return {"name": name, "args": args}
 
     @staticmethod
     def retry_notice(problem=None):

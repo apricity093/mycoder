@@ -101,10 +101,11 @@ Code review found the first 180-Run experiment's core verification chain was
 not trustworthy; those results are invalidated. The fixes:
 
 - **Artifact verifiers execute**: the public verifier command runs as a
-  subprocess against the workspace copy, and the hidden verifier checks that
-  the task artifact contains its `required_fact`. `run_pass` requires
-  `artifact_pass AND context_pass AND trace_pass`; the deterministic gate
-  records the artifact dimension as skipped rather than faking a pass.
+  subprocess against the workspace copy. Hidden checks validate the declared
+  artifact, durable event projection, or model-visible Surface according to
+  the task contract. `run_pass` requires `artifact_pass AND context_pass AND
+  trace_pass`; the deterministic gate records the artifact dimension as
+  skipped rather than faking a pass.
 - **Replay integrity replays**: `replay_integrity()` folds events into the
   Surface, rebuilds the dispatch-time flat prompt with the same versioned
   renderer (`render_dispatch_prompt` for B/C/D, `_LegacyRenderer` for A),

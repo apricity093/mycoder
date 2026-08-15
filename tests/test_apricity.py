@@ -38,6 +38,40 @@ def build_agent(tmp_path, outputs, **kwargs):
     )
 
 
+def test_parse_deepseek_dsml_run_process_with_json_and_string_parameters():
+    raw = (
+        "<\uff5cDSML\uff5ctool_calls>\n"
+        "<\uff5cDSML\uff5cinvoke name=\"RunProcess\">\n"
+        "<\uff5cDSML\uff5cparameter name=\"args\" string=\"false\">"
+        "[\"pytest\", \"-q\"]"
+        "</\uff5cDSML\uff5cparameter>\n"
+        "<\uff5cDSML\uff5cparameter name=\"program\" string=\"true\">"
+        "python"
+        "</\uff5cDSML\uff5cparameter>\n"
+        "</\uff5cDSML\uff5cinvoke>\n"
+        "</\uff5cDSML\uff5ctool_calls>"
+    )
+
+    kind, payload = Apricity.parse(raw)
+
+    assert kind == "tool"
+    assert payload == {
+        "name": "run_process",
+        "args": {"args": ["pytest", "-q"], "program": "python"},
+    }
+
+
+def test_parse_deepseek_dsml_uses_first_invoke_and_rejects_incomplete_envelope():
+    first = '<\uff5cDSML\uff5cinvoke name="ReadFile"><\uff5cDSML\uff5cparameter name="path">README.md</\uff5cDSML\uff5cparameter></\uff5cDSML\uff5cinvoke>'
+    second = '<\uff5cDSML\uff5cinvoke name="RunProcess"><\uff5cDSML\uff5cparameter name="program">python</\uff5cDSML\uff5cparameter></\uff5cDSML\uff5cinvoke>'
+
+    assert Apricity.parse(first + second) == (
+        "tool",
+        {"name": "read_file", "args": {"path": "README.md"}},
+    )
+    assert Apricity.parse("<\uff5cDSML\uff5ctool_calls><\uff5cDSML\uff5cinvoke name=\"RunProcess\">")[0] == "retry"
+
+
 def test_agent_runs_tool_then_final(tmp_path):
     (tmp_path / "hello.txt").write_text("alpha\nbeta\n", encoding="utf-8")
     agent = build_agent(

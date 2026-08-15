@@ -260,18 +260,21 @@ def artifact_verifier_pass(
     task: dict,
     hidden_verifier: dict,
     public_verifier_result: dict | None = None,
+    events: list[dict] | None = None,
+    surface_text: str = "",
 ) -> dict:
     """Execute the public and hidden artifact verifiers against the workspace.
 
     ``public_verifier_result`` is the subprocess outcome produced by the
     runner (exit code + bounded output); when None the public verifier has
-    not been executed and the check fails. The hidden verifier passes only
-    when its ``required_fact`` appears in the task's artifact file (the
-    fixture copy the Agent could have modified). The hidden verifier payload
-    itself is never part of the workspace.
+    not been executed and the check fails. Hidden checks may validate the
+    declared artifact, the durable event projection, or the model-visible
+    surface. The hidden verifier payload itself is never part of the workspace.
     """
     public_pass = bool(public_verifier_result and public_verifier_result.get("exit_code") == 0)
     hidden_required = str(hidden_verifier.get("required_fact") or "").strip()
+    hidden_surface_required = str(hidden_verifier.get("surface_required_fact") or "").strip()
+    hidden_check = str(hidden_verifier.get("check") or "").strip()
     hidden_pass = False
     artifact_rel = str(task.get("artifact_path") or "").strip()
     if hidden_required and artifact_rel:
@@ -286,6 +289,10 @@ def artifact_verifier_pass(
             except OSError:
                 text = ""
             hidden_pass = _normalized(hidden_required) in _normalized(text)
+    elif hidden_surface_required:
+        hidden_pass = _normalized(hidden_surface_required) in _normalized(surface_text)
+    elif hidden_check == "pair_balance":
+        hidden_pass = tool_pairs_balanced(events or [])
     artifact_pass = bool(public_pass and hidden_pass)
     return {
         "artifact_pass": artifact_pass,
@@ -298,6 +305,7 @@ def artifact_verifier_pass(
         },
         "hidden_verifier_id": str(hidden_verifier.get("check", "")),
         "hidden_required_fact": hidden_required,
+        "hidden_surface_required_fact": hidden_surface_required,
         "artifact_path": artifact_rel,
     }
 

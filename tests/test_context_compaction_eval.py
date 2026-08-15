@@ -721,6 +721,48 @@ def test_hidden_artifact_path_escape_fails_closed(tmp_path):
     assert result["artifact_pass"] is False
 
 
+def test_hidden_pair_and_surface_checks_use_run_state_not_wrong_artifact(tmp_path):
+    from apricity.evaluation.context_compaction.verifiers import artifact_verifier_pass
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    events = [
+        {
+            "seq": 0,
+            "type": "tool/call",
+            "data": {"call_id": "c1", "tool_name": "run_process"},
+            "surface_op": "append",
+        },
+        {
+            "seq": 1,
+            "type": "tool/result",
+            "data": {"call_id": "c1", "tool_name": "run_process", "content": "ok"},
+            "surface_op": "append",
+        },
+    ]
+    public = {"exit_code": 0, "stdout": "", "stderr": ""}
+
+    pair = artifact_verifier_pass(
+        workspace_copy_root=workspace,
+        task={"artifact_path": "app.py"},
+        hidden_verifier={"check": "pair_balance", "required_fact": ""},
+        public_verifier_result=public,
+        events=events,
+    )
+    assert pair["hidden_pass"] is True
+    assert pair["artifact_pass"] is True
+
+    surface = artifact_verifier_pass(
+        workspace_copy_root=workspace,
+        task={"artifact_path": "app.py"},
+        hidden_verifier={"check": "middle_diagnostic", "surface_required_fact": "timeout is 30"},
+        public_verifier_result=public,
+        surface_text="traceback: timeout is 30",
+    )
+    assert surface["hidden_pass"] is True
+    assert surface["artifact_pass"] is True
+
+
 def test_clean_worktree_is_enforced_and_dirty_override_is_noncanonical(tmp_path, monkeypatch):
     def make_runner(allow_dirty):
         return ContextCompactionRunner(

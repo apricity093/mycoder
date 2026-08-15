@@ -85,7 +85,7 @@
         "tool_pairs_balanced",
         "request_replayable"
       ],
-      "artifact_path": "app.py"
+      "artifact_path": "centralized_timeout_default.py"
     },
     {
       "id": "C03-tail-evidence",
