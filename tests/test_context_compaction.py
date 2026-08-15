@@ -100,6 +100,35 @@ def test_compaction_commits_valid_evidence_anchored_summary():
     # A committed summary replaces a contiguous old range; source events are
     # retained in the ledger and cited exactly.
     assert summary["selected_source_seqs"] == sorted(summary["selected_source_seqs"])
+    assert summary["selected_surface_seqs"]
+
+
+def test_compaction_preserves_current_request_and_protected_fact_for_replay():
+    ledger, engine = build_engine(compact_policy(), valid_summary(1, "seed answer 0 "), seed_units=8)
+    ledger.append(
+        "tool/call",
+        {"tool_name": "run_process", "call_id": "fact-call", "args": {"program": "pytest"}},
+    )
+    ledger.append(
+        "tool/result",
+        {"tool_name": "run_process", "call_id": "fact-call", "content": "PASS test_c"},
+    )
+    ledger.append("user/message", {"content": "Current request"})
+    for index in range(4):
+        ledger.append("assistant/message", {"content": f"later output {index} " + ("z" * 900)})
+    engine._protected_predicates = ("PASS test_c",)
+
+    prepared = engine.prepare("Current request", trigger="pressure")
+
+    from apricity.evaluation.context_compaction.verifiers import replay_integrity
+
+    assert prepared.changed is True
+    assert any(
+        node.event_type == "user/message" and node.data.get("content") == "Current request"
+        for node in ledger.surface.nodes
+    )
+    assert "PASS test_c" in ledger.surface_rendering()
+    assert replay_integrity(ledger.events()) is True
 
 
 def test_two_consecutive_compactions_keep_replay_chains_valid():

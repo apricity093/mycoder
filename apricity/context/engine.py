@@ -1032,7 +1032,7 @@ class ReplayableContextEngine:
     def _compact(self, user_message: str, trigger: str) -> bool:
         if self.summarizer is None:
             return False
-        range_seqs = self._select_compaction_range()
+        range_seqs = self._select_compaction_range(user_message)
         if not range_seqs:
             return False
         start_seq = range_seqs[0]
@@ -1132,7 +1132,8 @@ class ReplayableContextEngine:
             {
                 "compaction_id": compaction_id,
                 "rendered": rendered,
-                "selected_source_seqs": list(range_seqs),
+                "selected_surface_seqs": list(range_seqs),
+                "selected_source_seqs": sorted(range_seqs),
                 "source_token_count": source_tokens,
                 "replacement_token_count": rendered_tokens,
                 "gain_ratio": round(gain_ratio, 6),
@@ -1157,20 +1158,24 @@ class ReplayableContextEngine:
         self._compactions_used += 1
         return True
 
-    def _select_compaction_range(self) -> list[int]:
+    def _select_compaction_range(self, user_message: str | None = None) -> list[int]:
         """Select a contiguous safe old Surface range before the retained tail.
 
         The range must lie completely before the retained tail, must not
-        contain the current request, and must not split a completed
-        call/result pair. It is returned as contiguous Surface positions so
-        the replacement span and its source citations match exactly.
+        contain the current request or a protected critical fact, and must
+        not split a completed call/result pair. It is returned in contiguous
+        Surface order so the replacement span matches exactly.
         """
         nodes = self.ledger.surface.nodes
         if not nodes:
             return []
         retained_tail = self._retained_tail_seqs()
+        excluded = set(retained_tail)
+        excluded.update(self._protected_seq_set())
+        if user_message is not None:
+            excluded.update(self._request_user_seqs(str(user_message)))
         prefix_index = 0
-        while prefix_index < len(nodes) and nodes[prefix_index].seq not in retained_tail:
+        while prefix_index < len(nodes) and nodes[prefix_index].seq not in excluded:
             prefix_index += 1
         prefix = nodes[:prefix_index]
         if not prefix:
