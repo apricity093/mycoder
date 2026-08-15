@@ -115,7 +115,23 @@ def test_compaction_preserves_current_request_and_protected_fact_for_replay():
     )
     ledger.append("user/message", {"content": "Current request"})
     for index in range(4):
-        ledger.append("assistant/message", {"content": f"later output {index} " + ("z" * 900)})
+        ledger.append("assistant/message", {"content": f"later output {index}"})
+        ledger.append(
+            "tool/call",
+            {
+                "tool_name": "run_process",
+                "call_id": f"later-call-{index}",
+                "args": {"program": "pytest"},
+            },
+        )
+        ledger.append(
+            "tool/result",
+            {
+                "tool_name": "run_process",
+                "call_id": f"later-call-{index}",
+                "content": "later result " + ("z" * 900),
+            },
+        )
     engine._protected_predicates = ("PASS test_c",)
 
     prepared = engine.prepare("Current request", trigger="pressure")
@@ -128,6 +144,11 @@ def test_compaction_preserves_current_request_and_protected_fact_for_replay():
         for node in ledger.surface.nodes
     )
     assert "PASS test_c" in ledger.surface_rendering()
+    summary_events = [
+        event for event in ledger.events()
+        if event["type"] == "context/summary" and "compaction_id" in event["data"]
+    ]
+    assert summary_events[-1]["data"]["protected_evidence"]
     assert replay_integrity(ledger.events()) is True
 
 

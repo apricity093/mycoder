@@ -372,12 +372,32 @@ def test_resume_rejects_hash_mismatch(tmp_path):
         runner.validate_resume()
 
 
+def test_runner_finalizes_manifest_with_execution_mode(tmp_path):
+    runner = ContextCompactionRunner(
+        taskset_path="benchmarks/context_compaction/tasks.v2.json",
+        output_dir=tmp_path / "out",
+        workspace_root=tmp_path / "ws",
+        repetitions=1,
+        task_ids=["C01-early-fact"],
+        allow_dirty=True,
+    )
+
+    payload = runner.run()
+    manifest = json.loads((runner.output_dir / "manifest.json").read_text(encoding="utf-8"))
+
+    assert payload["status"] == "completed"
+    assert manifest["status"] == "completed"
+    assert manifest["completed_at"] == payload["completed_at"]
+    assert manifest["execution_mode"] == "deterministic"
+
+
 def test_deterministic_report_regeneration_is_stable(tmp_path):
     from apricity.evaluation.context_compaction import render_report
 
     payload = {
         "experiment_id": "context-compaction-2026-08-14-000000",
         "status": "completed",
+        "execution_mode": "real",
         "task_snapshot_hash": "sha256:abc",
         "schedule_hash": "sha256:def",
         "aggregate": {
@@ -425,6 +445,7 @@ def test_deterministic_report_regeneration_is_stable(tmp_path):
     assert first == second
     assert "D vs A comparison" in first
     assert "Safety gates" in first
+    assert "paid provider runs" in first
 
 
 def _make_dispatch_events():

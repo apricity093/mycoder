@@ -46,6 +46,12 @@ def render_report(payload: dict) -> str:
             f"{_pct(item['tool_pair_integrity_rate'])} | {_pct(item['replay_integrity_rate'])} |"
         )
     comparison = payload.get("comparison") or {}
+    execution_mode = str(payload.get("execution_mode", "deterministic"))
+    interpretation = (
+        "- This report contains paid provider runs; provider latency and model behavior are part of the result."
+        if execution_mode == "real"
+        else "- This is a deterministic-gate report; no paid provider run was executed."
+    )
     lines.extend(
         [
             "",
@@ -76,7 +82,7 @@ def render_report(payload: dict) -> str:
             "",
             "## Interpretation limits",
             "",
-            "- This is a deterministic-gate report when no paid provider run has been authorized.",
+            interpretation,
             "- 4096-token and 8192-token budgets are harness limits, not provider context windows.",
             "- Summary calls count toward D totals and are included in latency and token metrics.",
         ]

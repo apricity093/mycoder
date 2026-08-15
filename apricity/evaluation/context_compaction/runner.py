@@ -513,6 +513,7 @@ class ContextCompactionRunner:
             "schema_version": 1,
             "experiment_id": "context-compaction-" + datetime.now(timezone.utc).strftime("%Y-%m-%d-%H%M%S"),
             "status": "running",
+            "execution_mode": "real" if self.real else "deterministic",
             "captured_at": datetime.now(timezone.utc).isoformat(),
             "commit_sha": self._git_value("rev-parse", "HEAD"),
             "branch": self._git_value("branch", "--show-current"),
@@ -566,10 +567,19 @@ class ContextCompactionRunner:
             rows.append(row)
 
         aggregate = aggregate_rows(rows)
+        completed_at = datetime.now(timezone.utc).isoformat()
+        completed_manifest = {
+            **manifest,
+            "status": "completed",
+            "completed_at": completed_at,
+        }
+        (self.output_dir / "manifest.json").write_text(
+            json.dumps(completed_manifest, indent=2, sort_keys=True), encoding="utf-8"
+        )
         payload = {
             **manifest,
             "status": "completed",
-            "completed_at": datetime.now(timezone.utc).isoformat(),
+            "completed_at": completed_at,
             "aggregate": aggregate,
             "comparison": condition_delta(aggregate),
             "rows": [

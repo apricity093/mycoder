@@ -1112,6 +1112,11 @@ class ReplayableContextEngine:
             )
             return False
         rendered = render_summary(candidate)
+        protected_evidence = self._protected_evidence(range_seqs)
+        if protected_evidence:
+            rendered += "\n\nProtected evidence (verbatim):\n" + "\n".join(
+                f"- [seq {item['event_seq']}] {item['quote']}" for item in protected_evidence
+            )
         rendered_tokens = self._cache.count_text(rendered)
         gain_ratio = 1.0 - (rendered_tokens / source_tokens if source_tokens else 1.0)
         if gain_ratio < self.policy.minimum_compaction_gain:
@@ -1134,6 +1139,7 @@ class ReplayableContextEngine:
                 "rendered": rendered,
                 "selected_surface_seqs": list(range_seqs),
                 "selected_source_seqs": sorted(range_seqs),
+                "protected_evidence": protected_evidence,
                 "source_token_count": source_tokens,
                 "replacement_token_count": rendered_tokens,
                 "gain_ratio": round(gain_ratio, 6),
@@ -1158,6 +1164,39 @@ class ReplayableContextEngine:
         self._compactions_used += 1
         return True
 
+    def _protected_evidence(self, range_seqs: list[int]) -> list[dict]:
+        """Extract bounded verbatim quotes for protected public predicates.
+
+        The model summary remains the primary compaction artifact. This small
+        deterministic capsule prevents a valid summary from paraphrasing away
+        a fact that the evaluator requires to survive, while retaining the
+        source event sequence needed for replay and audit.
+        """
+        if not self._protected_predicates:
+            return []
+        selected = set(range_seqs)
+        evidence = []
+        seen = set()
+        limit = max(1, int(self.policy.evidence_quote_max_chars))
+        for node in self.ledger.surface.nodes:
+            if node.seq not in selected:
+                continue
+            rendering = render_surface_node(node)
+            for predicate in self._protected_predicates:
+                match = re.search(re.escape(predicate), rendering, flags=re.IGNORECASE)
+                if match is None or (node.seq, predicate.casefold()) in seen:
+                    continue
+                quote_limit = max(limit, len(predicate))
+                context = max(0, (quote_limit - len(predicate)) // 2)
+                start = max(0, match.start() - context)
+                end = min(len(rendering), start + quote_limit)
+                quote = rendering[start:end]
+                if predicate.casefold() not in quote.casefold():
+                    continue
+                evidence.append({"event_seq": node.seq, "predicate": predicate, "quote": quote})
+                seen.add((node.seq, predicate.casefold()))
+        return evidence
+
     def _select_compaction_range(self, user_message: str | None = None) -> list[int]:
         """Select a contiguous safe old Surface range before the retained tail.
 
@@ -1171,7 +1210,6 @@ class ReplayableContextEngine:
             return []
         retained_tail = self._retained_tail_seqs()
         excluded = set(retained_tail)
-        excluded.update(self._protected_seq_set())
         if user_message is not None:
             excluded.update(self._request_user_seqs(str(user_message)))
         prefix_index = 0
