@@ -112,6 +112,7 @@ class ContextCompactionRunner:
         allow_dirty=False,
         real=False,
         verify_artifacts=False,
+        task_ids=None,
     ):
         self.taskset_path = Path(taskset_path)
         self.output_dir = Path(output_dir)
@@ -128,11 +129,21 @@ class ContextCompactionRunner:
         self.allow_dirty = bool(allow_dirty)
         self.real = bool(real)
         self.verify_artifacts = bool(verify_artifacts)
+        self.task_ids = tuple(str(task_id) for task_id in (task_ids or ()))
 
         self.taskset = load_taskset(self.taskset_path, repo_root=self.repo_root, seed_root=self.seed_root)
-        self.tasks_by_id = {task["id"]: task for task in self.taskset["tasks"]}
+        all_tasks_by_id = {task["id"]: task for task in self.taskset["tasks"]}
+        unknown_task_ids = sorted(set(self.task_ids) - set(all_tasks_by_id))
+        if unknown_task_ids:
+            raise ValueError(f"unknown task ids: {unknown_task_ids}")
+        selected_tasks = (
+            [all_tasks_by_id[task_id] for task_id in self.task_ids]
+            if self.task_ids
+            else list(self.taskset["tasks"])
+        )
+        self.tasks_by_id = {task["id"]: task for task in selected_tasks}
         self.blocks, self.schedule_hash = build_schedule(
-            self.taskset["tasks"],
+            selected_tasks,
             repetitions=self.repetitions,
             budgets=self.budgets,
             sensitivity_tasks=self.sensitivity_tasks,
@@ -144,6 +155,7 @@ class ContextCompactionRunner:
                 "sensitivity_tasks": self.sensitivity_tasks,
                 "task_snapshot_hash": self.taskset["task_snapshot_hash"],
                 "allow_dirty": self.allow_dirty,
+                "task_ids": self.task_ids,
             }
         )
 

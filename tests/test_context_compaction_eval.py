@@ -47,6 +47,21 @@ def test_load_taskset_rejects_unknown_condition_field(tmp_path):
         )
 
 
+def test_runner_supports_explicit_task_subset_for_smoke_runs(tmp_path):
+    runner = ContextCompactionRunner(
+        taskset_path="benchmarks/context_compaction/tasks.v2.json",
+        output_dir=tmp_path / "out",
+        workspace_root="tests/fixtures/context_compaction_repo",
+        task_ids=("C05-tool-pair-boundary", "C07-oversized-result-selection"),
+    )
+
+    assert set(runner.tasks_by_id) == {
+        "C05-tool-pair-boundary",
+        "C07-oversized-result-selection",
+    }
+    assert len(runner.blocks) == 8
+
+
 def test_condition_policies_validate_configuration():
     policies = condition_policies(4096)
 

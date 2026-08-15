@@ -39,9 +39,21 @@ def main():
     parser.add_argument("--output-dir", default=None)
     parser.add_argument("--workspace-root", default="artifacts/context-compaction-pilot-workspaces")
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument(
+        "--tasks",
+        default=None,
+        help="comma-separated task ids for a small smoke subset; omit for all 12 tasks",
+    )
+    parser.add_argument(
+        "--verify-artifacts",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="execute public and hidden artifact verifiers (default: enabled)",
+    )
     args = parser.parse_args()
 
     output_dir = Path(args.output_dir or f"benchmarks/results/context-compaction-{datetime.now(timezone.utc).strftime('%Y-%m-%d-%H%M%S')}")
+    task_ids = tuple(item.strip() for item in (args.tasks or "").split(",") if item.strip())
     factory, provider, model = build_model_client_factory()
 
     print(f"pilot provider/model: {provider}/{model}")
@@ -59,6 +71,8 @@ def main():
         model_client_factory=factory,
         resume=args.resume,
         real=True,
+        verify_artifacts=args.verify_artifacts,
+        task_ids=task_ids,
     )
     payload = runner.run()
     agg = payload["aggregate"]
