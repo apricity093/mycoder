@@ -1,0 +1,5 @@
+{
+  "check": "pair_balance",
+  "oracle_secret": "C05-HIDDEN-ORACLE",
+  "required_fact": "DEFAULT_TIMEOUT = 120"
+}

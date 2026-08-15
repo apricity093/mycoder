@@ -1,0 +1,5 @@
+{
+  "check": "realistic_json",
+  "oracle_secret": "R03-HIDDEN-ORACLE",
+  "required_fact": "sort_keys"
+}

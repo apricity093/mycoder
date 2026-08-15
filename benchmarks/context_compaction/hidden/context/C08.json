@@ -1,0 +1,5 @@
+{
+  "check": "overflow_recovery",
+  "oracle_secret": "C08-HIDDEN-ORACLE",
+  "required_fact": "DEFAULT_TIMEOUT = 120"
+}

@@ -306,3 +306,52 @@ uv run python scripts/run_real_model_benchmark.py \
 ```
 
 内部代码现在按较轻的边界拆分：`apricity/evaluation/` 放 benchmark 和 metrics，`apricity/providers/` 放模型 provider client，`apricity/features/` 放可选运行时能力。新代码应直接使用这些包路径；旧的 `apricity.evaluator`、`apricity.metrics`、`apricity.models` 和 `apricity.memory` import 不再作为公共入口保留。
+
+## 可回放上下文压缩（Replayable Context Compaction）
+
+Apricity 支持把会话模型上下文建立在 append-only 的 `SessionLedger` 上，并在一个小的 `ContextEngine.prepare()` seam 后面提供四种可对照的上下文策略：
+
+- **A legacy**：旧字符预算策略，但通过新 ledger 组装请求并记录 replay 证据。
+- **B token-only**：按 token 预算移除最旧的完整历史单元，保留当前请求与最近两步，tool call/result 作为不可拆分的原子单元。
+- **C tool-pruning**：对内置文本工具（`run_process`/`run_shell`/`read_file`/`search`/`list_files`）的 oversized 结果做确定性裁剪。
+- **D full-compaction**：在 C 之后用同一 provider/model（temperature=0）生成带 Evidence Anchor 的历史摘要，事务式替换旧 Surface 区间。
+
+实现位于 `apricity/context/`（ledger、token meter、pruning、compaction、引擎）与 `apricity/evaluation/context_compaction/`（任务 schema v2、三层验证、balanced schedule、resume、报告）。设计文档见 `docs/architecture/replayable-context-compaction.md`，需求见 `docs/requirements/replayable-context-compaction-prd.md`。
+
+确定性门禁（无模型调用）运行 48 Runs 的 4096-token mechanics 调度；8192-token A/D 灵敏度子集仅在正式实验中运行：
+
+```bash
+D:\anaconda3\envs\learn_claude\python.exe scripts\run_context_compaction_gate.py
+```
+
+正式实验（180 Runs = 144 主实验 + 36 灵敏度，真实 DeepSeek 调用）：
+
+```bash
+D:\anaconda3\envs\learn_claude\python.exe scripts\run_context_compaction_formal.py
+```
+
+### 正式实验状态（2026-08-14 首次运行，已作废）
+
+首次 180 Runs 于 2026-08-14 完成（DeepSeek / deepseek-v4-flash，temperature=0）。**该批结果已作废**：评审发现 artifact 验证器未真正执行（`artifact_pass` 被写死）、replay integrity 只检查了事件序号连续性而未重放请求、canonical hash 描述的结构与 DeepSeek 实际收到的扁平 prompt envelope 不一致。修复（见下）后必须从干净提交重新运行 pilot 与 180 Runs，才能产生可采信的性能结论；此前的 pass rate、retention 与 replay integrity 数字不作为正式证据。
+
+### 评审修复（2026-08-15）
+
+- **artifact 验证器真实执行**：public verifier 以子进程在 workspace 副本中运行；hidden verifier 检查任务 artifact 文件是否包含 `required_fact`。`run_pass = artifact_pass AND context_pass AND trace_pass`，artifact 维度不再写死为 True。
+- **真实 replay integrity**：`replay_integrity()` 折叠 ledger → 重建 Surface → 用共享渲染函数重建 dispatch 时刻的扁平 prompt → 重算 `canonical_dispatch_sha256` 并与 `request/dispatch.canonical_request_sha256` 逐字节比对。篡改源事件、替换跨度或 dispatch hash 都会使检查失败。
+- **hash 规范化 dispatch envelope**：引擎与 verifier 现在 hash 的是从 DeepSeek 实际 payload 映射出的语义 envelope（`provider/model/temperature/max_output_tokens` + 单个 `user` message 包含渲染后的扁平 prompt）；provider 字段名与 transport controls 被规范化，但所有模型可见文本均被覆盖。
+- **durable-before-dispatch**：`SessionLedger` 支持 `persist_path`，`flush_dispatch()` 原子写盘；Legacy A 与 Replayable B/C/D 都在 dispatch 记录后调用，持久化失败会中止 Run。
+- **原始 assistant 输出**：模型返回 tool call 时，先记录 `assistant/message`（原始输出）再记录结构化 `tool/call` + `tool/result`，请求可完整重建。
+- **canonical 标记修正**：脏工作树运行 manifest 恒为 `canonical: false`（`allow_dirty` 只允许运行，不再把脏运行标为 canonical）。
+- **hidden verifier 数据**：移除占位 `required_fact`，每个任务一个文件，结构一致。
+
+确定性门禁（无模型调用，artifact 维度标记为 skipped）运行 48 Runs 的 4096-token mechanics 调度；8192-token A/D 灵敏度子集仅在正式实验中运行：
+
+```bash
+D:\anaconda3\envs\learn_claude\python.exe scripts\run_context_compaction_gate.py
+```
+
+正式实验（180 Runs = 144 主实验 + 36 灵敏度，真实 DeepSeek 调用，artifact 验证开启）需从干净提交运行：
+
+```bash
+D:\anaconda3\envs\learn_claude\python.exe scripts\run_context_compaction_formal.py
+```

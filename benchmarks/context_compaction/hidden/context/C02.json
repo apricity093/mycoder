@@ -1,0 +1,5 @@
+{
+  "check": "middle_diagnostic",
+  "oracle_secret": "C02-HIDDEN-ORACLE",
+  "required_fact": "DEFAULT_TIMEOUT = 120"
+}

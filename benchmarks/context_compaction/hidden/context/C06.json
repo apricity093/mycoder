@@ -1,0 +1,5 @@
+{
+  "check": "repeated_compaction",
+  "oracle_secret": "C06-HIDDEN-ORACLE",
+  "required_fact": "sort_keys"
+}

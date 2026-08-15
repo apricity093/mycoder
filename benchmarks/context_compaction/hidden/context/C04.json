@@ -1,0 +1,5 @@
+{
+  "check": "authoritative_color",
+  "oracle_secret": "C04-HIDDEN-ORACLE",
+  "required_fact": "DEPLOYMENT_KEY_COLOR = \"blue\""
+}

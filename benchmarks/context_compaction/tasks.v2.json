@@ -1,0 +1,524 @@
+{
+  "schema_version": 2,
+  "description": "Context compaction benchmark tasks: 8 controlled and 4 realistic. Task definitions never select A/B/C/D behavior.",
+  "tasks": [
+    {
+      "id": "C01-early-fact",
+      "suite": "context-compaction",
+      "task_style": "controlled",
+      "category": "early-fact",
+      "prompt": "Implement the centralized timeout default so all HTTP timeouts come from centralized_timeout_default.py with value 120. The contract was stated early in the session; do not lose it.",
+      "fixture_repo": "tests/fixtures/context_compaction_repo",
+      "seed_event_log": "C01.jsonl",
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "run_process",
+        "patch_file"
+      ],
+      "step_budget": 10,
+      "pressure_profile": {
+        "target_input_tokens": 4096,
+        "critical_fact_position": "early",
+        "large_tool_result_position": "none"
+      },
+      "critical_facts": [
+        {
+          "id": "timeout-source",
+          "predicate": "centralized_timeout_default",
+          "contradiction_predicate": "timeout is 30"
+        }
+      ],
+      "public_verifier": [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "public_tests/test_timeout.py"
+      ],
+      "hidden_verifier_id": "context/C01",
+      "process_invariants": [
+        "tool_pairs_balanced",
+        "current_request_preserved",
+        "request_replayable"
+      ],
+      "artifact_path": "centralized_timeout_default.py"
+    },
+    {
+      "id": "C02-middle-evidence",
+      "suite": "context-compaction",
+      "task_style": "controlled",
+      "category": "middle-evidence",
+      "prompt": "Find the root cause of the failing test: the traceback in the middle of the process result says timeout is 30 but the contract requires 120. Preserve the diagnostic and repair the implementation.",
+      "fixture_repo": "tests/fixtures/context_compaction_repo",
+      "seed_event_log": "C02.jsonl",
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "run_process",
+        "patch_file"
+      ],
+      "step_budget": 10,
+      "pressure_profile": {
+        "target_input_tokens": 4096,
+        "critical_fact_position": "middle",
+        "large_tool_result_position": "middle"
+      },
+      "critical_facts": [
+        {
+          "id": "middle-diagnostic",
+          "predicate": "timeout is 30",
+          "contradiction_predicate": "NOISE line"
+        }
+      ],
+      "public_verifier": [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "public_tests/test_middle.py"
+      ],
+      "hidden_verifier_id": "context/C02",
+      "process_invariants": [
+        "tool_pairs_balanced",
+        "request_replayable"
+      ],
+      "artifact_path": "app.py"
+    },
+    {
+      "id": "C03-tail-evidence",
+      "suite": "context-compaction",
+      "task_style": "controlled",
+      "category": "tail-evidence",
+      "prompt": "The decisive failed-test expectation appears in the final bounded portion of the long result: actual == 42. Fix the implementation to return 42 and make the tail test pass.",
+      "fixture_repo": "tests/fixtures/context_compaction_repo",
+      "seed_event_log": "C03.jsonl",
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "run_process",
+        "patch_file"
+      ],
+      "step_budget": 10,
+      "pressure_profile": {
+        "target_input_tokens": 4096,
+        "critical_fact_position": "tail",
+        "large_tool_result_position": "tail"
+      },
+      "critical_facts": [
+        {
+          "id": "tail-expectation",
+          "predicate": "actual == 42",
+          "contradiction_predicate": "actual == 0"
+        }
+      ],
+      "public_verifier": [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "public_tests/test_tail.py"
+      ],
+      "hidden_verifier_id": "context/C03",
+      "process_invariants": [
+        "tool_pairs_balanced",
+        "request_replayable"
+      ],
+      "artifact_path": "app.py"
+    },
+    {
+      "id": "C04-stale-conflict",
+      "suite": "context-compaction",
+      "task_style": "controlled",
+      "category": "stale-conflict",
+      "prompt": "The README says the deployment key color is blue. Update the config file to reflect the authoritative current value. The obsolete 'red' value must not be presented as current.",
+      "fixture_repo": "tests/fixtures/context_compaction_repo",
+      "seed_event_log": "C04.jsonl",
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "run_process",
+        "patch_file"
+      ],
+      "step_budget": 10,
+      "pressure_profile": {
+        "target_input_tokens": 4096,
+        "critical_fact_position": "late",
+        "large_tool_result_position": "none"
+      },
+      "critical_facts": [
+        {
+          "id": "authoritative-color",
+          "predicate": "deployment key color: blue",
+          "contradiction_predicate": "deployment key is red"
+        }
+      ],
+      "public_verifier": [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "public_tests/test_stale.py"
+      ],
+      "hidden_verifier_id": "context/C04",
+      "process_invariants": [
+        "tool_pairs_balanced",
+        "current_request_preserved",
+        "request_replayable"
+      ],
+      "artifact_path": "config.py"
+    },
+    {
+      "id": "C05-tool-pair-boundary",
+      "suite": "context-compaction",
+      "task_style": "controlled",
+      "category": "tool-pair-boundary",
+      "prompt": "Fix the failing tests while keeping every completed tool call paired with its result in the transcript. Do not drop any call/result pair.",
+      "fixture_repo": "tests/fixtures/context_compaction_repo",
+      "seed_event_log": "C05.jsonl",
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "run_process",
+        "patch_file"
+      ],
+      "step_budget": 10,
+      "pressure_profile": {
+        "target_input_tokens": 4096,
+        "critical_fact_position": "tail",
+        "large_tool_result_position": "none"
+      },
+      "critical_facts": [
+        {
+          "id": "pair-balance",
+          "predicate": "PASS test_c",
+          "contradiction_predicate": ""
+        }
+      ],
+      "public_verifier": [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "public_tests/test_pairs.py"
+      ],
+      "hidden_verifier_id": "context/C05",
+      "process_invariants": [
+        "tool_pairs_balanced",
+        "request_replayable"
+      ],
+      "artifact_path": "app.py"
+    },
+    {
+      "id": "C06-repeated-compaction",
+      "suite": "context-compaction",
+      "task_style": "controlled",
+      "category": "repeated-compaction",
+      "prompt": "The JSON report must sort keys deterministically and include public user labels. Implement both requirements; the earlier requirement must survive later compaction.",
+      "fixture_repo": "tests/fixtures/context_compaction_repo",
+      "seed_event_log": "C06.jsonl",
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "run_process",
+        "patch_file",
+        "write_file"
+      ],
+      "step_budget": 12,
+      "pressure_profile": {
+        "target_input_tokens": 4096,
+        "critical_fact_position": "early",
+        "large_tool_result_position": "none"
+      },
+      "critical_facts": [
+        {
+          "id": "sorted-json",
+          "predicate": "sort_keys",
+          "contradiction_predicate": "unsorted"
+        },
+        {
+          "id": "user-label",
+          "predicate": "public user label",
+          "contradiction_predicate": ""
+        }
+      ],
+      "public_verifier": [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "public_tests/test_report.py"
+      ],
+      "hidden_verifier_id": "context/C06",
+      "process_invariants": [
+        "tool_pairs_balanced",
+        "request_replayable",
+        "partial_transaction_zero"
+      ],
+      "artifact_path": "report.py"
+    },
+    {
+      "id": "C07-oversized-result-selection",
+      "suite": "context-compaction",
+      "task_style": "controlled",
+      "category": "oversized-result-selection",
+      "prompt": "The relevant evidence is in the middle of a large search result (relevant_evidence lines). Implement the fix using that evidence while keeping deterministic pruning priority for oversized results.",
+      "fixture_repo": "tests/fixtures/context_compaction_repo",
+      "seed_event_log": "C07.jsonl",
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "run_process",
+        "patch_file"
+      ],
+      "step_budget": 12,
+      "pressure_profile": {
+        "target_input_tokens": 4096,
+        "critical_fact_position": "middle",
+        "large_tool_result_position": "multiple"
+      },
+      "critical_facts": [
+        {
+          "id": "relevant-evidence",
+          "predicate": "relevant_evidence",
+          "contradiction_predicate": "unrelated"
+        }
+      ],
+      "public_verifier": [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "public_tests/test_evidence.py"
+      ],
+      "hidden_verifier_id": "context/C07",
+      "process_invariants": [
+        "tool_pairs_balanced",
+        "request_replayable"
+      ],
+      "artifact_path": "app.py"
+    },
+    {
+      "id": "C08-overflow-recovery",
+      "suite": "context-compaction",
+      "task_style": "controlled",
+      "category": "overflow-recovery",
+      "prompt": "Complete the timeout fix. The first eligible request will receive a deterministic context-overflow fault; recover by rebuilding context once and finish without repeating side effects.",
+      "fixture_repo": "tests/fixtures/context_compaction_repo",
+      "seed_event_log": "C08.jsonl",
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "run_process",
+        "patch_file"
+      ],
+      "step_budget": 12,
+      "pressure_profile": {
+        "target_input_tokens": 4096,
+        "critical_fact_position": "early",
+        "large_tool_result_position": "none"
+      },
+      "critical_facts": [
+        {
+          "id": "timeout-120",
+          "predicate": "DEFAULT_TIMEOUT = 120",
+          "contradiction_predicate": "DEFAULT_TIMEOUT = 30"
+        }
+      ],
+      "public_verifier": [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "public_tests/test_overflow.py"
+      ],
+      "hidden_verifier_id": "context/C08",
+      "process_invariants": [
+        "tool_pairs_balanced",
+        "request_replayable",
+        "duplicate_side_effect_zero"
+      ],
+      "artifact_path": "centralized_timeout_default.py"
+    },
+    {
+      "id": "R01-centralized-timeout-default",
+      "suite": "context-compaction",
+      "task_style": "realistic",
+      "category": "realistic",
+      "prompt": "Fix the four failing tests. The centralized timeout default must be 120 seconds and all HTTP calls must use it.",
+      "fixture_repo": "tests/fixtures/context_compaction_repo",
+      "seed_event_log": "R01.jsonl",
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "run_process",
+        "patch_file",
+        "write_file"
+      ],
+      "step_budget": 14,
+      "pressure_profile": {
+        "target_input_tokens": 4096,
+        "critical_fact_position": "early",
+        "large_tool_result_position": "tail"
+      },
+      "critical_facts": [
+        {
+          "id": "timeout-contract",
+          "predicate": "DEFAULT_TIMEOUT = 120",
+          "contradiction_predicate": "DEFAULT_TIMEOUT = 30"
+        }
+      ],
+      "public_verifier": [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "public_tests/test_realistic.py"
+      ],
+      "hidden_verifier_id": "context/R01",
+      "process_invariants": [
+        "tool_pairs_balanced",
+        "request_replayable"
+      ],
+      "artifact_path": "centralized_timeout_default.py"
+    },
+    {
+      "id": "R02-public-user-label",
+      "suite": "context-compaction",
+      "task_style": "realistic",
+      "category": "realistic",
+      "prompt": "Fix the four failing tests. The public user label from the README must be surfaced in the output.",
+      "fixture_repo": "tests/fixtures/context_compaction_repo",
+      "seed_event_log": "R02.jsonl",
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "run_process",
+        "patch_file",
+        "write_file"
+      ],
+      "step_budget": 14,
+      "pressure_profile": {
+        "target_input_tokens": 4096,
+        "critical_fact_position": "early",
+        "large_tool_result_position": "tail"
+      },
+      "critical_facts": [
+        {
+          "id": "public-label",
+          "predicate": "public user label: visible",
+          "contradiction_predicate": "internal"
+        }
+      ],
+      "public_verifier": [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "public_tests/test_realistic.py"
+      ],
+      "hidden_verifier_id": "context/R02",
+      "process_invariants": [
+        "tool_pairs_balanced",
+        "request_replayable"
+      ],
+      "artifact_path": "labels.py"
+    },
+    {
+      "id": "R03-stable-json-report",
+      "suite": "context-compaction",
+      "task_style": "realistic",
+      "category": "realistic",
+      "prompt": "Fix the four failing tests. The JSON report must be stable and deterministic across runs.",
+      "fixture_repo": "tests/fixtures/context_compaction_repo",
+      "seed_event_log": "R03.jsonl",
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "run_process",
+        "patch_file",
+        "write_file"
+      ],
+      "step_budget": 14,
+      "pressure_profile": {
+        "target_input_tokens": 4096,
+        "critical_fact_position": "early",
+        "large_tool_result_position": "tail"
+      },
+      "critical_facts": [
+        {
+          "id": "stable-report",
+          "predicate": "sort_keys",
+          "contradiction_predicate": "unsorted"
+        }
+      ],
+      "public_verifier": [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "public_tests/test_realistic.py"
+      ],
+      "hidden_verifier_id": "context/R03",
+      "process_invariants": [
+        "tool_pairs_balanced",
+        "request_replayable"
+      ],
+      "artifact_path": "report.py"
+    },
+    {
+      "id": "R04-workspace-relative-path-guard",
+      "suite": "context-compaction",
+      "task_style": "realistic",
+      "category": "realistic",
+      "prompt": "Fix the four failing tests. All artifacts must be referenced by workspace-relative paths, never absolute paths.",
+      "fixture_repo": "tests/fixtures/context_compaction_repo",
+      "seed_event_log": "R04.jsonl",
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "run_process",
+        "patch_file",
+        "write_file"
+      ],
+      "step_budget": 14,
+      "pressure_profile": {
+        "target_input_tokens": 4096,
+        "critical_fact_position": "early",
+        "large_tool_result_position": "tail"
+      },
+      "critical_facts": [
+        {
+          "id": "relative-path",
+          "predicate": "relative",
+          "contradiction_predicate": ""
+        }
+      ],
+      "public_verifier": [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "public_tests/test_realistic.py"
+      ],
+      "hidden_verifier_id": "context/R04",
+      "process_invariants": [
+        "tool_pairs_balanced",
+        "request_replayable"
+      ],
+      "artifact_path": "paths.py"
+    }
+  ]
+}
