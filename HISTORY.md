@@ -59,3 +59,10 @@
 - 新增接口层测试 `test_context_ledger.py`、`test_context_policy.py`，覆盖不可变事件、替换投影、持久化 round-trip、tool pairing、A 窗口移除、C 裁剪与 `no_safe_range`。
 - 验证：`compileall`、`ruff` 通过，全量 pytest `203 passed, 1 skipped`。
 
+### 15.Add structural compaction condition E（26/8/16）
+
+- 在 `apricity/context` 内部 seam 增加 LLM-free 前缀压缩：把旧 Surface prefix 折叠为一个确定性、带 `[seq]` 引用的结构 capsule；保留用户要求与工具诊断行，丢弃冗余输出，源事件不删除。
+- 条件 E = C + 结构压缩；压缩后不再允许整单元删除回退，仍超压时抛 `no_safe_range`，避免静默丢弃已压缩事实。
+- 把前缀压缩事务与 window 单元移除分别下沉到 `structural.py` / `planner.py`，`engine.py` 保持 298 行（≤300）；`apricity/context` 总计 1,198 行，文档上限调整为 1,500 以容纳后续 D 条件。
+- 新增 E 的接口测试：需求保留、诊断保留、噪声丢弃、源事件保留、tool pairing、确定性哈希。
+- 验证：`compileall`、`ruff` 通过，全量 pytest `205 passed, 1 skipped`。

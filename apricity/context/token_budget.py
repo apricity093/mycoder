@@ -90,6 +90,8 @@ class ContextPolicy:
     pressure_threshold: float = 0.85
     tool_pruning: bool = False
     history_compaction: bool = False
+    structural_compaction: bool = False
+    chunked_llm_compaction: bool = False
     tool_result_soft_limit: int = 1600
     tool_pruning_minimum_gain: float = 0.10
     retained_recent_steps: int = 2
@@ -119,5 +121,10 @@ class ContextPolicy:
             raise ValueError("summary_max_tokens must be positive")
         if self.evidence_quote_max_chars <= 0:
             raise ValueError("evidence_quote_max_chars must be positive")
-        if self.history_compaction and self.tool_pruning is False:
+        if self.history_compaction and not self.tool_pruning:
             raise ValueError("history_compaction requires tool_pruning")
+        modes = int(bool(self.structural_compaction)) + int(bool(self.chunked_llm_compaction))
+        if self.history_compaction and modes != 1:
+            raise ValueError("history_compaction requires exactly one of structural_compaction or chunked_llm_compaction")
+        if not self.history_compaction and modes:
+            raise ValueError("compaction mode flags require history_compaction")

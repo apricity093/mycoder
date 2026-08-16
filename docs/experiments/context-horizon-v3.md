@@ -116,7 +116,7 @@ tests/fixtures/context_horizon_repo/...
 scripts/run_context_horizon_experiment.py
 ```
 
-Implementation status: D1 cleanup complete; D2 `SessionLedger` + conditions A/C complete and covered by interface tests. E and D are not implemented yet.
+Implementation status: D1 cleanup complete; D2 `SessionLedger` + conditions A/C complete; D3 condition E deterministic structural compaction complete, with interface tests covering source retention, diagnostic preservation, and determinism. Condition D is not implemented yet.
 
 ## 4. Conditions
 
@@ -210,7 +210,7 @@ The v1 rewrite grew to 11,000+ lines. v3 is capped:
 
 | Area | Line cap |
 | --- | ---: |
-| `apricity/context/` total | 1,200 |
+| `apricity/context/` total | 1,500 |
 | `apricity/evaluation/context_horizon/` total | 1,350 |
 | `scripts/run_context_horizon_experiment.py` | 250 |
 | New tests total | 1,500 |

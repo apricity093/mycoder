@@ -119,3 +119,83 @@ def test_dispatch_hash_replay_is_stable_when_surface_unchanged(tmp_path):
     assert first.canonical_request_sha256 == second_hash
     assert first.metadata["token_meter"]["name"] == "deterministic-test"
     assert first.metadata["token_meter"]["exact"] is True
+
+
+def test_condition_e_structural_compaction_preserves_requirements_and_diagnostics(tmp_path):
+    ledger = SessionLedger(session_id="s", workspace_root=str(tmp_path), created_at="t")
+    ledger.append("user/message", {"content": "Requirement: keep timeout 120"})
+    ledger.append("assistant/message", {"content": "I will investigate."})
+    ledger.append("tool/call", {"name": "run_process", "call_id": "c0", "args": {"program": "python"}})
+    ledger.append("tool/result", {"tool_name": "run_process", "call_id": "c0", "content": "ok"})
+    for index in range(3):
+        noise = [f"NOISE_E_SHOULD_DROP {index} {line}" for line in range(80)]
+        content = "\n".join(noise + ["ERROR: root cause is timeout 30", "tail evidence"])
+        ledger.append("user/message", {"content": f"step {index}"})
+        ledger.append("assistant/message", {"content": f"reasoning {index}"})
+        ledger.append("tool/call", {"name": "run_process", "call_id": f"c{index + 1}", "args": {"program": "pytest"}})
+        ledger.append(
+            "tool/result",
+            {"tool_name": "run_process", "call_id": f"c{index + 1}", "content": content, "metadata": {"status": "failed", "exit_code": 1}},
+        )
+
+    policy = ContextPolicy(
+        condition_id="E",
+        condition_label="structural",
+        effective_input_budget=2000,
+        pressure_threshold=0.85,
+        tool_pruning=True,
+        tool_result_soft_limit=100000,
+        history_compaction=True,
+        structural_compaction=True,
+        retained_recent_steps=1,
+        minimum_compaction_gain=0.15,
+        max_compactions_per_run=1,
+    )
+    engine = build_engine(policy=policy, ledger=ledger)
+
+    prepared = engine.prepare("current request")
+
+    assert prepared.changed
+    assert "Requirement: keep timeout 120" in prepared.prompt
+    assert "ERROR: root cause is timeout 30" in prepared.prompt
+    assert "NOISE_E_SHOULD_DROP 0 40" not in prepared.prompt
+    summaries = [event for event in engine.ledger.events if event.type == "context/summary" and event.data.get("kind") == "structural"]
+    assert summaries
+    assert summaries[0].data["gain_ratio"] >= 0.15
+    assert any(event.type == "tool/result" and "NOISE_E_SHOULD_DROP" in str(event.data.get("content", "")) for event in engine.ledger.events)
+    assert engine.ledger.pairs_balanced()
+    assert prepared.metadata["tool_pairs_balanced"] is True
+
+
+def test_condition_e_structural_summary_is_deterministic(tmp_path):
+    def build_and_prepare():
+        ledger = SessionLedger(session_id="s", workspace_root=str(tmp_path), created_at="t")
+        for index in range(3):
+            content = "\n".join([f"NOISE {index} {line}" for line in range(120)] + [f"FACT {index} must survive", "tail"])
+            ledger.append("user/message", {"content": f"requirement {index}"})
+            ledger.append("tool/call", {"name": "run_process", "call_id": f"c{index}", "args": {"program": "python"}})
+            ledger.append("tool/result", {"tool_name": "run_process", "call_id": f"c{index}", "content": content})
+        policy = ContextPolicy(
+            condition_id="E",
+            condition_label="structural",
+            effective_input_budget=2000,
+            pressure_threshold=0.85,
+            tool_pruning=True,
+            tool_result_soft_limit=100000,
+            history_compaction=True,
+            structural_compaction=True,
+            retained_recent_steps=1,
+            minimum_compaction_gain=0.15,
+            max_compactions_per_run=1,
+        )
+        engine = build_engine(policy=policy, ledger=ledger)
+        prepared = engine.prepare("current request")
+        summaries = [event for event in engine.ledger.events if event.type == "context/summary" and event.data.get("kind") == "structural"]
+        return prepared, summaries
+
+    first, first_summaries = build_and_prepare()
+    second, second_summaries = build_and_prepare()
+
+    assert first.prompt == second.prompt
+    assert first.canonical_request_sha256 == second.canonical_request_sha256
+    assert first_summaries[0].data["replacement_sha256"] == second_summaries[0].data["replacement_sha256"]

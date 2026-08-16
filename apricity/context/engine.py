@@ -1,8 +1,8 @@
 """ContextEngine external seam for Context Horizon v3.
 
-Conditions A (window) and C (prune) are implemented here. Conditions E and D
-will be added behind the same ``prepare`` interface; callers never learn which
-policy is active from this module's signature.
+Conditions A (window), C (prune), and E (structural compaction) are
+implemented here. Condition D will be added behind the same ``prepare``
+interface; callers never learn which policy is active from this signature.
 """
 
 from __future__ import annotations
@@ -12,8 +12,13 @@ from dataclasses import dataclass
 from typing import Any
 
 from .ledger import SessionLedger, canonical_json, render_surface_node
-from .planner import is_removal_notice, plan_units, request_user_seqs, retained_tail_seqs
-from .structural import PRUNING_POLICY_NAME, PRUNING_POLICY_VERSION, prune_tool_result
+from .planner import remove_old_units
+from .structural import (
+    PRUNING_POLICY_NAME,
+    PRUNING_POLICY_VERSION,
+    compact_structural_prefix,
+    prune_tool_result,
+)
 from .token_budget import ContextPolicy, FallbackTokenEstimator, ModelRequest, TokenMeter
 
 
@@ -163,45 +168,29 @@ class ContextEngine:
             changed = True
         return changed
 
+    def _compact_structural(self, user_message: str) -> bool:
+        if not self.policy.structural_compaction:
+            return False
+        committed = compact_structural_prefix(
+            ledger=self.ledger,
+            meter=self.meter,
+            policy=self.policy,
+            user_message=user_message,
+            compactions_used=self._compactions_used,
+        )
+        if committed:
+            self._compactions_used += 1
+        return committed
+
     def _remove_old_units(self, user_message: str, request: ModelRequest, tokens: int) -> bool:
-        units = plan_units(self.ledger.surface)
-        if not units:
-            return False
-        retained_tail = retained_tail_seqs(self.ledger.surface, units, int(self.policy.retained_recent_steps))
-        request_seqs = request_user_seqs(self.ledger.surface, user_message)
-        removable = [
-            unit
-            for unit in units
-            if not (set(unit) & retained_tail)
-            and not (set(unit) & request_seqs)
-            and not is_removal_notice(self.ledger.surface, unit)
-        ]
-        if not removable:
-            return False
-        target = int(self.policy.effective_input_budget * self.policy.pressure_threshold)
-        new_tokens = tokens
-        removed: list[list[int]] = []
-        nodes = {node.seq: node for node in self.ledger.surface}
-        for unit in removable:
-            unit_tokens = sum(int(self.meter.count_text(render_surface_node(nodes[seq]))) for seq in unit if seq in nodes)
-            new_tokens -= unit_tokens
-            removed.append(unit)
-            if new_tokens < target:
-                break
-        if not removed:
-            return False
-        for unit in removed:
-            self.ledger.append(
-                "context/summary",
-                {
-                    "rendered": "[context-summary] older history units removed deterministically under token pressure.",
-                    "kind": "removal",
-                    "removed_unit_seqs": sorted(unit),
-                },
-                surface_op={"op": "replace", "start": unit[0], "end": unit[-1]},
-                source_event_seqs=tuple(sorted(unit)),
-            )
-        return True
+        del request
+        return remove_old_units(
+            ledger=self.ledger,
+            meter=self.meter,
+            policy=self.policy,
+            user_message=user_message,
+            tokens=tokens,
+        )
 
     # ------------------------------------------------------------------
     # External seam
@@ -223,8 +212,18 @@ class ContextEngine:
                 pressure = self._pressure_active(request, tokens)
                 changed = True
 
+        if pressure and self.policy.history_compaction and self.policy.structural_compaction:
+            if self._compact_structural(user_message):
+                request = self._build_request()
+                tokens = int(self.meter.count_request(request))
+                pressure = self._pressure_active(request, tokens)
+                changed = True
+
+        # A and C may fall back to whole-unit removal. After semantic
+        # compaction (E/D) has committed a capsule, removal is forbidden:
+        # silently dropping a compacted capsule would lose facts.
         guard = 0
-        while pressure and guard < 50:
+        while pressure and not self.policy.history_compaction and guard < 50:
             guard += 1
             if not self._remove_old_units(user_message, request, tokens):
                 break
