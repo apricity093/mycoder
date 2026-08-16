@@ -89,3 +89,10 @@
 - 脚本新增 `formal` 子命令：freeze task hash、检查工作区干净、balanced schedule、manifest 记录 commit/model/价格/cost totals。
 - 新增 CostGuard 与 fake-client 付费 run 测试；全量 pytest `214 passed, 1 skipped`。
 - 修复 DeepSeek 真实输出使用双竖线 `｜｜DSML｜｜` 标记时被误判为 malformed 的问题，并补充双竖线解析测试。
+
+### 19.Run paid Context Horizon main experiment and report（26/8/17）
+
+- 付费主实验：deepseek-v4-flash，6 任务 × A/C/E/D = 24 runs，总花费 ¥0.61（远低于 ¥15 上限），缓存命中输入 253,312 tokens。
+- 首轮结果：A run-pass 0/6、fact retention 41.7%；E run-pass 3/6、fact retention 94.4%、成本 0.17 低于 A 的 0.21；C/D 同样在 fact retention 上显著优于 A。n=1/格，artifact verifier 仅检查隐藏必需事实，不声称生产可靠性。
+- 产出 `analysis.json` 与 `report.md`；README 增加 Context Horizon 研究实验小节。
+- 修复 D1 误删 README 正文的问题：从 `fb1cbb4^` 恢复 308 行正文后追加实验结果。

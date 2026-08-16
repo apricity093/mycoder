@@ -1,0 +1,315 @@
+{
+  "schema_version": 1,
+  "experiment_id": "context-horizon-paid-2026-08-16-175000",
+  "commit_sha": "2c8a966f756c67b48b601331f365f65fef21460d",
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "budget": 4096,
+  "total_cost_cny": 0.614733,
+  "conditions": [
+    "A",
+    "C",
+    "D",
+    "E"
+  ],
+  "per_task": {
+    "L1-incremental-contracts": {
+      "A": {
+        "stop_reason": "model_stop_failure",
+        "tool_steps": 3,
+        "context_pass": false,
+        "artifact_pass": true,
+        "mechanics_pass": true,
+        "run_pass": false,
+        "fact_retention": 0.5,
+        "cost_cny": 0.013186
+      },
+      "C": {
+        "stop_reason": "model_stop_failure",
+        "tool_steps": 4,
+        "context_pass": true,
+        "artifact_pass": true,
+        "mechanics_pass": true,
+        "run_pass": true,
+        "fact_retention": 1.0,
+        "cost_cny": 0.01081
+      },
+      "D": {
+        "stop_reason": "final_answer_returned",
+        "tool_steps": 3,
+        "context_pass": true,
+        "artifact_pass": true,
+        "mechanics_pass": true,
+        "run_pass": true,
+        "fact_retention": 1.0,
+        "cost_cny": 0.009697
+      },
+      "E": {
+        "stop_reason": "preparation_failed:no_safe_range",
+        "tool_steps": 6,
+        "context_pass": true,
+        "artifact_pass": true,
+        "mechanics_pass": true,
+        "run_pass": true,
+        "fact_retention": 1.0,
+        "cost_cny": 0.03086
+      }
+    },
+    "L2-long-log-root-cause": {
+      "A": {
+        "stop_reason": "completed",
+        "tool_steps": 10,
+        "context_pass": false,
+        "artifact_pass": false,
+        "mechanics_pass": true,
+        "run_pass": false,
+        "fact_retention": 0.0,
+        "cost_cny": 0.065134
+      },
+      "C": {
+        "stop_reason": "final_answer_returned",
+        "tool_steps": 0,
+        "context_pass": true,
+        "artifact_pass": false,
+        "mechanics_pass": true,
+        "run_pass": false,
+        "fact_retention": 1.0,
+        "cost_cny": 0.002388
+      },
+      "D": {
+        "stop_reason": "model_stop_failure",
+        "tool_steps": 4,
+        "context_pass": true,
+        "artifact_pass": false,
+        "mechanics_pass": true,
+        "run_pass": false,
+        "fact_retention": 1.0,
+        "cost_cny": 0.016018
+      },
+      "E": {
+        "stop_reason": "final_answer_returned",
+        "tool_steps": 6,
+        "context_pass": true,
+        "artifact_pass": true,
+        "mechanics_pass": true,
+        "run_pass": true,
+        "fact_retention": 1.0,
+        "cost_cny": 0.019911
+      }
+    },
+    "L3-multi-round-test-fix": {
+      "A": {
+        "stop_reason": "model_stop_failure",
+        "tool_steps": 10,
+        "context_pass": false,
+        "artifact_pass": false,
+        "mechanics_pass": true,
+        "run_pass": false,
+        "fact_retention": 0.0,
+        "cost_cny": 0.054255
+      },
+      "C": {
+        "stop_reason": "preparation_failed:no_safe_range",
+        "tool_steps": 9,
+        "context_pass": true,
+        "artifact_pass": false,
+        "mechanics_pass": true,
+        "run_pass": false,
+        "fact_retention": 1.0,
+        "cost_cny": 0.038152
+      },
+      "D": {
+        "stop_reason": "model_stop_failure",
+        "tool_steps": 0,
+        "context_pass": false,
+        "artifact_pass": false,
+        "mechanics_pass": true,
+        "run_pass": false,
+        "fact_retention": 0.3333333333333333,
+        "cost_cny": 0.013176
+      },
+      "E": {
+        "stop_reason": "model_stop_failure",
+        "tool_steps": 11,
+        "context_pass": false,
+        "artifact_pass": false,
+        "mechanics_pass": true,
+        "run_pass": false,
+        "fact_retention": 0.6666666666666666,
+        "cost_cny": 0.062005
+      }
+    },
+    "L4-stale-conflict": {
+      "A": {
+        "stop_reason": "final_answer_returned",
+        "tool_steps": 0,
+        "context_pass": false,
+        "artifact_pass": false,
+        "mechanics_pass": true,
+        "run_pass": false,
+        "fact_retention": 1.0,
+        "cost_cny": 0.007202
+      },
+      "C": {
+        "stop_reason": "final_answer_returned",
+        "tool_steps": 2,
+        "context_pass": true,
+        "artifact_pass": false,
+        "mechanics_pass": true,
+        "run_pass": false,
+        "fact_retention": 1.0,
+        "cost_cny": 0.004325
+      },
+      "D": {
+        "stop_reason": "model_stop_failure",
+        "tool_steps": 7,
+        "context_pass": true,
+        "artifact_pass": false,
+        "mechanics_pass": true,
+        "run_pass": false,
+        "fact_retention": 1.0,
+        "cost_cny": 0.018565
+      },
+      "E": {
+        "stop_reason": "final_answer_returned",
+        "tool_steps": 2,
+        "context_pass": true,
+        "artifact_pass": true,
+        "mechanics_pass": true,
+        "run_pass": true,
+        "fact_retention": 1.0,
+        "cost_cny": 0.006043
+      }
+    },
+    "L5-realistic-multi-file": {
+      "A": {
+        "stop_reason": "preparation_failed:no_safe_range",
+        "tool_steps": 5,
+        "context_pass": true,
+        "artifact_pass": false,
+        "mechanics_pass": true,
+        "run_pass": false,
+        "fact_retention": 1.0,
+        "cost_cny": 0.012712
+      },
+      "C": {
+        "stop_reason": "model_stop_failure",
+        "tool_steps": 5,
+        "context_pass": true,
+        "artifact_pass": false,
+        "mechanics_pass": true,
+        "run_pass": false,
+        "fact_retention": 1.0,
+        "cost_cny": 0.025135
+      },
+      "D": {
+        "stop_reason": "model_stop_failure",
+        "tool_steps": 4,
+        "context_pass": true,
+        "artifact_pass": false,
+        "mechanics_pass": true,
+        "run_pass": false,
+        "fact_retention": 1.0,
+        "cost_cny": 0.021703
+      },
+      "E": {
+        "stop_reason": "preparation_failed:no_safe_range",
+        "tool_steps": 9,
+        "context_pass": true,
+        "artifact_pass": false,
+        "mechanics_pass": true,
+        "run_pass": false,
+        "fact_retention": 1.0,
+        "cost_cny": 0.032827
+      }
+    },
+    "L6-overflow-recovery": {
+      "A": {
+        "stop_reason": "completed",
+        "tool_steps": 12,
+        "context_pass": false,
+        "artifact_pass": false,
+        "mechanics_pass": true,
+        "run_pass": false,
+        "fact_retention": 0.0,
+        "cost_cny": 0.058414
+      },
+      "C": {
+        "stop_reason": "preparation_failed:no_safe_range",
+        "tool_steps": 8,
+        "context_pass": true,
+        "artifact_pass": false,
+        "mechanics_pass": true,
+        "run_pass": false,
+        "fact_retention": 1.0,
+        "cost_cny": 0.032902
+      },
+      "D": {
+        "stop_reason": "completed",
+        "tool_steps": 12,
+        "context_pass": true,
+        "artifact_pass": false,
+        "mechanics_pass": true,
+        "run_pass": false,
+        "fact_retention": 1.0,
+        "cost_cny": 0.037337
+      },
+      "E": {
+        "stop_reason": "preparation_failed:no_safe_range",
+        "tool_steps": 5,
+        "context_pass": true,
+        "artifact_pass": false,
+        "mechanics_pass": true,
+        "run_pass": false,
+        "fact_retention": 1.0,
+        "cost_cny": 0.021981
+      }
+    }
+  },
+  "per_condition": {
+    "A": {
+      "runs": 6,
+      "run_passes": 0,
+      "context_passes": 1,
+      "artifact_passes": 1,
+      "fact_retention": 0.416667,
+      "tool_steps": 40,
+      "model_stop_failures": 2,
+      "no_safe_range": 1,
+      "cost_cny": 0.210902
+    },
+    "C": {
+      "runs": 6,
+      "run_passes": 1,
+      "context_passes": 6,
+      "artifact_passes": 1,
+      "fact_retention": 1.0,
+      "tool_steps": 28,
+      "model_stop_failures": 2,
+      "no_safe_range": 2,
+      "cost_cny": 0.113711
+    },
+    "D": {
+      "runs": 6,
+      "run_passes": 1,
+      "context_passes": 5,
+      "artifact_passes": 1,
+      "fact_retention": 0.888889,
+      "tool_steps": 30,
+      "model_stop_failures": 4,
+      "no_safe_range": 0,
+      "cost_cny": 0.116495
+    },
+    "E": {
+      "runs": 6,
+      "run_passes": 3,
+      "context_passes": 5,
+      "artifact_passes": 3,
+      "fact_retention": 0.944444,
+      "tool_steps": 39,
+      "model_stop_failures": 1,
+      "no_safe_range": 3,
+      "cost_cny": 0.173626
+    }
+  }
+}

@@ -1,0 +1,1408 @@
+{
+  "schema_version": 1,
+  "experiment_id": "context-horizon-paid-2026-08-16-175000",
+  "captured_at": "2026-08-16T17:39:27.047559+00:00",
+  "commit_sha": "2c8a966f756c67b48b601331f365f65fef21460d",
+  "dirty": false,
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "budget": 4096,
+  "conditions": [
+    "A",
+    "C",
+    "E",
+    "D"
+  ],
+  "task_snapshot_hash": "2ab0154a2874df9620ed47a09f6671d64a57d93a5231825695a8fdc0a8e240c1",
+  "pricing": {
+    "input_cache_miss_cny_per_1m": 1.4,
+    "input_cache_hit_cny_per_1m": 0.05,
+    "output_cny_per_1m": 4.5
+  },
+  "max_cost_cny": 15.0,
+  "completed_at": "2026-08-16T18:04:43.572057+00:00",
+  "rows": [
+    {
+      "task_id": "L1-incremental-contracts",
+      "condition": "A",
+      "budget": 4096,
+      "stop_reason": "model_stop_failure",
+      "model_error": "RuntimeError: DeepSeek error: empty message.content after semantic retry (finish_reason=length, reasoning_tokens=2048, reasoning_content_chars=8522, requested_max_tokens=2048)",
+      "tool_steps": 3,
+      "attempts": 5,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L1-incremental-contracts",
+        "required_facts": [
+          "timeout=120",
+          "label=public",
+          "report_keys_sorted",
+          "paths_workspace_relative"
+        ],
+        "retained_facts": [
+          "report_keys_sorted",
+          "paths_workspace_relative"
+        ],
+        "forbidden_facts_hit": [],
+        "fact_retention": 0.5,
+        "context_pass": false
+      },
+      "artifact": {
+        "task_id": "L1-incremental-contracts",
+        "artifact_required": [
+          "timeout=120",
+          "label=public",
+          "report_keys_sorted",
+          "paths_workspace_relative"
+        ],
+        "artifact_found": [
+          "timeout=120",
+          "label=public",
+          "report_keys_sorted",
+          "paths_workspace_relative"
+        ],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": true
+      },
+      "mechanics": {
+        "task_id": "L1-incremental-contracts",
+        "tool_pairs_balanced": true,
+        "surface_generation": 4,
+        "event_count": 41,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.0131858,
+        "input_tokens": 7936,
+        "output_tokens": 2074,
+        "cached_tokens": 5376,
+        "cache_miss_tokens": 2560
+      }
+    },
+    {
+      "task_id": "L1-incremental-contracts",
+      "condition": "C",
+      "budget": 4096,
+      "stop_reason": "model_stop_failure",
+      "model_error": "RuntimeError: DeepSeek error: empty message.content after semantic retry (finish_reason=length, reasoning_tokens=2048, reasoning_content_chars=8801, requested_max_tokens=2048)",
+      "tool_steps": 4,
+      "attempts": 5,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L1-incremental-contracts",
+        "required_facts": [
+          "timeout=120",
+          "label=public",
+          "report_keys_sorted",
+          "paths_workspace_relative"
+        ],
+        "retained_facts": [
+          "timeout=120",
+          "label=public",
+          "report_keys_sorted",
+          "paths_workspace_relative"
+        ],
+        "forbidden_facts_hit": [],
+        "fact_retention": 1.0,
+        "context_pass": true
+      },
+      "artifact": {
+        "task_id": "L1-incremental-contracts",
+        "artifact_required": [
+          "timeout=120",
+          "label=public",
+          "report_keys_sorted",
+          "paths_workspace_relative"
+        ],
+        "artifact_found": [
+          "timeout=120",
+          "label=public",
+          "report_keys_sorted",
+          "paths_workspace_relative"
+        ],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": true
+      },
+      "mechanics": {
+        "task_id": "L1-incremental-contracts",
+        "tool_pairs_balanced": true,
+        "surface_generation": 4,
+        "event_count": 43,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.0239957,
+        "input_tokens": 13066,
+        "output_tokens": 3917,
+        "cached_tokens": 8832,
+        "cache_miss_tokens": 4234
+      }
+    },
+    {
+      "task_id": "L1-incremental-contracts",
+      "condition": "E",
+      "budget": 4096,
+      "stop_reason": "preparation_failed:no_safe_range",
+      "model_error": "",
+      "tool_steps": 6,
+      "attempts": 7,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L1-incremental-contracts",
+        "required_facts": [
+          "timeout=120",
+          "label=public",
+          "report_keys_sorted",
+          "paths_workspace_relative"
+        ],
+        "retained_facts": [
+          "timeout=120",
+          "label=public",
+          "report_keys_sorted",
+          "paths_workspace_relative"
+        ],
+        "forbidden_facts_hit": [],
+        "fact_retention": 1.0,
+        "context_pass": true
+      },
+      "artifact": {
+        "task_id": "L1-incremental-contracts",
+        "artifact_required": [
+          "timeout=120",
+          "label=public",
+          "report_keys_sorted",
+          "paths_workspace_relative"
+        ],
+        "artifact_found": [
+          "timeout=120",
+          "label=public",
+          "report_keys_sorted",
+          "paths_workspace_relative"
+        ],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": true
+      },
+      "mechanics": {
+        "task_id": "L1-incremental-contracts",
+        "tool_pairs_balanced": true,
+        "surface_generation": 5,
+        "event_count": 56,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.05485520000000001,
+        "input_tokens": 24817,
+        "output_tokens": 10306,
+        "cached_tokens": 19456,
+        "cache_miss_tokens": 5361
+      }
+    },
+    {
+      "task_id": "L1-incremental-contracts",
+      "condition": "D",
+      "budget": 4096,
+      "stop_reason": "final_answer_returned",
+      "model_error": "",
+      "tool_steps": 3,
+      "attempts": 4,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L1-incremental-contracts",
+        "required_facts": [
+          "timeout=120",
+          "label=public",
+          "report_keys_sorted",
+          "paths_workspace_relative"
+        ],
+        "retained_facts": [
+          "timeout=120",
+          "label=public",
+          "report_keys_sorted",
+          "paths_workspace_relative"
+        ],
+        "forbidden_facts_hit": [],
+        "fact_retention": 1.0,
+        "context_pass": true
+      },
+      "artifact": {
+        "task_id": "L1-incremental-contracts",
+        "artifact_required": [
+          "timeout=120",
+          "label=public",
+          "report_keys_sorted",
+          "paths_workspace_relative"
+        ],
+        "artifact_found": [
+          "timeout=120",
+          "label=public",
+          "report_keys_sorted",
+          "paths_workspace_relative"
+        ],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": true
+      },
+      "mechanics": {
+        "task_id": "L1-incremental-contracts",
+        "tool_pairs_balanced": true,
+        "surface_generation": 4,
+        "event_count": 39,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.0645521,
+        "input_tokens": 30025,
+        "output_tokens": 12223,
+        "cached_tokens": 24064,
+        "cache_miss_tokens": 5961
+      }
+    },
+    {
+      "task_id": "L2-long-log-root-cause",
+      "condition": "C",
+      "budget": 4096,
+      "stop_reason": "final_answer_returned",
+      "model_error": "",
+      "tool_steps": 0,
+      "attempts": 1,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L2-long-log-root-cause",
+        "required_facts": [
+          "expected timeout 120, found timeout 30"
+        ],
+        "retained_facts": [
+          "expected timeout 120, found timeout 30"
+        ],
+        "forbidden_facts_hit": [],
+        "fact_retention": 1.0,
+        "context_pass": true
+      },
+      "artifact": {
+        "task_id": "L2-long-log-root-cause",
+        "artifact_required": [
+          "TIMEOUT = 120"
+        ],
+        "artifact_found": [],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": false
+      },
+      "mechanics": {
+        "task_id": "L2-long-log-root-cause",
+        "tool_pairs_balanced": true,
+        "surface_generation": 4,
+        "event_count": 24,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.06693980000000001,
+        "input_tokens": 31114,
+        "output_tokens": 12722,
+        "cached_tokens": 25088,
+        "cache_miss_tokens": 6026
+      }
+    },
+    {
+      "task_id": "L2-long-log-root-cause",
+      "condition": "E",
+      "budget": 4096,
+      "stop_reason": "final_answer_returned",
+      "model_error": "",
+      "tool_steps": 6,
+      "attempts": 7,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L2-long-log-root-cause",
+        "required_facts": [
+          "expected timeout 120, found timeout 30"
+        ],
+        "retained_facts": [
+          "expected timeout 120, found timeout 30"
+        ],
+        "forbidden_facts_hit": [],
+        "fact_retention": 1.0,
+        "context_pass": true
+      },
+      "artifact": {
+        "task_id": "L2-long-log-root-cause",
+        "artifact_required": [
+          "TIMEOUT = 120"
+        ],
+        "artifact_found": [
+          "TIMEOUT = 120"
+        ],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": true
+      },
+      "mechanics": {
+        "task_id": "L2-long-log-root-cause",
+        "tool_pairs_balanced": true,
+        "surface_generation": 4,
+        "event_count": 54,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.08685049999999998,
+        "input_tokens": 42724,
+        "output_tokens": 16453,
+        "cached_tokens": 34816,
+        "cache_miss_tokens": 7908
+      }
+    },
+    {
+      "task_id": "L2-long-log-root-cause",
+      "condition": "D",
+      "budget": 4096,
+      "stop_reason": "model_stop_failure",
+      "model_error": "RuntimeError: DeepSeek error: empty message.content after semantic retry (finish_reason=length, reasoning_tokens=2048, reasoning_content_chars=8476, requested_max_tokens=2048)",
+      "tool_steps": 4,
+      "attempts": 6,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L2-long-log-root-cause",
+        "required_facts": [
+          "expected timeout 120, found timeout 30"
+        ],
+        "retained_facts": [
+          "expected timeout 120, found timeout 30"
+        ],
+        "forbidden_facts_hit": [],
+        "fact_retention": 1.0,
+        "context_pass": true
+      },
+      "artifact": {
+        "task_id": "L2-long-log-root-cause",
+        "artifact_required": [
+          "TIMEOUT = 120"
+        ],
+        "artifact_found": [],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": false
+      },
+      "mechanics": {
+        "task_id": "L2-long-log-root-cause",
+        "tool_pairs_balanced": true,
+        "surface_generation": 4,
+        "event_count": 46,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.10286809999999999,
+        "input_tokens": 51010,
+        "output_tokens": 19585,
+        "cached_tokens": 41984,
+        "cache_miss_tokens": 9026
+      }
+    },
+    {
+      "task_id": "L2-long-log-root-cause",
+      "condition": "A",
+      "budget": 4096,
+      "stop_reason": "completed",
+      "model_error": "",
+      "tool_steps": 10,
+      "attempts": 10,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L2-long-log-root-cause",
+        "required_facts": [
+          "expected timeout 120, found timeout 30"
+        ],
+        "retained_facts": [],
+        "forbidden_facts_hit": [],
+        "fact_retention": 0.0,
+        "context_pass": false
+      },
+      "artifact": {
+        "task_id": "L2-long-log-root-cause",
+        "artifact_required": [
+          "TIMEOUT = 120"
+        ],
+        "artifact_found": [],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": false
+      },
+      "mechanics": {
+        "task_id": "L2-long-log-root-cause",
+        "tool_pairs_balanced": true,
+        "surface_generation": 9,
+        "event_count": 76,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.1680019,
+        "input_tokens": 82580,
+        "output_tokens": 31687,
+        "cached_tokens": 66816,
+        "cache_miss_tokens": 15764
+      }
+    },
+    {
+      "task_id": "L3-multi-round-test-fix",
+      "condition": "E",
+      "budget": 4096,
+      "stop_reason": "model_stop_failure",
+      "model_error": "RuntimeError: DeepSeek error: empty message.content after semantic retry (finish_reason=length, reasoning_tokens=2047, reasoning_content_chars=8174, requested_max_tokens=2048)",
+      "tool_steps": 11,
+      "attempts": 12,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L3-multi-round-test-fix",
+        "required_facts": [
+          "formula must double the value",
+          "report must sort keys",
+          "public label must be visible"
+        ],
+        "retained_facts": [
+          "formula must double the value",
+          "report must sort keys"
+        ],
+        "forbidden_facts_hit": [],
+        "fact_retention": 0.6666666666666666,
+        "context_pass": false
+      },
+      "artifact": {
+        "task_id": "L3-multi-round-test-fix",
+        "artifact_required": [
+          "def normalize",
+          "dict(sorted(entries))",
+          "PUBLIC_LABEL"
+        ],
+        "artifact_found": [
+          "def normalize"
+        ],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": false
+      },
+      "mechanics": {
+        "task_id": "L3-multi-round-test-fix",
+        "tool_pairs_balanced": true,
+        "surface_generation": 2,
+        "event_count": 80,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.23000700000000002,
+        "input_tokens": 112668,
+        "output_tokens": 43478,
+        "cached_tokens": 91392,
+        "cache_miss_tokens": 21276
+      }
+    },
+    {
+      "task_id": "L3-multi-round-test-fix",
+      "condition": "D",
+      "budget": 4096,
+      "stop_reason": "model_stop_failure",
+      "model_error": "RuntimeError: DeepSeek error: empty message.content after semantic retry (finish_reason=length, reasoning_tokens=2048, reasoning_content_chars=8433, requested_max_tokens=2048)",
+      "tool_steps": 0,
+      "attempts": 1,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L3-multi-round-test-fix",
+        "required_facts": [
+          "formula must double the value",
+          "report must sort keys",
+          "public label must be visible"
+        ],
+        "retained_facts": [
+          "formula must double the value"
+        ],
+        "forbidden_facts_hit": [],
+        "fact_retention": 0.3333333333333333,
+        "context_pass": false
+      },
+      "artifact": {
+        "task_id": "L3-multi-round-test-fix",
+        "artifact_required": [
+          "def normalize",
+          "dict(sorted(entries))",
+          "PUBLIC_LABEL"
+        ],
+        "artifact_found": [
+          "def normalize"
+        ],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": false
+      },
+      "mechanics": {
+        "task_id": "L3-multi-round-test-fix",
+        "tool_pairs_balanced": true,
+        "surface_generation": 1,
+        "event_count": 22,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 2268,
+        "output_tokens": 2376,
+        "cached_tokens": 512,
+        "cache_miss_tokens": 1756,
+        "calls": 4
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.243183,
+        "input_tokens": 114936,
+        "output_tokens": 45854,
+        "cached_tokens": 91904,
+        "cache_miss_tokens": 23032
+      }
+    },
+    {
+      "task_id": "L3-multi-round-test-fix",
+      "condition": "A",
+      "budget": 4096,
+      "stop_reason": "model_stop_failure",
+      "model_error": "RuntimeError: DeepSeek error: empty message.content after semantic retry (finish_reason=length, reasoning_tokens=2048, reasoning_content_chars=8819, requested_max_tokens=2048)",
+      "tool_steps": 10,
+      "attempts": 11,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L3-multi-round-test-fix",
+        "required_facts": [
+          "formula must double the value",
+          "report must sort keys",
+          "public label must be visible"
+        ],
+        "retained_facts": [],
+        "forbidden_facts_hit": [],
+        "fact_retention": 0.0,
+        "context_pass": false
+      },
+      "artifact": {
+        "task_id": "L3-multi-round-test-fix",
+        "artifact_required": [
+          "def normalize",
+          "dict(sorted(entries))",
+          "PUBLIC_LABEL"
+        ],
+        "artifact_found": [
+          "def normalize"
+        ],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": false
+      },
+      "mechanics": {
+        "task_id": "L3-multi-round-test-fix",
+        "tool_pairs_balanced": true,
+        "surface_generation": 8,
+        "event_count": 77,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.29743780000000003,
+        "input_tokens": 145025,
+        "output_tokens": 55116,
+        "cached_tokens": 113792,
+        "cache_miss_tokens": 31233
+      }
+    },
+    {
+      "task_id": "L3-multi-round-test-fix",
+      "condition": "C",
+      "budget": 4096,
+      "stop_reason": "preparation_failed:no_safe_range",
+      "model_error": "",
+      "tool_steps": 9,
+      "attempts": 9,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L3-multi-round-test-fix",
+        "required_facts": [
+          "formula must double the value",
+          "report must sort keys",
+          "public label must be visible"
+        ],
+        "retained_facts": [
+          "formula must double the value",
+          "report must sort keys",
+          "public label must be visible"
+        ],
+        "forbidden_facts_hit": [],
+        "fact_retention": 1.0,
+        "context_pass": true
+      },
+      "artifact": {
+        "task_id": "L3-multi-round-test-fix",
+        "artifact_required": [
+          "def normalize",
+          "dict(sorted(entries))",
+          "PUBLIC_LABEL"
+        ],
+        "artifact_found": [
+          "def normalize"
+        ],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": false
+      },
+      "mechanics": {
+        "task_id": "L3-multi-round-test-fix",
+        "tool_pairs_balanced": true,
+        "surface_generation": 24,
+        "event_count": 87,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.33558940000000004,
+        "input_tokens": 171155,
+        "output_tokens": 61532,
+        "cached_tokens": 134016,
+        "cache_miss_tokens": 37139
+      }
+    },
+    {
+      "task_id": "L4-stale-conflict",
+      "condition": "D",
+      "budget": 4096,
+      "stop_reason": "model_stop_failure",
+      "model_error": "RuntimeError: DeepSeek error: empty message.content after semantic retry (finish_reason=length, reasoning_tokens=2048, reasoning_content_chars=9027, requested_max_tokens=2048)",
+      "tool_steps": 7,
+      "attempts": 8,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L4-stale-conflict",
+        "required_facts": [
+          "authoritative current color is red"
+        ],
+        "retained_facts": [
+          "authoritative current color is red"
+        ],
+        "forbidden_facts_hit": [],
+        "fact_retention": 1.0,
+        "context_pass": true
+      },
+      "artifact": {
+        "task_id": "L4-stale-conflict",
+        "artifact_required": [
+          "COLOR = \"red\""
+        ],
+        "artifact_found": [],
+        "artifact_forbidden_hit": [
+          "COLOR = \"blue\""
+        ],
+        "artifact_pass": false
+      },
+      "mechanics": {
+        "task_id": "L4-stale-conflict",
+        "tool_pairs_balanced": true,
+        "surface_generation": 4,
+        "event_count": 58,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.35415409999999997,
+        "input_tokens": 182053,
+        "output_tokens": 64955,
+        "cached_tokens": 142976,
+        "cache_miss_tokens": 39077
+      }
+    },
+    {
+      "task_id": "L4-stale-conflict",
+      "condition": "A",
+      "budget": 4096,
+      "stop_reason": "final_answer_returned",
+      "model_error": "",
+      "tool_steps": 0,
+      "attempts": 1,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L4-stale-conflict",
+        "required_facts": [
+          "authoritative current color is red"
+        ],
+        "retained_facts": [
+          "authoritative current color is red"
+        ],
+        "forbidden_facts_hit": [
+          "current color is blue"
+        ],
+        "fact_retention": 1.0,
+        "context_pass": false
+      },
+      "artifact": {
+        "task_id": "L4-stale-conflict",
+        "artifact_required": [
+          "COLOR = \"red\""
+        ],
+        "artifact_found": [],
+        "artifact_forbidden_hit": [
+          "COLOR = \"blue\""
+        ],
+        "artifact_pass": false
+      },
+      "mechanics": {
+        "task_id": "L4-stale-conflict",
+        "tool_pairs_balanced": true,
+        "surface_generation": 2,
+        "event_count": 22,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.36135609999999996,
+        "input_tokens": 184253,
+        "output_tokens": 65871,
+        "cached_tokens": 142976,
+        "cache_miss_tokens": 41277
+      }
+    },
+    {
+      "task_id": "L4-stale-conflict",
+      "condition": "C",
+      "budget": 4096,
+      "stop_reason": "final_answer_returned",
+      "model_error": "",
+      "tool_steps": 2,
+      "attempts": 3,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L4-stale-conflict",
+        "required_facts": [
+          "authoritative current color is red"
+        ],
+        "retained_facts": [
+          "authoritative current color is red"
+        ],
+        "forbidden_facts_hit": [],
+        "fact_retention": 1.0,
+        "context_pass": true
+      },
+      "artifact": {
+        "task_id": "L4-stale-conflict",
+        "artifact_required": [
+          "COLOR = \"red\""
+        ],
+        "artifact_found": [],
+        "artifact_forbidden_hit": [
+          "COLOR = \"blue\""
+        ],
+        "artifact_pass": false
+      },
+      "mechanics": {
+        "task_id": "L4-stale-conflict",
+        "tool_pairs_balanced": true,
+        "surface_generation": 4,
+        "event_count": 34,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.3656809,
+        "input_tokens": 187499,
+        "output_tokens": 66667,
+        "cached_tokens": 145792,
+        "cache_miss_tokens": 41707
+      }
+    },
+    {
+      "task_id": "L4-stale-conflict",
+      "condition": "E",
+      "budget": 4096,
+      "stop_reason": "final_answer_returned",
+      "model_error": "",
+      "tool_steps": 2,
+      "attempts": 3,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L4-stale-conflict",
+        "required_facts": [
+          "authoritative current color is red"
+        ],
+        "retained_facts": [
+          "authoritative current color is red"
+        ],
+        "forbidden_facts_hit": [],
+        "fact_retention": 1.0,
+        "context_pass": true
+      },
+      "artifact": {
+        "task_id": "L4-stale-conflict",
+        "artifact_required": [
+          "COLOR = \"red\""
+        ],
+        "artifact_found": [
+          "COLOR = \"red\""
+        ],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": true
+      },
+      "mechanics": {
+        "task_id": "L4-stale-conflict",
+        "tool_pairs_balanced": true,
+        "surface_generation": 4,
+        "event_count": 34,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.3717236,
+        "input_tokens": 190723,
+        "output_tokens": 67890,
+        "cached_tokens": 148736,
+        "cache_miss_tokens": 41987
+      }
+    },
+    {
+      "task_id": "L5-realistic-multi-file",
+      "condition": "A",
+      "budget": 4096,
+      "stop_reason": "preparation_failed:no_safe_range",
+      "model_error": "",
+      "tool_steps": 5,
+      "attempts": 5,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L5-realistic-multi-file",
+        "required_facts": [
+          "normalize must strip whitespace",
+          "summarize must drop falsy values",
+          "report must sort keys"
+        ],
+        "retained_facts": [
+          "normalize must strip whitespace",
+          "summarize must drop falsy values",
+          "report must sort keys"
+        ],
+        "forbidden_facts_hit": [],
+        "fact_retention": 1.0,
+        "context_pass": true
+      },
+      "artifact": {
+        "task_id": "L5-realistic-multi-file",
+        "artifact_required": [
+          "dict(sorted(entries))"
+        ],
+        "artifact_found": [],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": false
+      },
+      "mechanics": {
+        "task_id": "L5-realistic-multi-file",
+        "tool_pairs_balanced": true,
+        "surface_generation": 15,
+        "event_count": 58,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.38443520000000003,
+        "input_tokens": 199741,
+        "output_tokens": 69522,
+        "cached_tokens": 154112,
+        "cache_miss_tokens": 45629
+      }
+    },
+    {
+      "task_id": "L5-realistic-multi-file",
+      "condition": "C",
+      "budget": 4096,
+      "stop_reason": "model_stop_failure",
+      "model_error": "RuntimeError: DeepSeek error: empty message.content after semantic retry (finish_reason=length, reasoning_tokens=2048, reasoning_content_chars=9099, requested_max_tokens=2048)",
+      "tool_steps": 5,
+      "attempts": 7,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L5-realistic-multi-file",
+        "required_facts": [
+          "normalize must strip whitespace",
+          "summarize must drop falsy values",
+          "report must sort keys"
+        ],
+        "retained_facts": [
+          "normalize must strip whitespace",
+          "summarize must drop falsy values",
+          "report must sort keys"
+        ],
+        "forbidden_facts_hit": [],
+        "fact_retention": 1.0,
+        "context_pass": true
+      },
+      "artifact": {
+        "task_id": "L5-realistic-multi-file",
+        "artifact_required": [
+          "dict(sorted(entries))"
+        ],
+        "artifact_found": [],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": false
+      },
+      "mechanics": {
+        "task_id": "L5-realistic-multi-file",
+        "tool_pairs_balanced": true,
+        "surface_generation": 4,
+        "event_count": 51,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.4095701,
+        "input_tokens": 210436,
+        "output_tokens": 74353,
+        "cached_tokens": 162688,
+        "cache_miss_tokens": 47748
+      }
+    },
+    {
+      "task_id": "L5-realistic-multi-file",
+      "condition": "E",
+      "budget": 4096,
+      "stop_reason": "preparation_failed:no_safe_range",
+      "model_error": "",
+      "tool_steps": 9,
+      "attempts": 9,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L5-realistic-multi-file",
+        "required_facts": [
+          "normalize must strip whitespace",
+          "summarize must drop falsy values",
+          "report must sort keys"
+        ],
+        "retained_facts": [
+          "normalize must strip whitespace",
+          "summarize must drop falsy values",
+          "report must sort keys"
+        ],
+        "forbidden_facts_hit": [],
+        "fact_retention": 1.0,
+        "context_pass": true
+      },
+      "artifact": {
+        "task_id": "L5-realistic-multi-file",
+        "artifact_required": [
+          "dict(sorted(entries))"
+        ],
+        "artifact_found": [],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": false
+      },
+      "mechanics": {
+        "task_id": "L5-realistic-multi-file",
+        "tool_pairs_balanced": true,
+        "surface_generation": 4,
+        "event_count": 67,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.442397,
+        "input_tokens": 229018,
+        "output_tokens": 80782,
+        "cached_tokens": 179072,
+        "cache_miss_tokens": 49946
+      }
+    },
+    {
+      "task_id": "L5-realistic-multi-file",
+      "condition": "D",
+      "budget": 4096,
+      "stop_reason": "model_stop_failure",
+      "model_error": "RuntimeError: DeepSeek error: empty message.content after semantic retry (finish_reason=length, reasoning_tokens=2048, reasoning_content_chars=8877, requested_max_tokens=2048)",
+      "tool_steps": 4,
+      "attempts": 6,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L5-realistic-multi-file",
+        "required_facts": [
+          "normalize must strip whitespace",
+          "summarize must drop falsy values",
+          "report must sort keys"
+        ],
+        "retained_facts": [
+          "normalize must strip whitespace",
+          "summarize must drop falsy values",
+          "report must sort keys"
+        ],
+        "forbidden_facts_hit": [],
+        "fact_retention": 1.0,
+        "context_pass": true
+      },
+      "artifact": {
+        "task_id": "L5-realistic-multi-file",
+        "artifact_required": [
+          "dict(sorted(entries))"
+        ],
+        "artifact_found": [],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": false
+      },
+      "mechanics": {
+        "task_id": "L5-realistic-multi-file",
+        "tool_pairs_balanced": true,
+        "surface_generation": 4,
+        "event_count": 46,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.46409970000000006,
+        "input_tokens": 236949,
+        "output_tokens": 85211,
+        "cached_tokens": 185984,
+        "cache_miss_tokens": 50965
+      }
+    },
+    {
+      "task_id": "L6-overflow-recovery",
+      "condition": "C",
+      "budget": 4096,
+      "stop_reason": "preparation_failed:no_safe_range",
+      "model_error": "",
+      "tool_steps": 8,
+      "attempts": 8,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L6-overflow-recovery",
+        "required_facts": [
+          "expected timeout 120, found timeout 30"
+        ],
+        "retained_facts": [
+          "expected timeout 120, found timeout 30"
+        ],
+        "forbidden_facts_hit": [],
+        "fact_retention": 1.0,
+        "context_pass": true
+      },
+      "artifact": {
+        "task_id": "L6-overflow-recovery",
+        "artifact_required": [
+          "TIMEOUT = 120"
+        ],
+        "artifact_found": [],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": false
+      },
+      "mechanics": {
+        "task_id": "L6-overflow-recovery",
+        "tool_pairs_balanced": true,
+        "surface_generation": 26,
+        "event_count": 84,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.4970016000000001,
+        "input_tokens": 251235,
+        "output_tokens": 91534,
+        "cached_tokens": 197504,
+        "cache_miss_tokens": 53731
+      }
+    },
+    {
+      "task_id": "L6-overflow-recovery",
+      "condition": "E",
+      "budget": 4096,
+      "stop_reason": "preparation_failed:no_safe_range",
+      "model_error": "",
+      "tool_steps": 5,
+      "attempts": 5,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L6-overflow-recovery",
+        "required_facts": [
+          "expected timeout 120, found timeout 30"
+        ],
+        "retained_facts": [
+          "expected timeout 120, found timeout 30"
+        ],
+        "forbidden_facts_hit": [],
+        "fact_retention": 1.0,
+        "context_pass": true
+      },
+      "artifact": {
+        "task_id": "L6-overflow-recovery",
+        "artifact_required": [
+          "TIMEOUT = 120"
+        ],
+        "artifact_found": [],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": false
+      },
+      "mechanics": {
+        "task_id": "L6-overflow-recovery",
+        "tool_pairs_balanced": true,
+        "surface_generation": 5,
+        "event_count": 48,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.5189822000000002,
+        "input_tokens": 259855,
+        "output_tokens": 95964,
+        "cached_tokens": 204928,
+        "cache_miss_tokens": 54927
+      }
+    },
+    {
+      "task_id": "L6-overflow-recovery",
+      "condition": "D",
+      "budget": 4096,
+      "stop_reason": "completed",
+      "model_error": "",
+      "tool_steps": 12,
+      "attempts": 12,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L6-overflow-recovery",
+        "required_facts": [
+          "expected timeout 120, found timeout 30"
+        ],
+        "retained_facts": [
+          "expected timeout 120, found timeout 30"
+        ],
+        "forbidden_facts_hit": [],
+        "fact_retention": 1.0,
+        "context_pass": true
+      },
+      "artifact": {
+        "task_id": "L6-overflow-recovery",
+        "artifact_required": [
+          "TIMEOUT = 120"
+        ],
+        "artifact_found": [],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": false
+      },
+      "mechanics": {
+        "task_id": "L6-overflow-recovery",
+        "tool_pairs_balanced": true,
+        "surface_generation": 4,
+        "event_count": 81,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.5563192,
+        "input_tokens": 283517,
+        "output_tokens": 103274,
+        "cached_tokens": 226176,
+        "cache_miss_tokens": 57341
+      }
+    },
+    {
+      "task_id": "L6-overflow-recovery",
+      "condition": "A",
+      "budget": 4096,
+      "stop_reason": "completed",
+      "model_error": "",
+      "tool_steps": 12,
+      "attempts": 13,
+      "observed_overflow": false,
+      "context": {
+        "task_id": "L6-overflow-recovery",
+        "required_facts": [
+          "expected timeout 120, found timeout 30"
+        ],
+        "retained_facts": [],
+        "forbidden_facts_hit": [],
+        "fact_retention": 0.0,
+        "context_pass": false
+      },
+      "artifact": {
+        "task_id": "L6-overflow-recovery",
+        "artifact_required": [
+          "TIMEOUT = 120"
+        ],
+        "artifact_found": [],
+        "artifact_forbidden_hit": [],
+        "artifact_pass": false
+      },
+      "mechanics": {
+        "task_id": "L6-overflow-recovery",
+        "tool_pairs_balanced": true,
+        "surface_generation": 6,
+        "event_count": 86,
+        "mechanics_pass": true
+      },
+      "hidden_isolated": true,
+      "summary_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_tokens": 0,
+        "cache_miss_tokens": 0,
+        "calls": 0
+      },
+      "cost_guard_snapshot": {
+        "spent_cny": 0.6147334999999999,
+        "input_tokens": 316273,
+        "output_tokens": 114205,
+        "cached_tokens": 253312,
+        "cache_miss_tokens": 62961
+      }
+    }
+  ],
+  "cost_totals": {
+    "spent_cny": 0.6147334999999999,
+    "input_tokens": 316273,
+    "output_tokens": 114205,
+    "cached_tokens": 253312,
+    "cache_miss_tokens": 62961
+  }
+}
