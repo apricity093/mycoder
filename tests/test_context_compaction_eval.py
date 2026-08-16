@@ -7,9 +7,7 @@ import pytest
 
 from apricity.evaluation.context_compaction import (
     ContextCompactionRunner,
-    balanced_condition_order,
     build_schedule,
-    canonical_hash,
     condition_policies,
     load_taskset,
     verify_run,
@@ -310,8 +308,6 @@ def test_verify_run_contradiction_without_authoritative_fails():
 
 
 def test_hidden_verifier_never_lands_in_workspace(tmp_path):
-    repo_root = Path(".").resolve()
-    hidden_root = repo_root / "benchmarks" / "context_compaction" / "hidden"
     runner = ContextCompactionRunner(
         taskset_path="benchmarks/context_compaction/tasks.v2.json",
         output_dir=tmp_path / "out",
@@ -330,7 +326,6 @@ def test_hidden_verifier_never_lands_in_workspace(tmp_path):
 
 
 def test_hidden_verifier_isolated_when_clean(tmp_path):
-    repo_root = Path(".").resolve()
     runner = ContextCompactionRunner(
         taskset_path="benchmarks/context_compaction/tasks.v2.json",
         output_dir=tmp_path / "out",
@@ -347,7 +342,6 @@ def test_hidden_verifier_isolated_when_clean(tmp_path):
 
 
 def test_resume_rejects_hash_mismatch(tmp_path):
-    repo_root = Path(".").resolve()
     runner = ContextCompactionRunner(
         taskset_path="benchmarks/context_compaction/tasks.v2.json",
         output_dir=tmp_path / "out",
@@ -813,3 +807,240 @@ def test_clean_worktree_is_enforced_and_dirty_override_is_noncanonical(tmp_path,
     assert payload["dirty"] is True
     assert payload["canonical"] is False
     assert payload["canonical_override_requested"] is True
+
+
+def test_validate_fixture_copy_detects_tampered_tree(tmp_path):
+    import shutil
+
+    repo_root = Path(".").resolve()
+    runner = ContextCompactionRunner(
+        taskset_path="benchmarks/context_compaction/tasks.v2.json",
+        output_dir=tmp_path / "out",
+        workspace_root=tmp_path / "ws",
+        task_ids=["C01-early-fact"],
+        allow_dirty=True,
+    )
+    task = runner.tasks_by_id["C01-early-fact"]
+    source = repo_root / task["fixture_repo"]
+    copied = tmp_path / "fixture"
+    shutil.copytree(source, copied)
+
+    first_file = next(path for path in copied.rglob("*") if path.is_file())
+    first_file.write_text("tampered\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="fixture tree hash mismatch"):
+        runner._validate_fixture_copy(task, copied)
+
+
+def test_validate_seed_hashes_detects_mismatch(tmp_path):
+    runner = ContextCompactionRunner(
+        taskset_path="benchmarks/context_compaction/tasks.v2.json",
+        output_dir=tmp_path / "out",
+        workspace_root=tmp_path / "ws",
+        task_ids=["C01-early-fact"],
+        allow_dirty=True,
+    )
+    seed_file = tmp_path / "C01.jsonl"
+    seed_file.write_text("[]\n", encoding="utf-8")
+    runner.seed_root = tmp_path
+    runner.tasks_by_id = {
+        "C01-early-fact": {
+            "id": "C01-early-fact",
+            "seed_event_log": "C01.jsonl",
+            "seed_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        }
+    }
+
+    with pytest.raises(ValueError, match="seed hash mismatch"):
+        runner._validate_seed_hashes()
+
+
+def test_resume_preserves_runner_error_run_and_reruns_it(tmp_path):
+    runner = ContextCompactionRunner(
+        taskset_path="benchmarks/context_compaction/tasks.v2.json",
+        output_dir=tmp_path / "out",
+        workspace_root=tmp_path / "ws",
+        task_ids=["C01-early-fact"],
+        allow_dirty=True,
+    )
+    runner.run()
+    runs_root = tmp_path / "out" / "runs"
+    target = runs_root / "A-C01-early-fact-r01-b4096"
+    report_path = target / "report.json"
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report["runner_error"] = True
+    report["error"] = "simulated runner error"
+    report_path.write_text(json.dumps(report), encoding="utf-8")
+
+    prior_manifest = json.loads((tmp_path / "out" / "manifest.json").read_text(encoding="utf-8"))
+    resumed = ContextCompactionRunner(
+        taskset_path="benchmarks/context_compaction/tasks.v2.json",
+        output_dir=tmp_path / "out",
+        workspace_root=tmp_path / "ws",
+        task_ids=["C01-early-fact"],
+        allow_dirty=True,
+        resume=True,
+    )
+    payload = resumed.run()
+
+    preserved_dirs = list((runs_root / "runner-errors").iterdir())
+    assert len(preserved_dirs) == 1
+    assert preserved_dirs[0].name.startswith(target.name + ".runner-error-")
+    preserved_report = json.loads(
+        (preserved_dirs[0] / "report.json").read_text(encoding="utf-8")
+    )
+    assert preserved_report["runner_error"] is True
+    assert preserved_report["error"] == "simulated runner error"
+
+    new_report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert new_report.get("runner_error") is False
+    assert new_report.get("resume_provenance") is not None
+
+    assert payload["resume_provenance"][0]["preserved_run_dir"] == str(preserved_dirs[0])
+    assert payload["resumed_from_experiment_id"] == prior_manifest["experiment_id"]
+
+
+def test_aggregate_rows_excludes_runner_error_blocks_from_paired_delta():
+    from apricity.evaluation.context_compaction.metrics import aggregate_rows, condition_delta
+
+    def row(task_id, condition, *, runner_error=False, run_pass=True, artifact_pass=True):
+        return {
+            "task_id": task_id,
+            "condition": condition,
+            "repetition": 1,
+            "budget": 4096,
+            "runner_error": runner_error,
+            "run_pass": run_pass,
+            "mechanics_pass": True,
+            "artifact_pass": artifact_pass,
+            "context_pass": True,
+            "trace_pass": True,
+            "trace_checks": {},
+            "context_fact_retention": 1,
+            "context_required_facts": 1,
+            "observed_overflow": False,
+            "recovered_overflow": False,
+            "summary_error_claims": 0,
+            "summary_total_claims": 0,
+            "tool_steps": 0,
+            "attempts": 0,
+            "estimated_input_tokens": 0,
+            "duration_ms": 0,
+        }
+
+    rows = [
+        row("T1", "A", run_pass=True),
+        row("T1", "D", run_pass=False, artifact_pass=False),
+        row("T2", "A", run_pass=True),
+        row("T2", "D", runner_error=True, run_pass=False, artifact_pass=None),
+    ]
+    aggregate = aggregate_rows(rows)
+
+    assert aggregate["blocks_with_runner_errors"] == 1
+    assert aggregate["paired_valid_blocks"] == 1
+    delta = condition_delta(aggregate)
+    assert delta["pass_rate_delta"] == -1.0
+
+
+def test_primary_failure_taxonomy_has_no_unknown_for_observable_failures():
+    from apricity.evaluation.context_compaction.metrics import _primary_failure
+
+    base = {
+        "runner_error": False,
+        "run_pass": False,
+        "artifact_pass": True,
+        "context_pass": True,
+        "trace_pass": True,
+        "trace_checks": {},
+        "context_fact_retention": 1,
+        "context_required_facts": 1,
+        "observed_overflow": False,
+        "recovered_overflow": False,
+        "summary_error_claims": 0,
+        "summary_total_claims": 0,
+    }
+
+    assert _primary_failure({**base, "artifact_pass": False}) == "artifact_verifier_failed"
+    assert (
+        _primary_failure({**base, "trace_checks": {"request_replayable": False}, "events": [{"seq": 0, "type": "request/dispatch", "data": {}}]})
+        == "replay_mismatch"
+    )
+    assert (
+        _primary_failure({**base, "stop_reason": "preparation_failed:no_safe_range"})
+        == "budget_exhausted"
+    )
+
+
+def test_summary_fallback_count_requires_removal_after_failed_compaction():
+    from apricity.evaluation.context_compaction.metrics import _row_summary_fallback_count
+
+    row_with_fallback = {
+        "events": [
+            {"seq": 0, "type": "compaction/end", "data": {"success": False}},
+            {"seq": 1, "type": "context/summary", "data": {"kind": "removal"}},
+            {"seq": 2, "type": "request/dispatch", "data": {}},
+        ]
+    }
+    row_without_fallback = {
+        "events": [
+            {"seq": 0, "type": "compaction/end", "data": {"success": False}},
+            {"seq": 1, "type": "request/dispatch", "data": {}},
+        ]
+    }
+
+    assert _row_summary_fallback_count(row_with_fallback) == 1
+    assert _row_summary_fallback_count(row_without_fallback) == 0
+
+
+def test_replay_integrity_denominator_is_dispatch_bearing():
+    from apricity.evaluation.context_compaction.metrics import aggregate_rows
+
+    dispatch_event = {"seq": 0, "type": "request/dispatch", "data": {}}
+    rows = [
+        {
+            "task_id": "T1",
+            "condition": "A",
+            "repetition": 1,
+            "budget": 4096,
+            "runner_error": False,
+            "run_pass": True,
+            "mechanics_pass": True,
+            "artifact_pass": True,
+            "context_pass": True,
+            "trace_pass": True,
+            "trace_checks": {"request_replayable": True},
+            "context_fact_retention": 1,
+            "context_required_facts": 1,
+            "observed_overflow": False,
+            "recovered_overflow": False,
+            "summary_error_claims": 0,
+            "summary_total_claims": 0,
+            "events": [dispatch_event],
+        },
+        {
+            "task_id": "T2",
+            "condition": "A",
+            "repetition": 1,
+            "budget": 4096,
+            "runner_error": False,
+            "run_pass": False,
+            "mechanics_pass": False,
+            "artifact_pass": True,
+            "context_pass": True,
+            "trace_pass": False,
+            "trace_checks": {"request_replayable": False},
+            "context_fact_retention": 1,
+            "context_required_facts": 1,
+            "observed_overflow": False,
+            "recovered_overflow": False,
+            "summary_error_claims": 0,
+            "summary_total_claims": 0,
+            "events": [],
+        },
+    ]
+    aggregate = aggregate_rows(rows)
+
+    assert aggregate["dispatch_bearing_runs"] == 1
+    assert aggregate["dispatch_bearing_replay_integrity_rate"] == 1.0
+    assert aggregate["conditions"]["A"]["replay_evaluated_runs"] == 1
+    assert aggregate["conditions"]["A"]["replay_integrity_rate"] == 1.0

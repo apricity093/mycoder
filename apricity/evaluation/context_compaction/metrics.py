@@ -33,22 +33,174 @@ def _mean(values):
     return sum(values) / len(values) if values else 0.0
 
 
+def _block_key(row: dict) -> tuple:
+    return (row.get("task_id"), row.get("repetition"), row.get("budget"))
+
+
+def _row_dispatch_count(row: dict) -> int:
+    events = row.get("events") or []
+    return sum(1 for event in events if event.get("type") == "request/dispatch")
+
+
+def _row_compaction_attempts(row: dict) -> int:
+    events = row.get("events") or []
+    return sum(1 for event in events if event.get("type") == "compaction/end")
+
+
+def _row_compaction_successes(row: dict) -> int:
+    events = row.get("events") or []
+    return sum(
+        1 for event in events
+        if event.get("type") == "compaction/end" and event.get("data", {}).get("success")
+    )
+
+
+def _row_summary_fallback_count(row: dict) -> int:
+    """Count failed compaction attempts that were followed by whole-unit removal.
+
+    A summary fallback is a failed ``compaction/end`` whose remaining pressure
+    was then handled by deterministic whole-unit removal (a ``context/summary``
+    event with ``kind == "removal"``) before the next request dispatch.
+    """
+    events = row.get("events") or []
+    failed_ends = [
+        event for event in events
+        if event.get("type") == "compaction/end" and not event.get("data", {}).get("success")
+    ]
+    fallbacks = 0
+    for failed in failed_ends:
+        failed_seq = int(failed.get("seq", -1))
+        next_dispatch_seq = next(
+            (
+                int(event.get("seq", -1))
+                for event in events
+                if event.get("type") == "request/dispatch" and int(event.get("seq", -1)) > failed_seq
+            ),
+            None,
+        )
+        for event in events:
+            seq = int(event.get("seq", -1))
+            if failed_seq < seq and (next_dispatch_seq is None or seq < next_dispatch_seq):
+                if (
+                    event.get("type") == "context/summary"
+                    and event.get("data", {}).get("kind") == "removal"
+                ):
+                    fallbacks += 1
+                    break
+    return fallbacks
+
+
+def _failure_flags(row: dict) -> dict:
+    """Deterministic failure flags from observable Run fields.
+
+    These flags feed the PRD failure precedence. A row may carry more than
+    one flag; ``_primary_failure`` selects the highest-precedence one.
+    """
+    flags = {}
+    if row.get("runner_error"):
+        flags["runner_error"] = True
+        return flags
+    if row.get("run_pass") is True or row.get("run_pass") is None:
+        return flags
+
+    trace_checks = row.get("trace_checks") or {}
+    if trace_checks.get("request_replayable") is False and _row_dispatch_count(row) > 0:
+        flags["replay_mismatch"] = True
+    if trace_checks.get("tool_pairs_balanced") is False:
+        flags["tool_pair_broken"] = True
+    if trace_checks.get("partial_transaction_zero") is False:
+        flags["compaction_commit_failed"] = True
+
+    if row.get("summary_error_claims", 0) > 0:
+        flags["summary_invalid"] = True
+
+    if row.get("context_pass") is False:
+        # Fact retention failure is the dangerous compaction outcome. The
+        # context oracle may also fail for other contradiction reasons, so
+        # only set critical_fact_lost when a required fact is missing.
+        if int(row.get("context_fact_retention", 0) or 0) < int(
+            row.get("context_required_facts", 0) or 0
+        ):
+            flags["critical_fact_lost"] = True
+
+    if row.get("observed_overflow") and not row.get("recovered_overflow"):
+        flags["context_overflow_unrecovered"] = True
+
+    if row.get("artifact_pass") is False:
+        flags["artifact_verifier_failed"] = True
+
+    stop_reason = str(row.get("stop_reason") or "")
+    if stop_reason == "model_stop_failure":
+        flags["model_stop_failure"] = True
+    elif stop_reason.startswith("preparation_failed:"):
+        code = stop_reason.split(":", 1)[1]
+        if code == "no_safe_range":
+            flags["budget_exhausted"] = True
+
+    return flags
+
+
 def _primary_failure(row: dict) -> str:
-    """Choose the primary failure by PRD precedence, then optional secondary
-    tags. A runner_error always outranks strategy failures."""
+    """Choose the primary failure by PRD precedence, then secondary tags."""
     if row.get("runner_error"):
         return "runner_error"
+    flags = _failure_flags(row)
     for category in FAILURE_PRECEDENCE:
-        if row.get(f"fail_{category}") or row.get("primary_failure") == category:
+        if flags.get(category) or row.get(f"fail_{category}"):
             return category
     stop_reason = str(row.get("stop_reason") or "")
     if stop_reason.startswith("preparation_failed:"):
         return stop_reason.split(":", 1)[1]
-    if stop_reason == "model_stop_failure":
-        return "model_stop_failure"
     if stop_reason:
         return stop_reason
     return row.get("primary_failure") or "unknown"
+
+
+def _condition_summary(items: list[dict]) -> dict:
+    evaluated_items = [row for row in items if row.get("artifact_pass") is not None]
+    replay_rows = [
+        row for row in items
+        if "request_replayable" in (row.get("trace_checks") or {})
+        and _row_dispatch_count(row) > 0
+    ]
+    return {
+        "runs": len(items),
+        "evaluated_runs": len(evaluated_items),
+        "passed": sum(1 for row in evaluated_items if row.get("run_pass") is True),
+        "pass_rate": _ratio(
+            sum(1 for row in evaluated_items if row.get("run_pass") is True),
+            len(evaluated_items),
+        ),
+        "mechanics_pass_rate": _ratio(
+            sum(1 for row in items if row.get("mechanics_pass", row.get("run_pass")) is True),
+            len(items),
+        ),
+        "unrecovered_overflow_rate": _ratio(
+            sum(1 for row in items if row.get("observed_overflow") and not row.get("recovered_overflow")),
+            len(items),
+        ),
+        "critical_fact_retention": _ratio(
+            sum(row.get("context_fact_retention", 0) for row in items),
+            sum(row.get("context_required_facts", 0) for row in items),
+        ),
+        "summary_factual_error_rate": _ratio(
+            sum(row.get("summary_error_claims", 0) for row in items),
+            sum(row.get("summary_total_claims", 0) for row in items),
+        ),
+        "tool_pair_integrity_rate": _ratio(
+            sum(1 for row in items if row.get("trace_checks", {}).get("tool_pairs_balanced")),
+            len(items),
+        ),
+        "replay_integrity_rate": _ratio(
+            sum(1 for row in replay_rows if row.get("trace_checks", {}).get("request_replayable")),
+            len(replay_rows),
+        ),
+        "replay_evaluated_runs": len(replay_rows),
+        "dispatch_bearing_runs": sum(1 for row in items if _row_dispatch_count(row) > 0),
+        "summary_fallback_count": sum(_row_summary_fallback_count(row) for row in items),
+        "compaction_attempts": sum(_row_compaction_attempts(row) for row in items),
+        "compaction_successes": sum(_row_compaction_successes(row) for row in items),
+    }
 
 
 def aggregate_rows(rows: list[dict]) -> dict:
@@ -56,8 +208,6 @@ def aggregate_rows(rows: list[dict]) -> dict:
     evaluated = [row for row in rows if row.get("artifact_pass") is not None]
     passed = [row for row in evaluated if row.get("run_pass") is True]
     completed = [row for row in rows if not row.get("runner_error")]
-    # Runs whose artifact dimension was skipped (deterministic gate) still
-    # count toward the context/trace mechanics pass rate.
     artifact_evaluated = evaluated
     overflow_rows = [row for row in rows if row.get("observed_overflow")]
     recovered = [row for row in overflow_rows if row.get("recovered_overflow")]
@@ -71,38 +221,20 @@ def aggregate_rows(rows: list[dict]) -> dict:
         if row.get("run_pass") is False:
             failure_counts[_primary_failure(row)] += 1
 
-    def condition_summary(items):
-        evaluated_items = [row for row in items if row.get("artifact_pass") is not None]
-        return {
-            "runs": len(items),
-            "evaluated_runs": len(evaluated_items),
-            "passed": sum(1 for row in evaluated_items if row.get("run_pass") is True),
-            "pass_rate": _ratio(sum(1 for row in evaluated_items if row.get("run_pass") is True), len(evaluated_items)),
-            "mechanics_pass_rate": _ratio(
-                sum(1 for row in items if row.get("mechanics_pass", row.get("run_pass")) is True),
-                len(items),
-            ),
-            "unrecovered_overflow_rate": _ratio(
-                sum(1 for row in items if row.get("observed_overflow") and not row.get("recovered_overflow")),
-                len(items),
-            ),
-            "critical_fact_retention": _ratio(
-                sum(row.get("context_fact_retention", 0) for row in items),
-                sum(row.get("context_required_facts", 0) for row in items),
-            ),
-            "summary_factual_error_rate": _ratio(
-                sum(row.get("summary_error_claims", 0) for row in items),
-                sum(row.get("summary_total_claims", 0) for row in items),
-            ),
-            "tool_pair_integrity_rate": _ratio(
-                sum(1 for row in items if row.get("trace_checks", {}).get("tool_pairs_balanced")),
-                len(items),
-            ),
-            "replay_integrity_rate": _ratio(
-                sum(1 for row in items if row.get("trace_checks", {}).get("request_replayable")),
-                len(items),
-            ),
-        }
+    # Paired-block handling: a runner_error invalidates the whole
+    # (task_id, repetition, budget) block for paired comparisons.
+    blocks = defaultdict(list)
+    for row in rows:
+        blocks[_block_key(row)].append(row)
+    blocks_with_runner_errors = {
+        key for key, items in blocks.items() if any(row.get("runner_error") for row in items)
+    }
+    paired_valid_rows = [
+        row for row in rows if _block_key(row) not in blocks_with_runner_errors
+    ]
+    paired_condition_rows = defaultdict(list)
+    for row in paired_valid_rows:
+        paired_condition_rows[str(row.get("condition", "unknown"))].append(row)
 
     return {
         "total_runs": len(rows),
@@ -110,7 +242,9 @@ def aggregate_rows(rows: list[dict]) -> dict:
         "runner_errors": len(rows) - len(completed),
         "passed_runs": len(passed),
         "pass_rate": _ratio(len(passed), len(evaluated)),
-        "completed_pass_rate": _ratio(len(passed), len([row for row in completed if row.get("artifact_pass") is not None])),
+        "completed_pass_rate": _ratio(
+            len(passed), len([row for row in completed if row.get("artifact_pass") is not None])
+        ),
         "mechanics_pass_rate": _ratio(
             sum(1 for row in rows if row.get("mechanics_pass", row.get("run_pass")) is True),
             len(completed),
@@ -140,18 +274,49 @@ def aggregate_rows(rows: list[dict]) -> dict:
         ),
         "failure_category_counts": dict(sorted(failure_counts.items())),
         "conditions": {
-            condition: condition_summary(items)
+            condition: _condition_summary(items)
             for condition, items in sorted(condition_rows.items())
+        },
+        # Paired-block metrics over blocks without runner errors.
+        "blocks_with_runner_errors": len(blocks_with_runner_errors),
+        "paired_valid_blocks": len(
+            {
+                _block_key(row)
+                for row in paired_valid_rows
+                if row.get("condition") in ("A", "B", "C", "D")
+            }
+        ),
+        "paired_conditions": {
+            condition: _condition_summary(items)
+            for condition, items in sorted(paired_condition_rows.items())
         },
         "avg_tool_steps": _mean(row.get("tool_steps", 0) for row in rows),
         "avg_attempts": _mean(row.get("attempts", 0) for row in rows),
         "avg_input_tokens": _mean(row.get("estimated_input_tokens", 0) for row in rows),
-        "avg_compactions": _mean(row.get("compaction_count", 0) for row in rows),
+        "avg_compactions": _mean(_row_compaction_successes(row) for row in rows),
+        "avg_compaction_attempts": _mean(_row_compaction_attempts(row) for row in rows),
+        "summary_fallback_count": sum(_row_summary_fallback_count(row) for row in rows),
+        "dispatch_bearing_runs": sum(1 for row in rows if _row_dispatch_count(row) > 0),
+        "dispatch_bearing_replay_integrity_rate": _ratio(
+            sum(
+                1
+                for row in rows
+                if _row_dispatch_count(row) > 0
+                and "request_replayable" in (row.get("trace_checks") or {})
+                and row.get("trace_checks", {}).get("request_replayable")
+            ),
+            sum(
+                1
+                for row in rows
+                if _row_dispatch_count(row) > 0
+                and "request_replayable" in (row.get("trace_checks") or {})
+            ),
+        ),
         "avg_latency_ms": _mean(row.get("duration_ms", 0) for row in rows),
         "paired_tasks": len(
             {
-                (row.get("task_id"), row.get("repetition"), row.get("budget"))
-                for row in rows
+                _block_key(row)
+                for row in paired_valid_rows
                 if row.get("condition") in ("A", "B", "C", "D")
             }
         ),
@@ -159,8 +324,14 @@ def aggregate_rows(rows: list[dict]) -> dict:
 
 
 def condition_delta(aggregate: dict, left: str = "D", right: str = "A") -> dict:
-    left_summary = aggregate.get("conditions", {}).get(left, {})
-    right_summary = aggregate.get("conditions", {}).get(right, {})
+    """Paired D-vs-A delta over blocks without runner errors.
+
+    Falls back to the full condition summaries when paired summaries are not
+    present (older aggregate payloads).
+    """
+    paired = aggregate.get("paired_conditions") or aggregate.get("conditions") or {}
+    left_summary = paired.get(left, {})
+    right_summary = paired.get(right, {})
     return {
         "pass_rate_delta": float(left_summary.get("pass_rate", 0.0)) - float(right_summary.get("pass_rate", 0.0)),
         "unrecovered_overflow_delta": float(left_summary.get("unrecovered_overflow_rate", 0.0))

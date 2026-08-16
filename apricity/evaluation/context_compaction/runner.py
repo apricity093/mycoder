@@ -10,12 +10,10 @@ and the model prompt cannot reach them.
 
 from __future__ import annotations
 
-import itertools
 import json
 import os
 import shutil
 import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter
@@ -27,12 +25,16 @@ from ...context import (
     LegacyContextEngine,
     ReplayableContextEngine,
 )
-from ...context.ledger import render_surface_node
-from ...providers.clients import FakeModelClient
 from .metrics import aggregate_rows, condition_delta
-from .pressure import load_seed_events, prepare_ledger_from_seed
+from .pressure import prepare_ledger_from_seed
 from .report import render_report
-from .schema import CONDITION_IDS, canonical_hash, load_taskset
+from .schema import (
+    CONDITION_IDS,
+    canonical_hash,
+    fixture_tree_hash,
+    load_taskset,
+    sha256_of_bytes,
+)
 from .verifiers import verify_run
 
 MAIN_BUDGET = 4096
@@ -142,6 +144,9 @@ class ContextCompactionRunner:
             else list(self.taskset["tasks"])
         )
         self.tasks_by_id = {task["id"]: task for task in selected_tasks}
+        self._validate_seed_hashes()
+        self._prior_manifest = None
+        self._resume_provenance = []
         self.blocks, self.schedule_hash = build_schedule(
             selected_tasks,
             repetitions=self.repetitions,
@@ -188,6 +193,47 @@ class ContextCompactionRunner:
                 if hidden_text[:80] in text or (oracle_secret and oracle_secret in text):
                     return False
         return True
+
+    def _validate_seed_hashes(self) -> None:
+        """Fail fast when a frozen seed log no longer matches its task hash."""
+        for task in self.tasks_by_id.values():
+            seed_path = (self.seed_root / task["seed_event_log"]).resolve()
+            if not seed_path.is_file():
+                raise ValueError(f"seed event log not found: {task['seed_event_log']}")
+            actual = sha256_of_bytes(seed_path.read_bytes())
+            expected = str(task.get("seed_hash") or "")
+            if expected and actual != expected:
+                raise ValueError(
+                    f"seed hash mismatch for {task['id']}: "
+                    f"expected {expected}, got {actual}"
+                )
+
+    def _validate_fixture_copy(self, task, workspace_copy_root: Path) -> None:
+        """Confirm the isolated fixture copy matches the frozen tree hash."""
+        actual = fixture_tree_hash(workspace_copy_root)
+        expected = str(task.get("fixture_tree_hash") or "")
+        if expected and actual != expected:
+            raise ValueError(
+                f"fixture tree hash mismatch for {task['id']}: "
+                f"expected {expected}, got {actual}"
+            )
+
+    def _preserve_run_dir(self, run_dir: Path) -> Path:
+        """Move a failed or partial run directory aside before rerunning it.
+
+        Canonical evidence is never deleted. The preserved directory keeps the
+        original report, events, requests, trace, and verifier artifacts.
+        """
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+        preserved_root = run_dir.parent / "runner-errors"
+        preserved_root.mkdir(parents=True, exist_ok=True)
+        preserved = preserved_root / f"{run_dir.name}.runner-error-{timestamp}"
+        suffix = 1
+        while preserved.exists():
+            preserved = preserved_root / f"{run_dir.name}.runner-error-{timestamp}-{suffix}"
+            suffix += 1
+        shutil.move(str(run_dir), str(preserved))
+        return preserved
 
     def run_public_verifier(self, task, workspace_copy_root: Path) -> dict:
         """Execute the task's public verifier against the workspace copy."""
@@ -297,7 +343,9 @@ class ContextCompactionRunner:
             shutil.rmtree(workspace_copy_root)
         workspace_copy_root.mkdir(parents=True, exist_ok=True)
         fixture_source = self.repo_root / task["fixture_repo"]
-        shutil.copytree(fixture_source, workspace_copy_root / fixture_source.name)
+        fixture_copy_root = workspace_copy_root / fixture_source.name
+        shutil.copytree(fixture_source, fixture_copy_root)
+        self._validate_fixture_copy(task, fixture_copy_root)
 
         if not self.hidden_verifier_isolated(task, workspace_copy_root):
             raise ValueError(f"hidden verifier leaked into workspace for {task['id']}")
@@ -481,6 +529,7 @@ class ContextCompactionRunner:
     def validate_resume(self) -> None:
         manifest_path = self.output_dir / "manifest.json"
         if not manifest_path.exists():
+            self._prior_manifest = None
             return
         existing = json.loads(manifest_path.read_text(encoding="utf-8"))
         mismatches = []
@@ -494,6 +543,7 @@ class ContextCompactionRunner:
             mismatches.append("repetitions or budget")
         if mismatches:
             raise ValueError(f"cannot resume: mismatch in {', '.join(mismatches)}")
+        self._prior_manifest = existing
 
     # ------------------------------------------------------------------
     # Orchestration
@@ -514,6 +564,9 @@ class ContextCompactionRunner:
             "experiment_id": "context-compaction-" + datetime.now(timezone.utc).strftime("%Y-%m-%d-%H%M%S"),
             "status": "running",
             "execution_mode": "real" if self.real else "deterministic",
+            "resumed_from_experiment_id": (
+                self._prior_manifest.get("experiment_id") if self._prior_manifest else None
+            ),
             "captured_at": datetime.now(timezone.utc).isoformat(),
             "commit_sha": self._git_value("rev-parse", "HEAD"),
             "branch": self._git_value("branch", "--show-current"),
@@ -547,20 +600,59 @@ class ContextCompactionRunner:
         )
 
         rows = []
+        resume_provenance = []
         for block in self.blocks:
             run_dir = (
                 self.output_dir
                 / "runs"
                 / f"{block['condition']}-{block['task_id']}-r{block['repetition']:02d}-b{int(block['budget'])}"
             )
-            if self.resume and run_dir.exists() and (run_dir / "report.json").exists():
-                report = json.loads((run_dir / "report.json").read_text(encoding="utf-8"))
-                report["events"] = [
-                    json.loads(line)
-                    for line in (run_dir / "events.jsonl").read_text(encoding="utf-8").splitlines()
-                ]
-                report["verifier"] = json.loads((run_dir / "verifier.json").read_text(encoding="utf-8"))
-                rows.append(report)
+            if self.resume and run_dir.exists():
+                report_path = run_dir / "report.json"
+                if report_path.exists():
+                    report = json.loads(report_path.read_text(encoding="utf-8"))
+                    if report.get("runner_error") is True:
+                        preserved_dir = self._preserve_run_dir(run_dir)
+                        entry = {
+                            "run_name": run_dir.name,
+                            "block": block,
+                            "previous_runner_error": True,
+                            "previous_error": report.get("error"),
+                            "preserved_run_dir": str(preserved_dir),
+                            "rerun_at": datetime.now(timezone.utc).isoformat(),
+                        }
+                        row = self.run_block(block)
+                        row["resume_provenance"] = entry
+                        self.persist_run(block, row)
+                        rows.append(row)
+                        resume_provenance.append(entry)
+                        continue
+                    report["events"] = [
+                        json.loads(line)
+                        for line in (run_dir / "events.jsonl").read_text(encoding="utf-8").splitlines()
+                    ]
+                    report["verifier"] = json.loads(
+                        (run_dir / "verifier.json").read_text(encoding="utf-8")
+                    )
+                    report["resume_loaded"] = True
+                    rows.append(report)
+                    continue
+                # Partial run directory without a report is preserved and
+                # rerun; evidence is never deleted silently.
+                preserved_dir = self._preserve_run_dir(run_dir)
+                entry = {
+                    "run_name": run_dir.name,
+                    "block": block,
+                    "previous_runner_error": None,
+                    "previous_error": None,
+                    "preserved_run_dir": str(preserved_dir),
+                    "rerun_at": datetime.now(timezone.utc).isoformat(),
+                }
+                row = self.run_block(block)
+                row["resume_provenance"] = entry
+                self.persist_run(block, row)
+                rows.append(row)
+                resume_provenance.append(entry)
                 continue
             row = self.run_block(block)
             self.persist_run(block, row)
@@ -572,6 +664,7 @@ class ContextCompactionRunner:
             **manifest,
             "status": "completed",
             "completed_at": completed_at,
+            "resume_provenance": resume_provenance,
         }
         (self.output_dir / "manifest.json").write_text(
             json.dumps(completed_manifest, indent=2, sort_keys=True), encoding="utf-8"
@@ -582,6 +675,7 @@ class ContextCompactionRunner:
             "completed_at": completed_at,
             "aggregate": aggregate,
             "comparison": condition_delta(aggregate),
+            "resume_provenance": resume_provenance,
             "rows": [
                 {key: value for key, value in row.items() if key not in {"events", "requests", "surface_text", "verifier"}}
                 for row in rows
