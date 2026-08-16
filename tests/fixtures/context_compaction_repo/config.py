@@ -1,1 +1,0 @@
-DEPLOYMENT_KEY_COLOR = "blue"

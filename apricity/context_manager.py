@@ -125,15 +125,13 @@ class ContextManager:
         checkpoint_text = ""
         if hasattr(self.agent, "render_checkpoint_text"):
             checkpoint_text = str(self.agent.render_checkpoint_text() or "").strip()
-        if checkpoint_text:
-            section_texts["prefix"] = section_texts["prefix"] + "\n\n" + checkpoint_text
         selected_notes = []
         if memory_enabled and relevant_memory_enabled and hasattr(self.agent, "memory") and hasattr(self.agent.memory, "retrieval_candidates"):
             selected_notes = self.agent.memory.retrieval_candidates(user_message, limit=RELEVANT_MEMORY_LIMIT)
 
         if not context_reduction_enabled:
             rendered = self._render_sections_without_reduction(section_texts, selected_notes=selected_notes)
-            prompt = self._assemble_prompt(rendered)
+            prompt = self._assemble_prompt(rendered, checkpoint_text=checkpoint_text)
             metadata = self._metadata(
                 prompt=prompt,
                 rendered=rendered,
@@ -147,7 +145,7 @@ class ContextManager:
 
         budgets = dict(self.section_budgets)
         rendered = self._render_sections(section_texts, budgets, selected_notes=selected_notes)
-        prompt = self._assemble_prompt(rendered)
+        prompt = self._assemble_prompt(rendered, checkpoint_text=checkpoint_text)
         reduction_log = []
 
         # 如果 prompt 超预算，就按固定顺序不断压缩。
@@ -175,7 +173,7 @@ class ContextManager:
                 )
                 budgets[section] = new_budget
                 rendered = self._render_sections(section_texts, budgets, selected_notes=selected_notes)
-                prompt = self._assemble_prompt(rendered)
+                prompt = self._assemble_prompt(rendered, checkpoint_text=checkpoint_text)
                 reduced = True
                 break
             if not reduced:
@@ -457,17 +455,22 @@ class ContextManager:
             return [prefix, content]
         return [f"[{item['role']}] {_tail_clip(item['content'], line_limit)}"]
 
-    def _assemble_prompt(self, rendered):
+    def _assemble_prompt(self, rendered, checkpoint_text=""):
         # 顺序是刻意设计的：稳定规则放前面，最新请求放最后。
-        return "\n\n".join(
+        # checkpoint 单独追加在 prefix 之后，不参与 prefix 的 head clipping，
+        # 否则长 prefix 会把位于其尾部的恢复信息裁掉。
+        parts = [rendered["prefix"].rendered]
+        if checkpoint_text:
+            parts.append(checkpoint_text)
+        parts.extend(
             [
-                rendered["prefix"].rendered,
                 rendered["memory"].rendered,
                 rendered["relevant_memory"].rendered,
                 rendered["history"].rendered,
                 rendered[CURRENT_REQUEST_SECTION].rendered,
             ]
-        ).strip()
+        )
+        return "\n\n".join(parts).strip()
 
     def _metadata(self, prompt, rendered, budgets, reduction_log, selected_notes, user_message, section_texts):
         section_metadata = {}

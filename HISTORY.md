@@ -44,3 +44,11 @@
 - 报告层补齐阶段三要求：report.md 现在渲染 artifact hashes、provider/model/version、public verifier 的 pytest cache telemetry、mean/median/P95 延迟、main/summary/combined token totals、overflow 原始计数，以及 D-A delta 的 task-clustered bootstrap 95% CI。
 - runner 在 public verifier 子进程前后采集 `.pytest_cache` 目录，manifest 新增 `version` 字段并纳入 config hash；metrics 增加延迟分位数、token 汇总、cache telemetry 聚合与按 task 聚类的 bootstrap。
 
+### 13.Remove replayable context compaction v1 and fix workspace/checkpoint tests（26/8/16）
+
+- 删除 v1 Replayable Context Compaction 整条实验支线：`apricity/context`、`apricity/evaluation/context_compaction`、`benchmarks/context_compaction`、旧 fixture、5 个旧测试、3 个旧脚本，以及 replayable PRD、架构文档和 ADR 0002；生产 runtime 不依赖该代码。
+- 新增 `docs/experiments/context-horizon-v3.md`，保留 v1 复盘数据、失败原因与证据归档规则，并预注册 v3 的 Horizon 实验设计、A/C/E/D 条件、成功判据和停止线。
+- 修复测试工作区被 `git rev-parse` 漂移到父仓库的问题：测试 helper 使用 `repo_root_override=tmp_path`，runtime `refresh_prefix` 保持既有 `repo_root_override`。
+- 修复长 prefix 裁剪时 checkpoint 被 head-clip 丢弃的问题：checkpoint 文本改为独立追加在 prefix 之后，不参与 prefix 预算裁剪。
+- 删除后验证：`compileall`、`ruff`、全量 pytest `192 passed, 1 skipped`，CLI `--help` 正常，90 次确定性 recovery 实验仍为 compatible 80% / resilient 100%、恢复率提升 25pp。
+

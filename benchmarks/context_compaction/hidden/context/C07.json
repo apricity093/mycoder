@@ -1,6 +1,0 @@
-{
-  "check": "oversized_selection",
-  "oracle_secret": "C07-HIDDEN-ORACLE",
-  "required_fact": "",
-  "surface_required_fact": "relevant_evidence"
-}

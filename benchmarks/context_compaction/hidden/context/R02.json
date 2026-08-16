@@ -1,5 +1,0 @@
-{
-  "check": "realistic_label",
-  "oracle_secret": "R02-HIDDEN-ORACLE",
-  "required_fact": "public user label"
-}

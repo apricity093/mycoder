@@ -1,5 +1,0 @@
-{
-  "check": "timeout_source",
-  "oracle_secret": "C01-HIDDEN-ORACLE",
-  "required_fact": "DEFAULT_TIMEOUT = 120"
-}

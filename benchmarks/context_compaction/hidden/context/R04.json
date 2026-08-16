@@ -1,5 +1,0 @@
-{
-  "check": "realistic_paths",
-  "oracle_secret": "R04-HIDDEN-ORACLE",
-  "required_fact": "artifacts/run.json"
-}

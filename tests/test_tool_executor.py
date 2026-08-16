@@ -4,7 +4,7 @@ from apricity.tool_executor import ToolExecutor, ToolExecutionResult
 
 def build_agent(tmp_path):
     (tmp_path / "README.md").write_text("demo\n", encoding="utf-8")
-    workspace = WorkspaceContext.build(tmp_path)
+    workspace = WorkspaceContext.build(tmp_path, repo_root_override=tmp_path)
     store = SessionStore(tmp_path / ".apricity" / "sessions")
     return Apricity(
         model_client=FakeModelClient([]),

@@ -1,5 +1,0 @@
-{
-  "check": "tail_expectation",
-  "oracle_secret": "C03-HIDDEN-ORACLE",
-  "required_fact": "42"
-}

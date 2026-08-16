@@ -37,7 +37,7 @@ def build_agent(tmp_path, model_client, **kwargs):
     (tmp_path / "README.md").write_text("demo\n", encoding="utf-8")
     return Apricity(
         model_client=model_client,
-        workspace=WorkspaceContext.build(tmp_path),
+        workspace=WorkspaceContext.build(tmp_path, repo_root_override=tmp_path),
         session_store=SessionStore(tmp_path / ".apricity" / "sessions"),
         approval_policy="auto",
         recovery_mode="resilient",
