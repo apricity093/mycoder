@@ -96,3 +96,9 @@
 - 首轮结果：A run-pass 0/6、fact retention 41.7%；E run-pass 3/6、fact retention 94.4%、成本 0.17 低于 A 的 0.21；C/D 同样在 fact retention 上显著优于 A。n=1/格，artifact verifier 仅检查隐藏必需事实，不声称生产可靠性。
 - 产出 `analysis.json` 与 `report.md`；README 增加 Context Horizon 研究实验小节。
 - 修复 D1 误删 README 正文的问题：从 `fb1cbb4^` 恢复 308 行正文后追加实验结果。
+
+### 20.Package review pack and clean local temp products（26/8/17）
+
+- 重写 `docs/review-pack/README.md`：30 秒 pitch、10 分钟复现路径、生产/实验架构图、证据索引、5 个高频面试追问的代码定位，以及诚实限制。
+- 清理本地临时产物：`artifacts/`、`readme_intro_locked/`、全部 `tests/pytest/*`（重建空目录）、`.apricity/runs|sessions`、`__pycache__`、`.ruff_cache`；保留全部 `benchmarks/results/**`。
+- 将 `ziliao/`、面试题、`Redis.md`、`tiwen.md`、`yijian.md` 移到仓库外 `D:\Pythonprojects\yan_1\jobhunt\`，并创建本地求职漏斗 `funnel.md`。
