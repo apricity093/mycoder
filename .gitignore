@@ -72,6 +72,7 @@ apricity.egg-info/
 ziliao/
 *.md
 !README.md
+!HISTORY.md
 !docs/architecture/replayable-context-compaction.md
 !docs/requirements/replayable-context-compaction-prd.md
 !docs/adr/0002-event-sourced-model-context.md
