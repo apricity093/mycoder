@@ -196,7 +196,6 @@ def test_compaction_cancellation_leaves_surface_unchanged():
         raise SummaryCancelled("cancelled")
 
     ledger, engine = build_engine(compact_policy(), cancelled_summarizer)
-    before = ledger.surface_event_seqs()
 
     engine.prepare("Current request", trigger="context-overflow")
 

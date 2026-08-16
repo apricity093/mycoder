@@ -25,7 +25,7 @@ from ...context import (
     LegacyContextEngine,
     ReplayableContextEngine,
 )
-from .metrics import aggregate_rows, condition_delta, primary_failure_for_row
+from .metrics import aggregate_rows, condition_delta, primary_failure_for_row, task_clustered_bootstrap
 from .pressure import prepare_ledger_from_seed
 from .report import render_report
 from .schema import (
@@ -39,6 +39,34 @@ from .verifiers import verify_run
 
 MAIN_BUDGET = 4096
 SENSITIVITY_BUDGET = 8192
+EXPERIMENT_VERSION = "0.1.0"
+
+
+def _pytest_cache_dirs(root: Path) -> list[str]:
+    """Return relative paths of ``.pytest_cache`` dirs under ``root``."""
+    try:
+        root = Path(root)
+        if not root.is_dir():
+            return []
+        return sorted(
+            str(path.relative_to(root))
+            for path in root.rglob(".pytest_cache")
+            if path.is_dir()
+        )
+    except OSError:
+        return []
+
+
+def _cache_telemetry(before: list[str], after: list[str]) -> dict:
+    """Deterministic summary of pytest cache-dir creation by a verifier."""
+    before_set = set(before)
+    return {
+        "pytest_cache_dirs_before": before,
+        "pytest_cache_dirs_after": after,
+        "pytest_cache_dir_count_before": len(before),
+        "pytest_cache_dir_count_after": len(after),
+        "pytest_cache_created": sorted(set(after) - before_set),
+    }
 
 
 def condition_policies(budget: int) -> dict[str, ContextPolicy]:
@@ -155,6 +183,7 @@ class ContextCompactionRunner:
         )
         self.config_hash = canonical_hash(
             {
+                "version": EXPERIMENT_VERSION,
                 "repetitions": self.repetitions,
                 "budgets": self.budgets,
                 "sensitivity_tasks": self.sensitivity_tasks,
@@ -282,6 +311,7 @@ class ContextCompactionRunner:
         verifier_env["PYTEST_ADDOPTS"] = (
             "-p no:cacheprovider" if not existing_addopts else f"-p no:cacheprovider {existing_addopts}"
         )
+        cache_before = _pytest_cache_dirs(workspace_copy_root)
         try:
             result = _subprocess.run(
                 argv,
@@ -294,16 +324,20 @@ class ContextCompactionRunner:
                 env=verifier_env,
                 timeout=int(task.get("verifier_timeout_seconds", 60)),
             )
+            cache_after = _pytest_cache_dirs(workspace_copy_root)
             return {
                 "exit_code": result.returncode,
                 "stdout": result.stdout,
                 "stderr": result.stderr,
+                "cache_telemetry": _cache_telemetry(cache_before, cache_after),
             }
         except _subprocess.TimeoutExpired as exc:
+            cache_after = _pytest_cache_dirs(workspace_copy_root)
             return {
                 "exit_code": None,
                 "stdout": exc.stdout or "",
                 "stderr": f"public verifier timed out\n{exc.stderr or ''}",
+                "cache_telemetry": _cache_telemetry(cache_before, cache_after),
             }
 
     def artifact_result_for(
@@ -579,6 +613,8 @@ class ContextCompactionRunner:
             mismatches.append("provider")
         if existing.get("model") != self.model_name():
             mismatches.append("model")
+        if existing.get("version") != EXPERIMENT_VERSION:
+            mismatches.append("experiment version")
         if existing.get("commit_sha") != self._git_value("rev-parse", "HEAD"):
             mismatches.append("code commit")
         if existing.get("fixture_hashes") != {
@@ -632,6 +668,7 @@ class ContextCompactionRunner:
             )
         manifest = {
             "schema_version": 1,
+            "version": EXPERIMENT_VERSION,
             "experiment_id": "context-compaction-" + datetime.now(timezone.utc).strftime("%Y-%m-%d-%H%M%S"),
             "status": "running",
             "execution_mode": "real" if self.real else "deterministic",
@@ -755,12 +792,16 @@ class ContextCompactionRunner:
         (self.output_dir / "manifest.json").write_text(
             json.dumps(completed_manifest, indent=2, sort_keys=True), encoding="utf-8"
         )
+        comparison = {
+            **condition_delta(aggregate),
+            **task_clustered_bootstrap(rows, left="D", right="A"),
+        }
         payload = {
             **manifest,
             "status": "completed",
             "completed_at": completed_at,
             "aggregate": aggregate,
-            "comparison": condition_delta(aggregate),
+            "comparison": comparison,
             "resume_provenance": resume_provenance,
             "completed_artifact_hashes": completed_manifest["completed_artifact_hashes"],
             "rows": [

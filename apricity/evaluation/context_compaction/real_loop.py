@@ -10,7 +10,6 @@ state.
 
 from __future__ import annotations
 
-import time
 import uuid
 from pathlib import Path
 
@@ -20,7 +19,6 @@ from ...context import (
     LegacyContextEngine,
     ReplayableContextEngine,
 )
-from ...context.compaction import render_summary
 from ...context.summarizer import RealModelSummarizer, SummaryUsage
 from ...context.token_meter import DeterministicTestMeter
 from ...evaluation.faults import FaultInjectingModelClient
@@ -178,7 +176,6 @@ class RealAgentLoop:
                     continue
                 return self._fail_row(prepared, observed_overflow, recovered_overflow, f"preparation_failed:{exc.code}", final_answer, attempts, tool_steps)
             attempts += 1
-            started = time.monotonic()
             try:
                 raw = self.model_client.complete(prepared.prompt, self.max_new_tokens)
             except Exception as exc:

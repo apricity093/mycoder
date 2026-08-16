@@ -302,6 +302,7 @@ def artifact_verifier_pass(
             "exit_code": (public_verifier_result or {}).get("exit_code"),
             "stdout_tail": (public_verifier_result or {}).get("stdout", "")[-500:],
             "stderr_tail": (public_verifier_result or {}).get("stderr", "")[-500:],
+            "cache_telemetry": (public_verifier_result or {}).get("cache_telemetry", {}),
         },
         "hidden_verifier_id": str(hidden_verifier.get("check", "")),
         "hidden_required_fact": hidden_required,

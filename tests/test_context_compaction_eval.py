@@ -514,6 +514,231 @@ def test_deterministic_report_regeneration_is_stable(tmp_path):
     assert "paid provider runs" in first
 
 
+def test_aggregate_rows_reports_latency_percentiles_token_totals_and_overflow_counts():
+    from apricity.evaluation.context_compaction.metrics import aggregate_rows
+
+    def row(task_id, condition, *, run_pass, artifact_pass=True, duration_ms=0, observed=False, recovered=False):
+        return {
+            "task_id": task_id,
+            "condition": condition,
+            "repetition": 1,
+            "budget": 4096,
+            "runner_error": False,
+            "run_pass": run_pass,
+            "mechanics_pass": True,
+            "artifact_pass": artifact_pass,
+            "context_pass": True,
+            "trace_pass": True,
+            "trace_checks": {},
+            "context_fact_retention": 1,
+            "context_required_facts": 1,
+            "observed_overflow": observed,
+            "recovered_overflow": recovered,
+            "summary_error_claims": 0,
+            "summary_total_claims": 0,
+            "tool_steps": 0,
+            "attempts": 0,
+            "estimated_input_tokens": 100,
+            "duration_ms": duration_ms,
+            "main_usage": {
+                "summary_calls": 2,
+                "summary_input_tokens": 10,
+                "summary_output_tokens": 5,
+                "summary_total_tokens": 15,
+            },
+            "summary_usage": {
+                "summary_calls": 1,
+                "summary_input_tokens": 20,
+                "summary_output_tokens": 7,
+                "summary_total_tokens": 27,
+            },
+            "artifact": {
+                "public_verifier": {
+                    "cache_telemetry": {
+                        "pytest_cache_dir_count_before": 0,
+                        "pytest_cache_dir_count_after": 0,
+                        "pytest_cache_created": [],
+                    }
+                }
+            },
+        }
+
+    rows = [
+        row("T1", "A", run_pass=True, duration_ms=10),
+        row("T1", "D", run_pass=False, duration_ms=20, observed=True, recovered=True),
+        row("T2", "A", run_pass=True, duration_ms=30),
+        row("T2", "D", run_pass=False, duration_ms=40, observed=True, recovered=False),
+    ]
+    aggregate = aggregate_rows(rows)
+
+    assert aggregate["median_latency_ms"] == 25.0
+    assert aggregate["p95_latency_ms"] == 38.5
+    assert aggregate["overflow_observed_runs"] == 2
+    assert aggregate["overflow_recovered_runs"] == 1
+    assert aggregate["overflow_unrecovered_runs"] == 1
+    assert aggregate["cache_telemetry_runs"] == 4
+    assert aggregate["pytest_cache_created_runs"] == 0
+    assert aggregate["main_usage_input_tokens"] == 40
+    assert aggregate["main_usage_output_tokens"] == 20
+    assert aggregate["main_usage_total_tokens"] == 60
+    assert aggregate["summary_usage_input_tokens"] == 80
+    assert aggregate["summary_usage_total_tokens"] == 108
+    assert aggregate["total_usage_tokens"] == 168
+
+
+def test_render_report_includes_provenance_hashes_telemetry_and_bootstrap_ci():
+    from apricity.evaluation.context_compaction.metrics import aggregate_rows, condition_delta, task_clustered_bootstrap
+    from apricity.evaluation.context_compaction.report import render_report
+
+    rows = []
+    for index in range(4):
+        rows.append(
+            {
+                "task_id": f"T{index}",
+                "condition": "A",
+                "repetition": 1,
+                "budget": 4096,
+                "runner_error": False,
+                "run_pass": True,
+                "mechanics_pass": True,
+                "artifact_pass": True,
+                "context_pass": True,
+                "trace_pass": True,
+                "trace_checks": {},
+                "context_fact_retention": 1,
+                "context_required_facts": 1,
+                "observed_overflow": False,
+                "recovered_overflow": False,
+                "summary_error_claims": 0,
+                "summary_total_claims": 0,
+                "tool_steps": 1,
+                "attempts": 1,
+                "estimated_input_tokens": 100,
+                "duration_ms": 10 + index,
+                "artifact": {
+                    "public_verifier": {
+                        "cache_telemetry": {
+                            "pytest_cache_dir_count_before": 0,
+                            "pytest_cache_dir_count_after": 0,
+                            "pytest_cache_created": [],
+                        }
+                    }
+                },
+            }
+        )
+        rows.append(
+            {
+                "task_id": f"T{index}",
+                "condition": "D",
+                "repetition": 1,
+                "budget": 4096,
+                "runner_error": False,
+                "run_pass": True,
+                "mechanics_pass": True,
+                "artifact_pass": True,
+                "context_pass": True,
+                "trace_pass": True,
+                "trace_checks": {},
+                "context_fact_retention": 1,
+                "context_required_facts": 1,
+                "observed_overflow": False,
+                "recovered_overflow": False,
+                "summary_error_claims": 0,
+                "summary_total_claims": 0,
+                "tool_steps": 1,
+                "attempts": 1,
+                "estimated_input_tokens": 100,
+                "duration_ms": 20 + index,
+                "artifact": {
+                    "public_verifier": {
+                        "cache_telemetry": {
+                            "pytest_cache_dir_count_before": 0,
+                            "pytest_cache_dir_count_after": 0,
+                            "pytest_cache_created": [],
+                        }
+                    }
+                },
+            }
+        )
+    aggregate = aggregate_rows(rows)
+    comparison = {**condition_delta(aggregate), **task_clustered_bootstrap(rows, iterations=50)}
+    payload = {
+        "experiment_id": "context-compaction-2026-08-17-000000",
+        "status": "completed",
+        "version": "0.1.0",
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "execution_mode": "real",
+        "task_snapshot_hash": "sha256:abc",
+        "schedule_hash": "sha256:def",
+        "aggregate": aggregate,
+        "comparison": comparison,
+        "completed_artifact_hashes": {
+            "A-T0-r01-b4096": {
+                "report.json": "sha256:1",
+                "events.jsonl": "sha256:2",
+                "requests.jsonl": "sha256:3",
+                "trace.jsonl": "sha256:4",
+                "verifier.json": "sha256:5",
+            }
+        },
+    }
+
+    report = render_report(payload)
+
+    assert "- Version: 0.1.0" in report
+    assert "- Provider: deepseek" in report
+    assert "- Model: deepseek-v4-flash" in report
+    assert "## Artifact hashes" in report
+    assert "report.json: `sha256:1`" in report
+    assert "## Cache telemetry" in report
+    assert "## Token totals" in report
+    assert "P95 latency (ms)" in report
+    assert "Task-clustered bootstrap" in report
+    assert "Pass-rate delta 95% CI" in report
+    assert "Overflow observed runs: 0" in report
+
+
+def test_task_clustered_bootstrap_is_deterministic_and_bounded():
+    from apricity.evaluation.context_compaction.metrics import task_clustered_bootstrap
+
+    def row(task_id, condition, run_pass):
+        return {
+            "task_id": task_id,
+            "condition": condition,
+            "repetition": 1,
+            "budget": 4096,
+            "runner_error": False,
+            "run_pass": run_pass,
+            "mechanics_pass": True,
+            "artifact_pass": True,
+            "context_pass": True,
+            "trace_pass": True,
+            "trace_checks": {},
+            "context_fact_retention": 1,
+            "context_required_facts": 1,
+            "observed_overflow": False,
+            "recovered_overflow": False,
+            "summary_error_claims": 0,
+            "summary_total_claims": 0,
+            "duration_ms": 10,
+        }
+
+    rows = [
+        row("T1", "A", True),
+        row("T1", "D", False),
+        row("T2", "A", True),
+        row("T2", "D", True),
+    ]
+
+    first = task_clustered_bootstrap(rows, iterations=50, seed=7)
+    second = task_clustered_bootstrap(rows, iterations=50, seed=7)
+
+    assert first == second
+    assert first["task_clustered_bootstrap"]["task_clusters"] == 2
+    assert -1.0 <= first["pass_rate_delta_ci95_low"] <= first["pass_rate_delta_ci95_high"] <= 1.0
+
+
 def _make_dispatch_events():
     """A minimal valid ledger with one dispatched request."""
     return [

@@ -8,6 +8,7 @@ failure.
 
 from __future__ import annotations
 
+import random
 from collections import Counter, defaultdict
 
 FAILURE_PRECEDENCE = [
@@ -31,6 +32,22 @@ def _ratio(numerator, denominator):
 def _mean(values):
     values = list(values)
     return sum(values) / len(values) if values else 0.0
+
+
+def _percentile(values, q: float) -> float:
+    """Linear-interpolation percentile over non-negative numeric values."""
+    values = sorted(float(value) for value in values)
+    if not values:
+        return 0.0
+    if len(values) == 1:
+        return values[0]
+    rank = (len(values) - 1) * q
+    lower = int(rank)
+    upper = lower + 1
+    if upper >= len(values):
+        return values[-1]
+    fraction = rank - lower
+    return values[lower] * (1.0 - fraction) + values[upper] * fraction
 
 
 def _block_key(row: dict) -> tuple:
@@ -88,6 +105,70 @@ def _row_summary_fallback_count(row: dict) -> int:
                     fallbacks += 1
                     break
     return fallbacks
+
+
+def _row_cache_telemetry(row: dict) -> dict:
+    """Cache telemetry recorded by the public-verifier subprocess, if any."""
+    artifact = row.get("artifact") or {}
+    public = artifact.get("public_verifier") or {}
+    telemetry = public.get("cache_telemetry") or {}
+    return telemetry if isinstance(telemetry, dict) else {}
+
+
+def _row_has_cache_telemetry(row: dict) -> bool:
+    return isinstance(_row_cache_telemetry(row), dict) and bool(
+        (row.get("artifact") or {}).get("public_verifier", {}).get("cache_telemetry")
+    )
+
+
+def _usage_totals(rows: list[dict]) -> dict:
+    """Aggregate provider usage and summary-call usage token totals.
+
+    ``SummaryUsage.as_dict`` serializes all counters with a ``summary_``
+    prefix, so both the main loop usage and the summarizer usage read from the
+    same key names even though only one of them is a summary-call meter.
+    """
+    totals = {
+        "main_usage_calls": 0,
+        "main_usage_input_tokens": 0,
+        "main_usage_output_tokens": 0,
+        "main_usage_total_tokens": 0,
+        "summary_usage_calls": 0,
+        "summary_usage_input_tokens": 0,
+        "summary_usage_output_tokens": 0,
+        "summary_usage_total_tokens": 0,
+        "total_usage_calls": 0,
+        "total_usage_input_tokens": 0,
+        "total_usage_output_tokens": 0,
+        "total_usage_tokens": 0,
+    }
+    for row in rows:
+        main = row.get("main_usage") or {}
+        summary = row.get("summary_usage") or {}
+        totals["main_usage_calls"] += int(main.get("summary_calls", 0) or 0)
+        totals["main_usage_input_tokens"] += int(main.get("summary_input_tokens", 0) or 0)
+        totals["main_usage_output_tokens"] += int(main.get("summary_output_tokens", 0) or 0)
+        totals["main_usage_total_tokens"] += int(main.get("summary_total_tokens", 0) or 0)
+        totals["summary_usage_calls"] += int(summary.get("summary_calls", 0) or 0)
+        totals["summary_usage_input_tokens"] += int(summary.get("summary_input_tokens", 0) or 0)
+        totals["summary_usage_output_tokens"] += int(summary.get("summary_output_tokens", 0) or 0)
+        totals["summary_usage_total_tokens"] += int(summary.get("summary_total_tokens", 0) or 0)
+    totals["total_usage_calls"] = totals["main_usage_calls"] + totals["summary_usage_calls"]
+    totals["total_usage_input_tokens"] = totals["main_usage_input_tokens"] + totals["summary_usage_input_tokens"]
+    totals["total_usage_output_tokens"] = totals["main_usage_output_tokens"] + totals["summary_usage_output_tokens"]
+    totals["total_usage_tokens"] = totals["main_usage_total_tokens"] + totals["summary_usage_total_tokens"]
+    return totals
+
+
+def _paired_valid_rows(rows: list[dict]) -> list[dict]:
+    """Rows whose (task_id, repetition, budget) block has no runner error."""
+    blocks = defaultdict(list)
+    for row in rows:
+        blocks[_block_key(row)].append(row)
+    invalid_blocks = {
+        key for key, items in blocks.items() if any(row.get("runner_error") for row in items)
+    }
+    return [row for row in rows if _block_key(row) not in invalid_blocks]
 
 
 def _failure_flags(row: dict) -> dict:
@@ -243,6 +324,10 @@ def aggregate_rows(rows: list[dict]) -> dict:
     for row in paired_valid_rows:
         paired_condition_rows[str(row.get("condition", "unknown"))].append(row)
 
+    durations = [float(row.get("duration_ms", 0) or 0) for row in rows]
+    cache_rows = [row for row in rows if _row_has_cache_telemetry(row)]
+    usage_totals = _usage_totals(rows)
+
     return {
         "total_runs": len(rows),
         "completed_runs": len(completed),
@@ -320,6 +405,26 @@ def aggregate_rows(rows: list[dict]) -> dict:
             ),
         ),
         "avg_latency_ms": _mean(row.get("duration_ms", 0) for row in rows),
+        "median_latency_ms": _percentile(durations, 0.50),
+        "p95_latency_ms": _percentile(durations, 0.95),
+        "overflow_observed_runs": len(overflow_rows),
+        "overflow_recovered_runs": len(recovered),
+        "overflow_unrecovered_runs": len(overflow_rows) - len(recovered),
+        "cache_telemetry_runs": len(cache_rows),
+        "pytest_cache_dirs_before_total": sum(
+            int(_row_cache_telemetry(row).get("pytest_cache_dir_count_before", 0) or 0)
+            for row in cache_rows
+        ),
+        "pytest_cache_dirs_after_total": sum(
+            int(_row_cache_telemetry(row).get("pytest_cache_dir_count_after", 0) or 0)
+            for row in cache_rows
+        ),
+        "pytest_cache_created_runs": sum(
+            1
+            for row in cache_rows
+            if _row_cache_telemetry(row).get("pytest_cache_created")
+        ),
+        **usage_totals,
         "paired_tasks": len(
             {
                 _block_key(row)
@@ -345,4 +450,106 @@ def condition_delta(aggregate: dict, left: str = "D", right: str = "A") -> dict:
         - float(right_summary.get("unrecovered_overflow_rate", 0.0)),
         "critical_fact_retention_delta": float(left_summary.get("critical_fact_retention", 0.0))
         - float(right_summary.get("critical_fact_retention", 0.0)),
+    }
+
+
+def _quick_summary(items: list[dict]) -> dict:
+    """Pass/overflow/retention rates for bootstrap samples without scanning
+    per-row event lists (the point aggregates already own event scans)."""
+    evaluated = [row for row in items if row.get("artifact_pass") is not None]
+    overflow_rows = [row for row in items if row.get("observed_overflow")]
+    return {
+        "pass_rate": _ratio(
+            sum(1 for row in evaluated if row.get("run_pass") is True),
+            len(evaluated),
+        ),
+        "unrecovered_overflow_rate": _ratio(
+            sum(1 for row in overflow_rows if not row.get("recovered_overflow")),
+            len(overflow_rows),
+        ),
+        "critical_fact_retention": _ratio(
+            sum(row.get("context_fact_retention", 0) for row in items),
+            sum(row.get("context_required_facts", 0) for row in items),
+        ),
+    }
+
+
+def task_clustered_bootstrap(
+    rows: list[dict],
+    *,
+    left: str = "D",
+    right: str = "A",
+    seed: int = 0,
+    iterations: int = 2000,
+) -> dict:
+    """Task-clustered bootstrap for D-vs-A deltas over paired valid rows.
+
+    The cluster unit is a task: each bootstrap replicate resamples tasks with
+    replacement and recomputes both condition summaries from the resampled
+    task rows. This preserves within-task correlation while treating tasks as
+    the independent sampling units for uncertainty.
+    """
+    paired = [row for row in _paired_valid_rows(rows) if row.get("condition") in (left, right)]
+    task_rows = defaultdict(list)
+    for row in paired:
+        task_id = str(row.get("task_id", ""))
+        if task_id:
+            task_rows[task_id].append(row)
+    tasks = sorted(
+        task_id
+        for task_id, task_items in task_rows.items()
+        if any(row.get("condition") == left for row in task_items)
+        and any(row.get("condition") == right for row in task_items)
+    )
+    if not tasks:
+        return {
+            "task_clustered_bootstrap": {
+                "seed": int(seed),
+                "iterations": int(iterations),
+                "task_clusters": 0,
+                "paired_rows": len(paired),
+            },
+            "pass_rate_delta_ci95_low": 0.0,
+            "pass_rate_delta_ci95_high": 0.0,
+            "unrecovered_overflow_delta_ci95_low": 0.0,
+            "unrecovered_overflow_delta_ci95_high": 0.0,
+            "critical_fact_retention_delta_ci95_low": 0.0,
+            "critical_fact_retention_delta_ci95_high": 0.0,
+        }
+
+    rng = random.Random(int(seed))
+    pass_deltas = []
+    overflow_deltas = []
+    retention_deltas = []
+    for _ in range(int(iterations)):
+        sampled = rng.choices(tasks, k=len(tasks))
+        sample_rows = []
+        for task_id in sampled:
+            sample_rows.extend(task_rows[task_id])
+        left_summary = _quick_summary([row for row in sample_rows if row.get("condition") == left])
+        right_summary = _quick_summary([row for row in sample_rows if row.get("condition") == right])
+        pass_deltas.append(left_summary["pass_rate"] - right_summary["pass_rate"])
+        overflow_deltas.append(
+            left_summary["unrecovered_overflow_rate"] - right_summary["unrecovered_overflow_rate"]
+        )
+        retention_deltas.append(
+            left_summary["critical_fact_retention"] - right_summary["critical_fact_retention"]
+        )
+
+    return {
+        "task_clustered_bootstrap": {
+            "seed": int(seed),
+            "iterations": int(iterations),
+            "task_clusters": len(tasks),
+            "paired_rows": len(paired),
+        },
+        "pass_rate_delta_ci95_low": _percentile(pass_deltas, 0.025),
+        "pass_rate_delta_ci95_high": _percentile(pass_deltas, 0.975),
+        "pass_rate_delta_bootstrap_mean": _mean(pass_deltas),
+        "unrecovered_overflow_delta_ci95_low": _percentile(overflow_deltas, 0.025),
+        "unrecovered_overflow_delta_ci95_high": _percentile(overflow_deltas, 0.975),
+        "unrecovered_overflow_delta_bootstrap_mean": _mean(overflow_deltas),
+        "critical_fact_retention_delta_ci95_low": _percentile(retention_deltas, 0.025),
+        "critical_fact_retention_delta_ci95_high": _percentile(retention_deltas, 0.975),
+        "critical_fact_retention_delta_bootstrap_mean": _mean(retention_deltas),
     }
