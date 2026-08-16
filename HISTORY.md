@@ -82,3 +82,10 @@
 - runner 新增 D policy 与确定性 `ScriptedChunkSummarizer`，本地 pilot 覆盖 A/C/E/D；D/E 在 6/6 任务保留全部 context facts，A 在 4/6 任务丢事实，校准 gate 通过。
 - 新增 D 接口测试：锚点事实保留、噪声丢弃、非法摘要回退、tool pairing。
 - 验证：`compileall`、`ruff` 通过，全量 pytest `212 passed, 1 skipped`。
+
+### 18.Add paid Context Horizon runner with cost guard（26/8/16）
+
+- 新增 `apricity/evaluation/context_horizon/paid.py`：真实模型 run、real process/shell 工具执行、`ModelSummarizer`、缓存感知的 ¥15 成本守卫（输入 miss 1.4 / hit 0.05 / 输出 4.5 每百万 token）。
+- 脚本新增 `formal` 子命令：freeze task hash、检查工作区干净、balanced schedule、manifest 记录 commit/model/价格/cost totals。
+- 新增 CostGuard 与 fake-client 付费 run 测试；全量 pytest `214 passed, 1 skipped`。
+- 修复 DeepSeek 真实输出使用双竖线 `｜｜DSML｜｜` 标记时被误判为 malformed 的问题，并补充双竖线解析测试。

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .metrics import summarize_rows
+from .paid import CostGuard, ModelSummarizer, build_paid_schedule, run_paid_run
 from .runner import condition_policies, run_local_pilot
 from .tasks import (
     MAIN_BUDGET,
@@ -17,10 +18,13 @@ from .tasks import (
 from .verifiers import artifact_verifier, context_verifier, mechanics_verifier
 
 __all__ = [
+    "CostGuard",
     "MAIN_BUDGET",
+    "ModelSummarizer",
     "TASK_SCHEMA_VERSION",
     "append_seed_events",
     "artifact_verifier",
+    "build_paid_schedule",
     "build_seed_events",
     "condition_policies",
     "context_verifier",
@@ -29,6 +33,7 @@ __all__ = [
     "load_taskset",
     "mechanics_verifier",
     "run_local_pilot",
+    "run_paid_run",
     "summarize_rows",
     "task_by_id",
 ]

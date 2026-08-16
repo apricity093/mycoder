@@ -61,6 +61,21 @@ def test_parse_deepseek_dsml_run_process_with_json_and_string_parameters():
     }
 
 
+def test_parse_deepseek_dsml_accepts_double_pipe_marker():
+    raw = (
+        '<\uff5c\uff5cDSML\uff5c\uff5ctool_calls>\n'
+        '<\uff5c\uff5cDSML\uff5c\uff5cinvoke name="read_file">\n'
+        '<\uff5c\uff5cDSML\uff5c\uff5cparameter name="path" string="true">config.py</\uff5c\uff5cDSML\uff5c\uff5cparameter>\n'
+        '</\uff5c\uff5cDSML\uff5c\uff5cinvoke>\n'
+        '</\uff5c\uff5cDSML\uff5c\uff5ctool_calls>'
+    )
+
+    kind, payload = Apricity.parse(raw)
+
+    assert kind == "tool"
+    assert payload == {"name": "read_file", "args": {"path": "config.py"}}
+
+
 def test_parse_deepseek_dsml_uses_first_invoke_and_rejects_incomplete_envelope():
     first = '<\uff5cDSML\uff5cinvoke name="ReadFile"><\uff5cDSML\uff5cparameter name="path">README.md</\uff5cDSML\uff5cparameter></\uff5cDSML\uff5cinvoke>'
     second = '<\uff5cDSML\uff5cinvoke name="RunProcess"><\uff5cDSML\uff5cparameter name="program">python</\uff5cDSML\uff5cparameter></\uff5cDSML\uff5cinvoke>'

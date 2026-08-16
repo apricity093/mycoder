@@ -3,10 +3,12 @@
 from pathlib import Path
 
 from apricity.evaluation.context_horizon import (
+    CostGuard,
     build_seed_events,
     load_hidden_verifier,
     load_taskset,
     run_local_pilot,
+    run_paid_run,
     summarize_rows,
     task_by_id,
 )
@@ -99,3 +101,57 @@ def test_calibration_gate_summary_passes_on_pilot_rows(tmp_path):
     assert summary["pressure_cross_rate_C_E"] == 1.0
     assert len(summary["A_lost_fact_or_overflow_tasks"]) >= 3
     assert summary["calibration_gate_pass"] is True
+
+
+class FakePaidClient:
+    def __init__(self):
+        self.last_completion_metadata = {
+            "input_tokens": 1000,
+            "output_tokens": 20,
+            "cached_tokens": 200,
+            "cache_miss_tokens": 800,
+        }
+
+    def complete(self, prompt, max_new_tokens):
+        del prompt, max_new_tokens
+        return "<final>Done.</final>"
+
+
+def test_cost_guard_uses_cache_aware_pricing():
+    guard = CostGuard(max_cost_cny=15.0)
+    cost = guard.record(
+        {
+            "input_tokens": 1_000_000,
+            "output_tokens": 100_000,
+            "cached_tokens": 200_000,
+            "cache_miss_tokens": 800_000,
+        }
+    )
+    assert round(cost, 6) == round(800_000 / 1_000_000 * 1.4 + 200_000 / 1_000_000 * 0.05 + 100_000 / 1_000_000 * 4.5, 6)
+    assert guard.remaining_cny < 15.0
+
+
+def test_paid_run_records_usage_and_stops_at_final(tmp_path):
+    taskset = load_tasks()
+    task = task_by_id(taskset, "L2-long-log-root-cause")
+    hidden = load_hidden_verifier(task, HIDDEN_ROOT)
+    guard = CostGuard(max_cost_cny=15.0)
+
+    row = run_paid_run(
+        task=task,
+        condition="A",
+        fixture_root=taskset["fixture_repo_abs"],
+        workspace_root=tmp_path / "paid-a",
+        hidden=hidden,
+        budget=4096,
+        client_factory=FakePaidClient,
+        cost_guard=guard,
+        provider="fake",
+        model="fake-model",
+    )
+
+    assert row["stop_reason"] == "final_answer_returned"
+    assert row["context"]["context_pass"] is False
+    assert guard.input_tokens == 1000
+    assert guard.spent_cny > 0
+    assert row["mechanics"]["mechanics_pass"] is True

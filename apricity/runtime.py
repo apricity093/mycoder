@@ -752,7 +752,7 @@ class Apricity:
         dsml_payload = Apricity.parse_dsml_tool(raw)
         if dsml_payload is not None:
             return "tool", dsml_payload
-        if "\uff5cDSML\uff5c" in raw:
+        if re.search(r"\uFF5C+DSML", raw):
             return "retry", Apricity.retry_notice("model returned malformed DSML tool output")
         # 这里支持两种工具格式：
         # 1. <tool>...</tool> 里包 JSON，适合简短调用
@@ -791,7 +791,7 @@ class Apricity:
     @staticmethod
     def parse_dsml_tool(raw):
         """Parse DeepSeek's ``<｜DSML｜invoke>`` compatibility output."""
-        marker = r"\uFF5CDSML\uFF5C"
+        marker = r"\uFF5C+DSML\uFF5C+"
         invoke = re.search(
             rf"<{marker}invoke\b(?P<attrs>[^>]*)>(?P<body>.*?)</{marker}invoke>",
             str(raw),
@@ -806,6 +806,7 @@ class Apricity:
         compact_name = re.sub(r"[^A-Za-z0-9]+", "", raw_name).lower()
         aliases = {
             "listfiles": "list_files",
+            "listdir": "list_files",
             "readfile": "read_file",
             "readspill": "read_spill",
             "search": "search",

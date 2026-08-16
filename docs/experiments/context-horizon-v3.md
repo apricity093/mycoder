@@ -116,7 +116,7 @@ tests/fixtures/context_horizon_repo/...
 scripts/run_context_horizon_experiment.py
 ```
 
-Implementation status: D1 cleanup complete; D2 `SessionLedger` + conditions A/C complete; D3 condition E deterministic structural compaction complete; D4 six-task suite, hidden verifiers, and local scripted-model pressure calibration complete; D5 condition D chunked evidence-anchored LLM compaction complete (scripted summarizer pilot: D retains facts on 6/6 tasks, A loses facts on 4/6, C/E pressure-cross 6/6). Paid DeepSeek runs remain.
+Implementation status: D1 cleanup complete; D2 `SessionLedger` + conditions A/C complete; D3 condition E deterministic structural compaction complete; D4 six-task suite, hidden verifiers, and local scripted-model pressure calibration complete; D5 condition D chunked evidence-anchored LLM compaction complete; D6 paid runner with cache-aware ¥15 cost guard is ready. Paid DeepSeek runs are the only remaining step.
 
 ## 4. Conditions
 

@@ -79,7 +79,7 @@ def _workspace_path(workspace: Path, raw_path: str) -> Path:
     return resolved
 
 
-def _execute_scripted_tool(workspace: Path, step: dict[str, Any]) -> dict[str, Any]:
+def execute_scripted_tool(workspace: Path, step: dict[str, Any]) -> dict[str, Any]:
     name = str(step.get("tool", ""))
     args = dict(step.get("args") or {})
     if name == "write_file":
@@ -207,7 +207,7 @@ def run_local_pilot(
         call_id = f"call-{condition}-{plan_index}-{uuid.uuid4().hex[:6]}"
         ledger.append("assistant/message", {"content": f"tool call {step.get('tool', '')}"})
         ledger.append("tool/call", {"name": str(step.get("tool", "")), "call_id": call_id, "args": dict(step.get("args") or {})})
-        result = _execute_scripted_tool(workspace, step)
+        result = execute_scripted_tool(workspace, step)
         result["call_id"] = call_id
         ledger.append("tool/result", result)
         steps.append({"step": plan_index, "phase": "tool", "tool": step.get("tool", "")})
