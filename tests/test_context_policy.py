@@ -1,4 +1,6 @@
-"""Interface tests for ContextEngine conditions A and C."""
+"""Interface tests for ContextEngine conditions A, C, E, and D."""
+
+import json
 
 import pytest
 
@@ -11,7 +13,7 @@ from apricity.context import (
 )
 
 
-def build_engine(*, policy, budget=4096, meter=None, ledger=None):
+def build_engine(*, policy, budget=4096, meter=None, ledger=None, summarizer=None):
     return ContextEngine(
         provider="scripted",
         model="test-model",
@@ -21,6 +23,7 @@ def build_engine(*, policy, budget=4096, meter=None, ledger=None):
         meter=meter or DeterministicTestMeter(),
         policy=policy,
         ledger=ledger,
+        summarizer=summarizer,
     )
 
 
@@ -199,3 +202,77 @@ def test_condition_e_structural_summary_is_deterministic(tmp_path):
     assert first.prompt == second.prompt
     assert first.canonical_request_sha256 == second.canonical_request_sha256
     assert first_summaries[0].data["replacement_sha256"] == second_summaries[0].data["replacement_sha256"]
+
+
+def _root_cause_summarizer(events, renderings, max_tokens):
+    del events, max_tokens
+    quote = "expected timeout 120, found timeout 30"
+    for seq in sorted(renderings):
+        if quote in str(renderings[seq]):
+            return json.dumps(
+                {
+                    "schema_version": 1,
+                    "facts": [{"text": "root cause found", "status": "confirmed", "sources": [{"event_seq": seq, "quote": quote}]}],
+                    "open_items": [],
+                }
+            )
+    return json.dumps({"schema_version": 1, "facts": [], "open_items": ["no salient facts"]})
+
+
+def _build_d_ledger(tmp_path):
+    ledger = SessionLedger(session_id="s", workspace_root=str(tmp_path), created_at="t")
+    for step in range(4):
+        lines = [f"NOISE_D {step} {index}" for index in range(120)]
+        if step == 0:
+            lines[60] = "ERROR: expected timeout 120, found timeout 30"
+        content = "\n".join(lines)
+        ledger.append("user/message", {"content": f"investigate {step}"})
+        ledger.append("assistant/message", {"content": "noted"})
+        ledger.append("tool/call", {"name": "run_process", "call_id": f"c{step}", "args": {"program": "pytest"}})
+        ledger.append("tool/result", {"tool_name": "run_process", "call_id": f"c{step}", "content": content})
+    return ledger
+
+
+def _d_policy():
+    return ContextPolicy(
+        condition_id="D",
+        condition_label="llm",
+        effective_input_budget=2000,
+        pressure_threshold=0.85,
+        tool_pruning=True,
+        tool_result_soft_limit=100000,
+        history_compaction=True,
+        chunked_llm_compaction=True,
+        retained_recent_steps=1,
+        minimum_compaction_gain=0.15,
+        max_compactions_per_run=1,
+    )
+
+
+def test_condition_d_chunked_summary_retains_anchored_fact(tmp_path):
+    ledger = _build_d_ledger(tmp_path)
+    engine = build_engine(policy=_d_policy(), ledger=ledger, summarizer=_root_cause_summarizer)
+
+    prepared = engine.prepare("current request")
+
+    assert prepared.changed
+    assert "expected timeout 120, found timeout 30" in prepared.prompt
+    assert "NOISE_D 1 60" not in prepared.prompt
+    summaries = [event for event in engine.ledger.events if event.type == "context/summary" and event.data.get("kind") == "chunked-llm"]
+    assert summaries
+    assert summaries[0].data["replacement_sha256"]
+    assert engine.ledger.pairs_balanced()
+
+
+def test_condition_d_falls_back_to_structural_on_invalid_summary(tmp_path):
+    ledger = _build_d_ledger(tmp_path)
+    engine = build_engine(policy=_d_policy(), ledger=ledger, summarizer=lambda *args, **kwargs: "not-json")
+
+    prepared = engine.prepare("current request")
+
+    assert prepared.changed
+    assert "expected timeout 120, found timeout 30" in prepared.prompt
+    summaries = [event for event in engine.ledger.events if event.type == "context/summary" and event.data.get("kind") == "chunked-llm"]
+    assert summaries
+    assert summaries[0].data["fallback_chunks"]
+    assert engine.ledger.pairs_balanced()

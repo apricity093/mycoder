@@ -11,6 +11,7 @@ import hashlib
 from dataclasses import dataclass
 from typing import Any
 
+from .chunked import compact_chunked_prefix
 from .ledger import SessionLedger, canonical_json, render_surface_node
 from .planner import remove_old_units
 from .structural import (
@@ -182,6 +183,21 @@ class ContextEngine:
             self._compactions_used += 1
         return committed
 
+    def _compact_chunked(self, user_message: str) -> bool:
+        if not self.policy.chunked_llm_compaction:
+            return False
+        committed = compact_chunked_prefix(
+            ledger=self.ledger,
+            meter=self.meter,
+            policy=self.policy,
+            user_message=user_message,
+            compactions_used=self._compactions_used,
+            summarizer=self.summarizer,
+        )
+        if committed:
+            self._compactions_used += 1
+        return committed
+
     def _remove_old_units(self, user_message: str, request: ModelRequest, tokens: int) -> bool:
         del request
         return remove_old_units(
@@ -212,8 +228,14 @@ class ContextEngine:
                 pressure = self._pressure_active(request, tokens)
                 changed = True
 
-        if pressure and self.policy.history_compaction and self.policy.structural_compaction:
-            if self._compact_structural(user_message):
+        if pressure and self.policy.history_compaction:
+            if self.policy.structural_compaction:
+                compacted = self._compact_structural(user_message)
+            elif self.policy.chunked_llm_compaction:
+                compacted = self._compact_chunked(user_message)
+            else:
+                compacted = False
+            if compacted:
                 request = self._build_request()
                 tokens = int(self.meter.count_request(request))
                 pressure = self._pressure_active(request, tokens)

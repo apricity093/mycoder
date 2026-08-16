@@ -8,6 +8,7 @@ used later by the paid runner.
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import uuid
 from pathlib import Path
@@ -56,6 +57,14 @@ def condition_policies(budget: int) -> dict[str, ContextPolicy]:
             history_compaction=True,
             structural_compaction=True,
         ),
+        "D": ContextPolicy(
+            condition_id="D",
+            condition_label="llm",
+            effective_input_budget=int(budget),
+            tool_pruning=True,
+            history_compaction=True,
+            chunked_llm_compaction=True,
+        ),
     }
 
 
@@ -102,7 +111,31 @@ def _execute_scripted_tool(workspace: Path, step: dict[str, Any]) -> dict[str, A
     return {"tool_name": name, "call_id": "", "content": f"scripted {name} result", "metadata": {"status": "ok", "exit_code": 0}}
 
 
-def _build_engine(*, condition: str, budget: int, ledger: SessionLedger) -> ContextEngine:
+_SALIENT_PATTERN = re.compile(r"(?i)(error|failed|failure|required|must|authoritative|round\d)")
+
+
+class ScriptedChunkSummarizer:
+    """Deterministic stand-in for the D-condition LLM summarizer.
+
+    It extracts salient lines from chunk renderings and cites exact quotes, so
+    local D pilots exercise the same schema/evidence path as a paid run.
+    """
+
+    def __call__(self, events, renderings: dict[int, str], max_tokens: int) -> str:
+        del events, max_tokens
+        facts = []
+        for seq in sorted(renderings):
+            for line in str(renderings[seq]).splitlines():
+                if not _SALIENT_PATTERN.search(line):
+                    continue
+                quote = line[:240]
+                facts.append({"text": line[:200], "status": "confirmed", "sources": [{"event_seq": seq, "quote": quote}]})
+        if not facts:
+            facts.append({"text": "no salient facts in chunk", "status": "open", "sources": []})
+        return json.dumps({"schema_version": 1, "facts": facts[:8], "open_items": []}, ensure_ascii=False)
+
+
+def _build_engine(*, condition: str, budget: int, ledger: SessionLedger, summarizer=None) -> ContextEngine:
     policies = condition_policies(budget)
     if condition not in policies:
         raise ValueError(f"unknown condition: {condition}")
@@ -114,6 +147,7 @@ def _build_engine(*, condition: str, budget: int, ledger: SessionLedger) -> Cont
         meter=DeterministicTestMeter(),
         policy=policies[condition],
         ledger=ledger,
+        summarizer=summarizer,
     )
 
 
@@ -125,6 +159,7 @@ def run_local_pilot(
     workspace_root: str | Path,
     hidden: dict[str, Any],
     budget: int = 4096,
+    summarizer=None,
 ) -> dict[str, Any]:
     """Run one task/condition with a deterministic tool plan, no model calls."""
     fixture = Path(fixture_root)
@@ -140,7 +175,7 @@ def run_local_pilot(
         persist_path=workspace / ".ledger.json",
     )
     append_seed_events(ledger, build_seed_events(task))
-    engine = _build_engine(condition=condition, budget=budget, ledger=ledger)
+    engine = _build_engine(condition=condition, budget=budget, ledger=ledger, summarizer=summarizer)
 
     steps: list[dict[str, Any]] = []
     tool_steps = 0

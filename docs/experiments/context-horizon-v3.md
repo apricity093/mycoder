@@ -101,7 +101,7 @@ apricity/context/
 |-- token_budget.py   # token meter identity, pressure, budget
 |-- planner.py        # internal Surface unit planning (not exported)
 |-- structural.py     # condition C tool-result pruning; condition E compactor lands here
-|-- chunked.py        # condition D (pending)
+|-- chunked.py        # condition D chunked LLM compaction with evidence anchors
 `-- engine.py         # ContextEngine.prepare
 apricity/evaluation/context_horizon/
 |-- runner.py         # reuse existing evaluator workspace/provider/verifier helpers
@@ -116,7 +116,7 @@ tests/fixtures/context_horizon_repo/...
 scripts/run_context_horizon_experiment.py
 ```
 
-Implementation status: D1 cleanup complete; D2 `SessionLedger` + conditions A/C complete; D3 condition E deterministic structural compaction complete; D4 six-task suite, hidden verifiers, and local scripted-model pressure calibration complete (A loses facts on 4/6 tasks, C/E cross pressure on 6/6). Condition D is not implemented yet.
+Implementation status: D1 cleanup complete; D2 `SessionLedger` + conditions A/C complete; D3 condition E deterministic structural compaction complete; D4 six-task suite, hidden verifiers, and local scripted-model pressure calibration complete; D5 condition D chunked evidence-anchored LLM compaction complete (scripted summarizer pilot: D retains facts on 6/6 tasks, A loses facts on 4/6, C/E pressure-cross 6/6). Paid DeepSeek runs remain.
 
 ## 4. Conditions
 

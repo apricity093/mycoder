@@ -22,7 +22,7 @@ from apricity.evaluation.context_horizon import (
     run_local_pilot,
     summarize_rows,
 )
-from apricity.evaluation.context_horizon.runner import write_pilot_artifacts
+from apricity.evaluation.context_horizon.runner import ScriptedChunkSummarizer, write_pilot_artifacts
 
 
 def _repo_root() -> Path:
@@ -48,7 +48,8 @@ def cmd_pilot(args) -> int:
     hidden_root = Path(args.hidden)
     output_dir = Path(args.output) if args.output else repo / "benchmarks" / "results" / f"context-horizon-calibration-{_now()}"
     output_dir.mkdir(parents=True, exist_ok=True)
-    conditions = tuple(args.condition or ["A", "C", "E"])
+    conditions = tuple(args.condition or ["A", "C", "E", "D"])
+    summarizer = ScriptedChunkSummarizer()
     rows = []
     for task in taskset["tasks"]:
         hidden = load_hidden_verifier(task, hidden_root)
@@ -61,6 +62,7 @@ def cmd_pilot(args) -> int:
                 workspace_root=workspace,
                 hidden=hidden,
                 budget=args.budget,
+                summarizer=summarizer,
             )
             rows.append(row)
             print(f"{task['id']} {condition}: pressure={row['pressure_crossed']} no_safe_range={row['no_safe_range']} context={row['context']['context_pass']}")

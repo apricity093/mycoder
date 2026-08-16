@@ -74,3 +74,11 @@
 - 关键事实只存在于 hidden verifier，任务文件与 policy 代码均不携带；seed 事实按步骤分布，保证 A 在旧 prefix 上真实丢失事实。
 - 本地校准结果：6/6 任务 C/E 均触发 Pressure；A 在 L2/L3/L5/L6 丢失早期事实；校准 gate 通过。
 - 验证：`compileall`、`ruff` 通过，全量 pytest `210 passed, 1 skipped`。
+
+### 17.Add chunked evidence-anchored LLM compaction condition D（26/8/16）
+
+- 新增 `apricity/context/chunked.py`：按完成 step 分块调用 summarizer，每块最多 2,000 字符 prompt，confirmed fact 必须有 `event_seq + 精确 quote`；渲染摘要时把 evidence 原文一并呈现，保证 predicate 事实在压缩后仍可见。
+- 无效摘要/坏 anchor 的 chunk 自动回退到 E 结构压缩；任何 chunk 无法安全回退则整笔不提交，仍超压时抛 `no_safe_range`。
+- runner 新增 D policy 与确定性 `ScriptedChunkSummarizer`，本地 pilot 覆盖 A/C/E/D；D/E 在 6/6 任务保留全部 context facts，A 在 4/6 任务丢事实，校准 gate 通过。
+- 新增 D 接口测试：锚点事实保留、噪声丢弃、非法摘要回退、tool pairing。
+- 验证：`compileall`、`ruff` 通过，全量 pytest `212 passed, 1 skipped`。
