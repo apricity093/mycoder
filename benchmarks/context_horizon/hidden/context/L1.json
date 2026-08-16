@@ -1,0 +1,22 @@
+{
+  "id": "L1",
+  "oracle_secret": "L1-oracle",
+  "context_required": [
+    "timeout=120",
+    "label=public",
+    "report_keys_sorted",
+    "paths_workspace_relative"
+  ],
+  "context_forbidden": [
+    "timeout=30",
+    "label=internal",
+    "report_keys_unsorted",
+    "paths_absolute"
+  ],
+  "artifact_required": [
+    "timeout=120",
+    "label=public",
+    "report_keys_sorted",
+    "paths_workspace_relative"
+  ]
+}

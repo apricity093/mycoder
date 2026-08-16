@@ -116,7 +116,7 @@ tests/fixtures/context_horizon_repo/...
 scripts/run_context_horizon_experiment.py
 ```
 
-Implementation status: D1 cleanup complete; D2 `SessionLedger` + conditions A/C complete; D3 condition E deterministic structural compaction complete, with interface tests covering source retention, diagnostic preservation, and determinism. Condition D is not implemented yet.
+Implementation status: D1 cleanup complete; D2 `SessionLedger` + conditions A/C complete; D3 condition E deterministic structural compaction complete; D4 six-task suite, hidden verifiers, and local scripted-model pressure calibration complete (A loses facts on 4/6 tasks, C/E cross pressure on 6/6). Condition D is not implemented yet.
 
 ## 4. Conditions
 

@@ -1,0 +1,19 @@
+{
+  "id": "L3",
+  "oracle_secret": "L3-oracle",
+  "context_required": [
+    "formula must double the value",
+    "report must sort keys",
+    "public label must be visible"
+  ],
+  "context_forbidden": [
+    "formula unchanged",
+    "report preserves input order",
+    "public label hidden"
+  ],
+  "artifact_required": [
+    "def normalize",
+    "dict(sorted(entries))",
+    "PUBLIC_LABEL"
+  ]
+}

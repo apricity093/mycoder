@@ -1,0 +1,16 @@
+{
+  "id": "L4",
+  "oracle_secret": "L4-oracle",
+  "context_required": [
+    "authoritative current color is red"
+  ],
+  "context_forbidden": [
+    "current color is blue"
+  ],
+  "artifact_required": [
+    "COLOR = \"red\""
+  ],
+  "artifact_forbidden": [
+    "COLOR = \"blue\""
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "L2",
+  "oracle_secret": "L2-oracle",
+  "context_required": [
+    "expected timeout 120, found timeout 30"
+  ],
+  "context_forbidden": [
+    "timeout already 120"
+  ],
+  "artifact_required": [
+    "TIMEOUT = 120"
+  ]
+}

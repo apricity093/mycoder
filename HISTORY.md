@@ -66,3 +66,11 @@
 - 把前缀压缩事务与 window 单元移除分别下沉到 `structural.py` / `planner.py`，`engine.py` 保持 298 行（≤300）；`apricity/context` 总计 1,198 行，文档上限调整为 1,500 以容纳后续 D 条件。
 - 新增 E 的接口测试：需求保留、诊断保留、噪声丢弃、源事件保留、tool pairing、确定性哈希。
 - 验证：`compileall`、`ruff` 通过，全量 pytest `205 passed, 1 skipped`。
+
+### 16.Add Context Horizon task suite and local pressure calibration（26/8/16）
+
+- 新增 `apricity/evaluation/context_horizon`：任务 schema v1、确定性 seed 生成、hidden verifier 加载、本地 scripted-model pilot runner、context/artifact/mechanics verifier 与校准聚合。
+- 新增 `benchmarks/context_horizon/tasks.v1.json`、6 个隐藏 verifier、6 个冻结 seed JSONL、`tests/fixtures/context_horizon_repo`，以及统一入口 `scripts/run_context_horizon_experiment.py`（freeze-seeds / pilot）。
+- 关键事实只存在于 hidden verifier，任务文件与 policy 代码均不携带；seed 事实按步骤分布，保证 A 在旧 prefix 上真实丢失事实。
+- 本地校准结果：6/6 任务 C/E 均触发 Pressure；A 在 L2/L3/L5/L6 丢失早期事实；校准 gate 通过。
+- 验证：`compileall`、`ruff` 通过，全量 pytest `210 passed, 1 skipped`。

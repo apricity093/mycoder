@@ -1,0 +1,17 @@
+{
+  "id": "L5",
+  "oracle_secret": "L5-oracle",
+  "context_required": [
+    "normalize must strip whitespace",
+    "summarize must drop falsy values",
+    "report must sort keys"
+  ],
+  "context_forbidden": [
+    "normalize keeps whitespace",
+    "summarize keeps falsy values",
+    "report preserves input order"
+  ],
+  "artifact_required": [
+    "dict(sorted(entries))"
+  ]
+}

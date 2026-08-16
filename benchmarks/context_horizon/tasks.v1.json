@@ -1,0 +1,238 @@
+{
+  "schema_version": 1,
+  "description": "Context Horizon v3 tasks. Task definitions never select A/C/E/D behavior; critical facts are consumed only by verifiers.",
+  "fixture_repo": "tests/fixtures/context_horizon_repo",
+  "tasks": [
+    {
+      "id": "L1-incremental-contracts",
+      "task_style": "controlled",
+      "prompt": "Implement requirements R1..R8 in contracts.py in order. Every earlier requirement must remain in the file and every later change must preserve it.",
+      "step_budget": 10,
+      "seed_spec": {
+        "pre_steps": 4,
+        "noise_lines": 90,
+        "line_template": "investigation noise {step} {index}",
+        "facts": [
+          "REQUIRED timeout=120",
+          "REQUIRED label=public",
+          "REQUIRED report_keys_sorted",
+          "REQUIRED paths_workspace_relative"
+        ],
+        "fact_positions": [
+          "early",
+          "middle",
+          "late",
+          "early"
+        ]
+      },
+      "scripted_plan": [
+        {
+          "tool": "write_file",
+          "args": {
+            "path": "contracts.py",
+            "content": "REQUIREMENTS = [\"timeout=120\", \"label=public\", \"report_keys_sorted\", \"paths_workspace_relative\"]\n"
+          }
+        },
+        {
+          "final": "requirements implemented"
+        }
+      ],
+      "hidden_verifier_id": "context/L1"
+    },
+    {
+      "id": "L2-long-log-root-cause",
+      "task_style": "controlled",
+      "prompt": "Find the root cause of the failing timeout test in the long process log, repair config.py, and keep the root cause visible for later steps.",
+      "step_budget": 10,
+      "seed_spec": {
+        "pre_steps": 4,
+        "noise_lines": 110,
+        "line_template": "pytest log noise {step} {index}",
+        "facts": [
+          "ERROR: expected timeout 120, found timeout 30"
+        ],
+        "fact_positions": [
+          "middle"
+        ]
+      },
+      "scripted_plan": [
+        {
+          "tool": "read_file",
+          "args": {
+            "path": "config.py"
+          },
+          "result": "TIMEOUT = 30\nCOLOR = \"blue\"\n"
+        },
+        {
+          "tool": "patch_file",
+          "args": {
+            "path": "config.py",
+            "old_text": "TIMEOUT = 30",
+            "new_text": "TIMEOUT = 120"
+          }
+        },
+        {
+          "final": "root cause fixed"
+        }
+      ],
+      "hidden_verifier_id": "context/L2"
+    },
+    {
+      "id": "L3-multi-round-test-fix",
+      "task_style": "controlled",
+      "prompt": "Fix three failing tests in app.py, report.py, and config.py. Each diagnosis appears once and later fixes must not remove the earlier ones.",
+      "step_budget": 12,
+      "seed_spec": {
+        "pre_steps": 4,
+        "noise_lines": 100,
+        "line_template": "test run {step} {index}",
+        "facts": [
+          "ROUND1 formula must double the value",
+          "ROUND2 report must sort keys",
+          "ROUND3 public label must be visible"
+        ],
+        "fact_positions": [
+          "early",
+          "middle",
+          "late"
+        ]
+      },
+      "scripted_plan": [
+        {
+          "tool": "patch_file",
+          "args": {
+            "path": "app.py",
+            "old_text": "def normalize(text):\n    return text.strip()",
+            "new_text": "def normalize(text):\n    return text.strip().upper()"
+          }
+        },
+        {
+          "tool": "patch_file",
+          "args": {
+            "path": "report.py",
+            "old_text": "def build_report(entries):\n    return dict(entries)",
+            "new_text": "def build_report(entries):\n    return dict(sorted(entries))"
+          }
+        },
+        {
+          "tool": "write_file",
+          "args": {
+            "path": "config.py",
+            "content": "TIMEOUT = 120\nCOLOR = \"blue\"\nPUBLIC_LABEL = \"public\"\n"
+          }
+        },
+        {
+          "final": "three fixes complete"
+        }
+      ],
+      "hidden_verifier_id": "context/L3"
+    },
+    {
+      "id": "L4-stale-conflict",
+      "task_style": "controlled",
+      "prompt": "The README stated color blue earlier, but the authoritative current value is red. Update config.py to red and never present blue as current.",
+      "step_budget": 10,
+      "seed_spec": {
+        "pre_steps": 4,
+        "noise_lines": 90,
+        "line_template": "README notes {step} {index}",
+        "facts": [
+          "color is blue in README",
+          "authoritative current color is red"
+        ],
+        "fact_positions": [
+          "early",
+          "late"
+        ]
+      },
+      "scripted_plan": [
+        {
+          "tool": "patch_file",
+          "args": {
+            "path": "config.py",
+            "old_text": "COLOR = \"blue\"",
+            "new_text": "COLOR = \"red\""
+          }
+        },
+        {
+          "final": "color updated"
+        }
+      ],
+      "hidden_verifier_id": "context/L4"
+    },
+    {
+      "id": "L5-realistic-multi-file",
+      "task_style": "realistic",
+      "prompt": "Implement the three small code changes in app.py and report.py described in the investigation evidence, and make public tests pass.",
+      "step_budget": 14,
+      "seed_spec": {
+        "pre_steps": 4,
+        "noise_lines": 100,
+        "line_template": "repository evidence {step} {index}",
+        "facts": [
+          "normalize must strip whitespace",
+          "summarize must drop falsy values",
+          "report must sort keys"
+        ],
+        "fact_positions": [
+          "early",
+          "middle",
+          "late"
+        ]
+      },
+      "scripted_plan": [
+        {
+          "tool": "patch_file",
+          "args": {
+            "path": "app.py",
+            "old_text": "def summarize(values):\n    return [item for item in values if item]",
+            "new_text": "def summarize(values):\n    return [item for item in values if item]"
+          }
+        },
+        {
+          "tool": "patch_file",
+          "args": {
+            "path": "report.py",
+            "old_text": "def build_report(entries):\n    return dict(entries)",
+            "new_text": "def build_report(entries):\n    return dict(sorted(entries))"
+          }
+        },
+        {
+          "final": "multi-file changes complete"
+        }
+      ],
+      "hidden_verifier_id": "context/L5"
+    },
+    {
+      "id": "L6-overflow-recovery",
+      "task_style": "controlled",
+      "prompt": "Complete the same timeout fix as L2. The first eligible request will receive one deterministic context-overflow fault; rebuild context once and finish without repeating side effects.",
+      "step_budget": 12,
+      "seed_spec": {
+        "pre_steps": 4,
+        "noise_lines": 100,
+        "line_template": "overflow probe {step} {index}",
+        "facts": [
+          "ERROR: expected timeout 120, found timeout 30"
+        ],
+        "fact_positions": [
+          "middle"
+        ]
+      },
+      "scripted_plan": [
+        {
+          "tool": "patch_file",
+          "args": {
+            "path": "config.py",
+            "old_text": "TIMEOUT = 30",
+            "new_text": "TIMEOUT = 120"
+          }
+        },
+        {
+          "final": "recovered"
+        }
+      ],
+      "hidden_verifier_id": "context/L6"
+    }
+  ]
+}

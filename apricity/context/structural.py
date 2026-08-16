@@ -21,7 +21,7 @@ COMPACTION_POLICY_VERSION = "v1"
 SUPPORTED_TOOLS = frozenset({"run_process", "run_shell", "read_file", "search", "list_files"})
 
 _DIAGNOSTIC_PATTERN = re.compile(
-    r"(?i)(traceback|error|failed|failure|exception|assert|warning)",
+    r"(?i)(traceback|error|failed|failure|exception|assert|warning|required|must|authoritative)",
 )
 _PATH_LINE_PATTERN = re.compile(r"(?:^|\s)(?:\w:[\\/])?[A-Za-z0-9_./\\-]+\.(?:py|json|md|txt)(?::\d+)?")
 

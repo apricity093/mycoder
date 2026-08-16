@@ -1,0 +1,8 @@
+{
+  "L1-incremental-contracts": "08f17ebff9ff03f93200049267016fe716a564febc361de7e39d08cb78dedb7f",
+  "L2-long-log-root-cause": "27e68e33ac499c8d2e7151c77c5b2bb683d6bfc073a29db92ece65c8d1b336e0",
+  "L3-multi-round-test-fix": "18c6325a8e18724a5c28aad2d70494b1208658e0c5acf0cd77c68b97b4fb1edb",
+  "L4-stale-conflict": "4e02f99e2b9ecee71ef4907d22ecc8b496f609fe6a2e6bdc9dc70af7caafb9a4",
+  "L5-realistic-multi-file": "77aeda0ce041126e5287c1874e543c568733b3edd38045c8d786defa25533873",
+  "L6-overflow-recovery": "47f006ad2fbddd459a447d3abc27d452d9f5e363f41b6ab50e69f536a9a81f4e"
+}
