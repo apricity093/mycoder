@@ -52,3 +52,10 @@
 - 修复长 prefix 裁剪时 checkpoint 被 head-clip 丢弃的问题：checkpoint 文本改为独立追加在 prefix 之后，不参与 prefix 预算裁剪。
 - 删除后验证：`compileall`、`ruff`、全量 pytest `192 passed, 1 skipped`，CLI `--help` 正常，90 次确定性 recovery 实验仍为 compatible 80% / resilient 100%、恢复率提升 25pp。
 
+### 14.Add lean SessionLedger and context policies A/C（26/8/16）
+
+- 新建精简版 `apricity/context`：append-only `SessionLedger` + Surface 折叠 + 原子替换、TokenMeter/ContextPolicy、内部 Surface planner、确定性工具结果裁剪，以及唯一外部接口 `ContextEngine.prepare`。
+- 实现 Context Horizon v3 的 A `window`（超预算移除最旧完整单元）和 C `prune`（先裁剪 oversized 文本工具结果）条件；policy 不接收任何 hidden verifier 或 critical-fact 谓词。
+- 新增接口层测试 `test_context_ledger.py`、`test_context_policy.py`，覆盖不可变事件、替换投影、持久化 round-trip、tool pairing、A 窗口移除、C 裁剪与 `no_safe_range`。
+- 验证：`compileall`、`ruff` 通过，全量 pytest `203 passed, 1 skipped`。
+

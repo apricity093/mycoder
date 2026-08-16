@@ -99,8 +99,9 @@ apricity/context/
 |-- __init__.py       # ContextEngine, ContextPolicy, PreparedContext, SessionLedger
 |-- ledger.py         # append-only events, Surface fold, atomic replacement
 |-- token_budget.py   # token meter identity, pressure, budget
-|-- structural.py     # condition E
-|-- chunked.py        # condition D
+|-- planner.py        # internal Surface unit planning (not exported)
+|-- structural.py     # condition C tool-result pruning; condition E compactor lands here
+|-- chunked.py        # condition D (pending)
 `-- engine.py         # ContextEngine.prepare
 apricity/evaluation/context_horizon/
 |-- runner.py         # reuse existing evaluator workspace/provider/verifier helpers
@@ -114,6 +115,8 @@ benchmarks/context_horizon/
 tests/fixtures/context_horizon_repo/...
 scripts/run_context_horizon_experiment.py
 ```
+
+Implementation status: D1 cleanup complete; D2 `SessionLedger` + conditions A/C complete and covered by interface tests. E and D are not implemented yet.
 
 ## 4. Conditions
 
