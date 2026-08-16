@@ -74,6 +74,15 @@ def _tail_clip(text: str, limit: int) -> str:
     return text[: limit - 3] + "..."
 
 
+def _normalized_fact_text(text: str) -> str:
+    """Normalize Surface text for critical-fact matching.
+
+    Mirrors ``verifiers.context_facts_pass``: collapse whitespace and fold
+    case so protected-fact detection agrees with the evaluator.
+    """
+    return re.sub(r"\s+", " ", str(text).strip()).casefold()
+
+
 class _LegacyRenderer:
     """Renders the old char-budget prompt sections from ledger events.
 
@@ -882,20 +891,36 @@ class ReplayableContextEngine:
         return units
 
     def _protected_seq_set(self) -> set[int]:
-        """Seq set of authoritative fact-bearing Surface nodes that whole-unit
-        removal must never drop. Only tool results, pruned results, and
-        summaries are protected; plain user/assistant messages are removable
-        even when they mention a predicate, as long as the authoritative
-        source survives."""
+        """Seq set of fact-bearing Surface nodes that whole-unit removal must
+        never drop.
+
+        Tool results, pruned results, and summaries are the authoritative fact
+        source. When a predicate appears only in plain user/assistant messages
+        (or in a tool call), those nodes are protected as a fallback so a
+        failed summary attempt cannot fall through to removal and silently
+        drop the only visible copy of a critical fact."""
         if not self._protected_predicates:
             return set()
+        authoritative_types = {"tool/result", "context/pruned-tool-result", "context/summary"}
+        normalized_predicates = [
+            (pred, _normalized_fact_text(pred)) for pred in self._protected_predicates
+        ]
+        authoritative_by_predicate = {pred: False for pred in self._protected_predicates}
+        fallback_seqs_by_predicate = {pred: [] for pred in self._protected_predicates}
         protected = set()
         for node in self.ledger.surface.nodes:
-            if node.event_type not in {"tool/result", "context/pruned-tool-result", "context/summary"}:
-                continue
-            rendered = render_surface_node(node)
-            if any(pred in rendered for pred in self._protected_predicates):
-                protected.add(node.seq)
+            rendered = _normalized_fact_text(render_surface_node(node))
+            for pred, pred_norm in normalized_predicates:
+                if pred_norm not in rendered:
+                    continue
+                if node.event_type in authoritative_types:
+                    authoritative_by_predicate[pred] = True
+                    protected.add(node.seq)
+                else:
+                    fallback_seqs_by_predicate[pred].append(node.seq)
+        for pred, seqs in fallback_seqs_by_predicate.items():
+            if not authoritative_by_predicate[pred]:
+                protected.update(seqs)
         return protected
 
     def _unit_is_removal_notice(self, unit: list[int]) -> bool:

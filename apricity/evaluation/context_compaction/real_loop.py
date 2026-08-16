@@ -251,6 +251,8 @@ class RealAgentLoop:
         self.ledger.flush_dispatch()
         compaction_ends = [e for e in events if e["type"] == "compaction/end"]
         pressure_events = [e for e in events if e["type"] == "context/pressure"]
+        # pressure_triggered records the initial-pressure flag of the first
+        # context/pressure event, not whether any later turn experienced pressure.
         initial_pressure = bool(pressure_events and pressure_events[0]["data"].get("initial_pressure"))
         summary_claims = 0
         summary_errors = 0
@@ -347,6 +349,18 @@ class RealAgentLoop:
             artifact_result=artifact_result,
         )
         generation = prepared.surface_generation if prepared is not None else self.ledger.surface_generation
+        compaction_ends = [e for e in events if e["type"] == "compaction/end"]
+        pressure_events = [e for e in events if e["type"] == "context/pressure"]
+        # pressure_triggered records the initial-pressure flag of the first
+        # context/pressure event, not whether any later turn experienced pressure.
+        initial_pressure = bool(pressure_events and pressure_events[0]["data"].get("initial_pressure"))
+        summary_claims = 0
+        summary_errors = 0
+        for event in events:
+            if event["type"] == "context/summary" and "compaction_id" in event["data"]:
+                summary_claims += 1
+                if not event["data"].get("validated", True):
+                    summary_errors += 1
         return {
             "task_id": self.task["id"],
             "condition": self.condition,
@@ -354,6 +368,7 @@ class RealAgentLoop:
             "budget": self.budget,
             "status": "fail",
             "run_pass": False,
+            "mechanics_pass": bool(verification["mechanics_pass"]),
             "artifact_pass": verification["artifact_pass"],
             "artifact": verification["artifact"],
             "context_pass": bool(verification["context_pass"]),
@@ -366,16 +381,16 @@ class RealAgentLoop:
             "runner_error": False,
             "surface_generation": generation,
             "estimated_input_tokens": (prepared.metadata.get("estimated_input_tokens", 0) if prepared is not None else 0),
-            "pressure_triggered": False,
-            "compaction_count": 0,
-            "summary_total_claims": 0,
-            "summary_error_claims": 0,
+            "pressure_triggered": initial_pressure,
+            "compaction_count": sum(1 for e in compaction_ends if e["data"].get("success")),
+            "summary_total_claims": summary_claims,
+            "summary_error_claims": summary_errors,
             "tool_steps": tool_steps,
             "attempts": attempts,
             "final_answer": final_answer,
             "stop_reason": reason,
-            "canonical_request_sha256": "",
-            "source_event_seqs": [],
+            "canonical_request_sha256": (prepared.canonical_request_sha256 if prepared is not None else ""),
+            "source_event_seqs": (list(prepared.source_event_seqs) if prepared is not None else []),
             "workspace_root": str(self.workspace_copy_root),
             "events": events,
             "trace_events": self.trace_events,

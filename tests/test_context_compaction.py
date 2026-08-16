@@ -19,12 +19,27 @@ class SummaryCancelled(Exception):
     pass
 
 
-def build_engine(policy, summarizer, seed_units=8):
+def build_engine(
+    policy,
+    summarizer,
+    seed_units=8,
+    *,
+    first_user_fact=None,
+    first_assistant_fact=None,
+):
     tmp = Path(tempfile.mkdtemp(prefix="apricity-compact-"))
     ledger = SessionLedger(session_id="s1", workspace_root=str(tmp))
     for index in range(seed_units):
-        ledger.append("user/message", {"content": f"seed user {index} " + ("x" * 400)})
-        ledger.append("assistant/message", {"content": f"seed answer {index} " + ("y" * 400)})
+        if index == 0 and first_user_fact:
+            user_content = f"{first_user_fact} " + ("x" * 400)
+        else:
+            user_content = f"seed user {index} " + ("x" * 400)
+        if index == 0 and first_assistant_fact:
+            assistant_content = f"{first_assistant_fact} " + ("y" * 400)
+        else:
+            assistant_content = f"seed answer {index} " + ("y" * 400)
+        ledger.append("user/message", {"content": user_content})
+        ledger.append("assistant/message", {"content": assistant_content})
     return ledger, ReplayableContextEngine(
         ledger=ledger,
         policy=policy,
@@ -194,6 +209,207 @@ def test_compaction_cancellation_leaves_surface_unchanged():
     assert not any("compaction_id" in node.data for node in compaction_surface)
     ends = [e for e in ledger.events() if e["type"] == "compaction/end"]
     assert any(e["data"]["success"] is False and e["data"].get("terminal_phase") == "summarized" for e in ends)
+
+
+@pytest.mark.parametrize(
+    ("first_user_fact", "first_assistant_fact", "predicate"),
+    [
+        ("centralized_timeout_default contract", None, "centralized_timeout_default"),
+        (None, "centralized_timeout_default contract", "centralized_timeout_default"),
+        ("centralized_timeout_default contract", None, "CENTRALIZED_TIMEOUT_DEFAULT"),
+        (None, "centralized_timeout_default contract", "CENTRALIZED_TIMEOUT_DEFAULT"),
+    ],
+)
+def test_failed_summary_fallback_preserves_user_assistant_only_protected_fact(
+    first_user_fact,
+    first_assistant_fact,
+    predicate,
+):
+    from apricity.evaluation.context_compaction.verifiers import (
+        context_facts_pass,
+        replay_integrity,
+        tool_pairs_balanced,
+    )
+
+    def failing_summarizer(events, renderings, max_tokens):
+        del events, renderings, max_tokens
+        raise ValueError("summary unavailable")
+
+    ledger, engine = build_engine(
+        compact_policy(),
+        failing_summarizer,
+        seed_units=12,
+        first_user_fact=first_user_fact,
+        first_assistant_fact=first_assistant_fact,
+    )
+    engine._protected_predicates = (predicate,)
+
+    prepared = engine.prepare("Current request", trigger="context-overflow")
+
+    assert prepared.changed is True
+    surface_text = ledger.surface_rendering()
+    assert "centralized_timeout_default" in surface_text.casefold()
+    facts = [
+        {
+            "id": "timeout-source",
+            "predicate": predicate,
+            "contradiction_predicate": "timeout is 30",
+        }
+    ]
+    assert context_facts_pass(surface_text, facts)["pass"] is True
+    events = ledger.events()
+    assert replay_integrity(events) is True
+    assert tool_pairs_balanced(events) is True
+    ends = [e for e in events if e["type"] == "compaction/end"]
+    assert any(
+        e["data"]["success"] is False and e["data"].get("error_code") == "summary_transport_failed"
+        for e in ends
+    )
+
+
+def test_fail_row_reports_prior_compaction_and_summary_stats():
+    from apricity.context.summarizer import SummaryUsage
+    from apricity.evaluation.context_compaction.real_loop import RealAgentLoop
+
+    tmp = Path(tempfile.mkdtemp(prefix="apricity-failrow-"))
+    ledger = SessionLedger(session_id="s1", workspace_root=str(tmp))
+    ledger.append(
+        "compaction/end",
+        {
+            "compaction_id": "c1",
+            "success": True,
+            "terminal_phase": "committed",
+            "ending_surface_generation": 0,
+        },
+    )
+    ledger.append(
+        "compaction/end",
+        {
+            "compaction_id": "c2",
+            "success": False,
+            "terminal_phase": "validated",
+            "error_code": "summary_no_gain",
+            "ending_surface_generation": 0,
+        },
+    )
+    ledger.append(
+        "context/summary",
+        {"compaction_id": "c1", "rendered": "[context-summary] ok", "validated": True},
+    )
+    ledger.append(
+        "context/summary",
+        {"compaction_id": "c3", "rendered": "[context-summary] bad", "validated": False},
+    )
+
+    loop = RealAgentLoop.__new__(RealAgentLoop)
+    loop.task = {
+        "id": "T",
+        "prompt": "Do the thing",
+        "critical_facts": [],
+        "process_invariants": [],
+    }
+    loop.condition = "D"
+    loop.repetition = 1
+    loop.budget = 4096
+    loop.workspace_copy_root = tmp
+    loop.fixture_root = tmp
+    loop.ledger = ledger
+    loop.trace_events = []
+    loop.summary_usage = SummaryUsage()
+    loop.main_usage = SummaryUsage()
+    loop.artifact_verifier = lambda task, root, events=None, surface_text="": {
+        "artifact_pass": None,
+        "skipped": True,
+    }
+
+    row = loop._fail_row(None, False, False, "model_stop_failure", "partial answer", attempts=3, tool_steps=2)
+
+    assert row["compaction_count"] == 1
+    assert row["summary_total_claims"] == 2
+    assert row["summary_error_claims"] == 1
+    assert row["mechanics_pass"] is True
+
+
+def test_fail_row_reports_prepared_dispatch_fields_and_initial_pressure():
+    from types import SimpleNamespace
+
+    from apricity.context.summarizer import SummaryUsage
+    from apricity.evaluation.context_compaction.real_loop import RealAgentLoop
+
+    tmp = Path(tempfile.mkdtemp(prefix="apricity-failrow-prepared-"))
+    ledger = SessionLedger(session_id="s1", workspace_root=str(tmp))
+    ledger.append(
+        "context/pressure",
+        {
+            "pressure": True,
+            "estimated_input_tokens": 1234,
+            "initial_pressure": True,
+            "trigger": "pressure",
+            "changed": False,
+        },
+    )
+    ledger.append(
+        "compaction/end",
+        {
+            "compaction_id": "c1",
+            "success": True,
+            "terminal_phase": "committed",
+            "ending_surface_generation": 0,
+        },
+    )
+    ledger.append(
+        "context/summary",
+        {"compaction_id": "c1", "rendered": "[context-summary] ok"},
+    )
+
+    prepared = SimpleNamespace(
+        surface_generation=4,
+        metadata={"estimated_input_tokens": 1234},
+        canonical_request_sha256="sha256:prepared-request",
+        source_event_seqs=(2, 5, 8),
+    )
+
+    loop = RealAgentLoop.__new__(RealAgentLoop)
+    loop.task = {
+        "id": "T",
+        "prompt": "Do the thing",
+        "critical_facts": [],
+        "process_invariants": [],
+    }
+    loop.condition = "D"
+    loop.repetition = 1
+    loop.budget = 4096
+    loop.workspace_copy_root = tmp
+    loop.fixture_root = tmp
+    loop.ledger = ledger
+    loop.trace_events = []
+    loop.summary_usage = SummaryUsage()
+    loop.main_usage = SummaryUsage()
+    loop.artifact_verifier = lambda task, root, events=None, surface_text="": {
+        "artifact_pass": None,
+        "skipped": True,
+    }
+
+    row = loop._fail_row(
+        prepared,
+        True,
+        False,
+        "model_stop_failure",
+        "partial answer",
+        attempts=2,
+        tool_steps=1,
+    )
+
+    assert row["pressure_triggered"] is True
+    assert row["estimated_input_tokens"] == 1234
+    assert row["canonical_request_sha256"] == "sha256:prepared-request"
+    assert row["source_event_seqs"] == [2, 5, 8]
+    assert row["surface_generation"] == 4
+    assert row["observed_overflow"] is True
+    assert row["recovered_overflow"] is False
+    assert row["compaction_count"] == 1
+    assert row["summary_total_claims"] == 1
+    assert row["summary_error_claims"] == 0
 
 
 def test_compaction_generation_conflict_is_detected():
