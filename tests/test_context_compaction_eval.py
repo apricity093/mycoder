@@ -383,6 +383,78 @@ def test_runner_finalizes_manifest_with_execution_mode(tmp_path):
     assert manifest["status"] == "completed"
     assert manifest["completed_at"] == payload["completed_at"]
     assert manifest["execution_mode"] == "deterministic"
+    assert manifest["provider"] == "deepseek"
+    assert manifest["model"] == "deepseek-v4-flash"
+    assert manifest["usage_meter"]["exact"] is False
+    assert manifest["completed_artifact_hashes"]
+    assert all(
+        set(hashes) == {"report.json", "events.jsonl", "requests.jsonl", "trace.jsonl", "verifier.json"}
+        for hashes in manifest["completed_artifact_hashes"].values()
+    )
+
+
+def test_failed_run_persists_primary_failure(tmp_path, monkeypatch):
+    runner = ContextCompactionRunner(
+        taskset_path="benchmarks/context_compaction/tasks.v2.json",
+        output_dir=tmp_path / "out",
+        workspace_root=tmp_path / "ws",
+        task_ids=["C01-early-fact"],
+        allow_dirty=True,
+    )
+    failed = {
+        "task_id": "C01-early-fact",
+        "condition": "A",
+        "repetition": 1,
+        "budget": 4096,
+        "run_pass": False,
+        "runner_error": False,
+        "artifact_pass": False,
+        "context_pass": True,
+        "trace_pass": True,
+        "trace_checks": {},
+        "context_fact_retention": 1,
+        "context_required_facts": 1,
+        "observed_overflow": False,
+        "recovered_overflow": False,
+        "summary_error_claims": 0,
+        "summary_total_claims": 0,
+        "events": [],
+        "requests": [],
+        "trace_events": [],
+        "surface_text": "",
+        "verifier": {},
+    }
+    monkeypatch.setattr(runner, "_run_one", lambda *args: dict(failed))
+    row = runner.run_block(runner.blocks[0])
+    runner.persist_run(runner.blocks[0], row)
+    report = json.loads(
+        (runner.output_dir / "runs" / "A-C01-early-fact-r01-b4096" / "report.json").read_text(encoding="utf-8")
+    )
+    assert row["primary_failure"] == "artifact_verifier_failed"
+    assert report["primary_failure"] == "artifact_verifier_failed"
+
+
+def test_resume_rejects_changed_completed_artifact(tmp_path):
+    runner = ContextCompactionRunner(
+        taskset_path="benchmarks/context_compaction/tasks.v2.json",
+        output_dir=tmp_path / "out",
+        workspace_root=tmp_path / "ws",
+        task_ids=["C01-early-fact"],
+        allow_dirty=True,
+    )
+    runner.run()
+    events = runner.output_dir / "runs" / "A-C01-early-fact-r01-b4096" / "events.jsonl"
+    events.write_text(events.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+    resumed = ContextCompactionRunner(
+        taskset_path="benchmarks/context_compaction/tasks.v2.json",
+        output_dir=tmp_path / "out",
+        workspace_root=tmp_path / "ws",
+        task_ids=["C01-early-fact"],
+        allow_dirty=True,
+        resume=True,
+    )
+    with pytest.raises(ValueError, match="artifact hashes"):
+        resumed.validate_resume()
 
 
 def test_deterministic_report_regeneration_is_stable(tmp_path):

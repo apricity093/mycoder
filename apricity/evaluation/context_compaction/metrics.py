@@ -156,6 +156,13 @@ def _primary_failure(row: dict) -> str:
     return row.get("primary_failure") or "unknown"
 
 
+def primary_failure_for_row(row: dict) -> str | None:
+    """Return the persisted failure category for a failed run only."""
+    if row.get("run_pass") is not False and not row.get("runner_error"):
+        return None
+    return _primary_failure(row)
+
+
 def _condition_summary(items: list[dict]) -> dict:
     evaluated_items = [row for row in items if row.get("artifact_pass") is not None]
     replay_rows = [

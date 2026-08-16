@@ -26,4 +26,5 @@ testpaths = ["tests"]
 addopts = "-p no:cacheprovider"
 norecursedirs = [
   "tests/fixtures/context_compaction_repo/public_tests",
+  "tests/pytest",
 ]

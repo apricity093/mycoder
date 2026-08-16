@@ -25,7 +25,7 @@ from ...context import (
     LegacyContextEngine,
     ReplayableContextEngine,
 )
-from .metrics import aggregate_rows, condition_delta
+from .metrics import aggregate_rows, condition_delta, primary_failure_for_row
 from .pressure import prepare_ledger_from_seed
 from .report import render_report
 from .schema import (
@@ -160,6 +160,10 @@ class ContextCompactionRunner:
                 "sensitivity_tasks": self.sensitivity_tasks,
                 "task_snapshot_hash": self.taskset["task_snapshot_hash"],
                 "allow_dirty": self.allow_dirty,
+                "real": self.real,
+                "verify_artifacts": self.verify_artifacts,
+                "provider": self.provider_name(),
+                "model": self.model_name(),
                 "task_ids": self.task_ids,
             }
         )
@@ -234,6 +238,27 @@ class ContextCompactionRunner:
             suffix += 1
         shutil.move(str(run_dir), str(preserved))
         return preserved
+
+    @staticmethod
+    def _run_artifact_hashes(run_dir: Path) -> dict[str, str]:
+        """Hash immutable per-run evidence files for resume validation."""
+        names = ("report.json", "events.jsonl", "requests.jsonl", "trace.jsonl", "verifier.json")
+        hashes = {}
+        for name in names:
+            path = run_dir / name
+            if not path.is_file():
+                raise ValueError(f"missing run artifact: {path}")
+            hashes[name] = sha256_of_bytes(path.read_bytes())
+        return hashes
+
+    def _completed_artifact_hashes(self) -> dict[str, dict[str, str]]:
+        runs_root = self.output_dir / "runs"
+        if not runs_root.is_dir():
+            return {}
+        result = {}
+        for run_dir in sorted(path for path in runs_root.iterdir() if path.is_dir() and path.name != "runner-errors"):
+            result[run_dir.name] = self._run_artifact_hashes(run_dir)
+        return result
 
     def run_public_verifier(self, task, workspace_copy_root: Path) -> dict:
         """Execute the task's public verifier against the workspace copy."""
@@ -342,6 +367,7 @@ class ContextCompactionRunner:
                 "error": f"{type(exc).__name__}: {exc}",
             }
         row["duration_ms"] = int((perf_counter() - started) * 1000)
+        row["primary_failure"] = primary_failure_for_row(row)
         return row
 
     def _run_one(self, task, condition, budget, repetition) -> dict:
@@ -549,6 +575,43 @@ class ContextCompactionRunner:
             mismatches.append("experiment config hash")
         if existing.get("repetitions") != self.repetitions or existing.get("budgets") != list(self.budgets):
             mismatches.append("repetitions or budget")
+        if existing.get("provider") != self.provider_name():
+            mismatches.append("provider")
+        if existing.get("model") != self.model_name():
+            mismatches.append("model")
+        if existing.get("commit_sha") != self._git_value("rev-parse", "HEAD"):
+            mismatches.append("code commit")
+        if existing.get("fixture_hashes") != {
+            task["id"]: task["fixture_tree_hash"] for task in self.taskset["tasks"]
+        }:
+            mismatches.append("fixture hashes")
+        if existing.get("pressure_hashes") != {
+            task["id"]: task["seed_hash"] for task in self.taskset["tasks"]
+        }:
+            mismatches.append("pressure hashes")
+        stored_artifacts = existing.get("completed_artifact_hashes")
+        if existing.get("status") == "completed" and not isinstance(stored_artifacts, dict):
+            mismatches.append("completed artifact hashes")
+        if isinstance(stored_artifacts, dict):
+            for run_name, expected in stored_artifacts.items():
+                run_dir = self.output_dir / "runs" / run_name
+                report_path = run_dir / "report.json"
+                if report_path.is_file():
+                    try:
+                        report = json.loads(report_path.read_text(encoding="utf-8"))
+                    except (OSError, json.JSONDecodeError):
+                        report = {}
+                    # A runner-error artifact is intentionally preserved and
+                    # replaced through the explicit runner-errors path below.
+                    if report.get("runner_error") is True:
+                        continue
+                try:
+                    actual = self._run_artifact_hashes(run_dir)
+                except ValueError as exc:
+                    mismatches.append(f"artifact {run_name}: {exc}")
+                    continue
+                if actual != expected:
+                    mismatches.append(f"artifact hashes for {run_name}")
         if mismatches:
             raise ValueError(f"cannot resume: mismatch in {', '.join(mismatches)}")
         self._prior_manifest = existing
@@ -578,6 +641,8 @@ class ContextCompactionRunner:
             "captured_at": datetime.now(timezone.utc).isoformat(),
             "commit_sha": self._git_value("rev-parse", "HEAD"),
             "branch": self._git_value("branch", "--show-current"),
+            "provider": self.provider_name(),
+            "model": self.model_name(),
             "dirty": dirty,
             # PRD §23.2: a dirty worktree may run with an explicit override, but
             # its manifest MUST be marked non-canonical and excluded from
@@ -595,7 +660,19 @@ class ContextCompactionRunner:
             "schedule_hash": self.schedule_hash,
             "repetitions": self.repetitions,
             "budgets": list(self.budgets),
-            "token_meter": {"name": "deterministic-test", "version": "v1", "exact": True},
+            "token_meter": {
+                "name": "deterministic-test",
+                "version": "v1",
+                "exact": True,
+                "scope": "context_budget_estimation",
+            },
+            "usage_meter": {
+                "name": "provider-response-usage" if self.real else "deterministic-test",
+                "version": "v1",
+                "exact": bool(self.real),
+                "scope": "model_usage_accounting",
+            },
+            "completed_artifact_hashes": {},
         }
         (self.output_dir / "manifest.json").write_text(
             json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8"
@@ -673,6 +750,7 @@ class ContextCompactionRunner:
             "status": "completed",
             "completed_at": completed_at,
             "resume_provenance": resume_provenance,
+            "completed_artifact_hashes": self._completed_artifact_hashes(),
         }
         (self.output_dir / "manifest.json").write_text(
             json.dumps(completed_manifest, indent=2, sort_keys=True), encoding="utf-8"
@@ -684,6 +762,7 @@ class ContextCompactionRunner:
             "aggregate": aggregate,
             "comparison": condition_delta(aggregate),
             "resume_provenance": resume_provenance,
+            "completed_artifact_hashes": completed_manifest["completed_artifact_hashes"],
             "rows": [
                 {key: value for key, value in row.items() if key not in {"events", "requests", "surface_text", "verifier"}}
                 for row in rows
