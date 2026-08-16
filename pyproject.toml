@@ -23,6 +23,7 @@ include = ["apricity*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-p no:cacheprovider"
 norecursedirs = [
   "tests/fixtures/context_compaction_repo/public_tests",
 ]

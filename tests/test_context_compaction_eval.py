@@ -1044,3 +1044,32 @@ def test_replay_integrity_denominator_is_dispatch_bearing():
     assert aggregate["dispatch_bearing_replay_integrity_rate"] == 1.0
     assert aggregate["conditions"]["A"]["replay_evaluated_runs"] == 1
     assert aggregate["conditions"]["A"]["replay_integrity_rate"] == 1.0
+
+
+def test_public_verifier_disables_pytest_cacheprovider(tmp_path, monkeypatch):
+    import subprocess
+
+    runner = ContextCompactionRunner(
+        taskset_path="benchmarks/context_compaction/tasks.v2.json",
+        output_dir=tmp_path / "out",
+        workspace_root=tmp_path / "ws",
+        task_ids=["C01-early-fact"],
+        allow_dirty=True,
+    )
+    captured = {}
+
+    def fake_run(argv, **kwargs):
+        captured["env"] = kwargs.get("env", {})
+        return subprocess.CompletedProcess(argv, 0, "", "")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    runner.run_public_verifier(
+        {
+            "public_verifier": ["python", "-m", "pytest", "-q", "public_tests/test_x.py"],
+            "verifier_timeout_seconds": 1,
+        },
+        tmp_path,
+    )
+
+    addopts = captured["env"].get("PYTEST_ADDOPTS", "")
+    assert "-p no:cacheprovider" in addopts

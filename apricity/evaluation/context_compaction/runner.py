@@ -249,6 +249,14 @@ class ContextCompactionRunner:
         verifier_env = dict(os.environ)
         verifier_env["PYTHONUTF8"] = "1"
         verifier_env["PYTHONIOENCODING"] = "utf-8"
+        # Public verifiers are pytest commands. Never let a verifier-run
+        # pytest create or migrate cache directories: cache artifacts are
+        # non-evidential and can land in the repo root when pytest climbs to
+        # the project rootdir.
+        existing_addopts = str(verifier_env.get("PYTEST_ADDOPTS") or "").strip()
+        verifier_env["PYTEST_ADDOPTS"] = (
+            "-p no:cacheprovider" if not existing_addopts else f"-p no:cacheprovider {existing_addopts}"
+        )
         try:
             result = _subprocess.run(
                 argv,
