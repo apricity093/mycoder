@@ -247,7 +247,7 @@ uv run apricity --provider ollama --model qwen3.5:4b
 常用本地检查：
 
 ```bash
-uv run pytest tests -q
+uv run pytest tests -q --basetemp tests/pytest/<task-id>
 uv run ruff check apricity tests scripts
 ```
 

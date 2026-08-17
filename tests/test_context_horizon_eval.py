@@ -131,6 +131,20 @@ def test_cost_guard_uses_cache_aware_pricing():
     assert guard.remaining_cny < 15.0
 
 
+def test_cost_guard_derives_miss_tokens_when_only_cache_hit_is_reported():
+    guard = CostGuard(max_cost_cny=15.0)
+    guard.record(
+        {
+            "input_tokens": 1000,
+            "output_tokens": 20,
+            "cached_tokens": 200,
+        }
+    )
+
+    assert guard.cache_miss_tokens == 800
+    assert guard.cached_tokens == 200
+
+
 def test_paid_run_records_usage_and_stops_at_final(tmp_path):
     taskset = load_tasks()
     task = task_by_id(taskset, "L2-long-log-root-cause")
@@ -155,3 +169,7 @@ def test_paid_run_records_usage_and_stops_at_final(tmp_path):
     assert guard.input_tokens == 1000
     assert guard.spent_cny > 0
     assert row["mechanics"]["mechanics_pass"] is True
+    assert "pressure_crossed" in row
+    assert "no_safe_range" in row
+    assert isinstance(row["pressure_crossed"], bool)
+    assert isinstance(row["no_safe_range"], bool)

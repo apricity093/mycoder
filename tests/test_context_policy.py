@@ -10,7 +10,9 @@ from apricity.context import (
     ContextPreparationError,
     DeterministicTestMeter,
     SessionLedger,
+    render_surface_node,
 )
+from apricity.context.structural import build_structural_summary
 
 
 def build_engine(*, policy, budget=4096, meter=None, ledger=None, summarizer=None):
@@ -168,6 +170,23 @@ def test_condition_e_structural_compaction_preserves_requirements_and_diagnostic
     assert any(event.type == "tool/result" and "NOISE_E_SHOULD_DROP" in str(event.data.get("content", "")) for event in engine.ledger.events)
     assert engine.ledger.pairs_balanced()
     assert prepared.metadata["tool_pairs_balanced"] is True
+
+
+def test_structural_summary_gain_uses_token_meter(tmp_path):
+    ledger = SessionLedger(session_id="s", workspace_root=str(tmp_path), created_at="t")
+    ledger.append("user/message", {"content": "keep this requirement"})
+    ledger.append("tool/result", {"tool_name": "read_file", "call_id": "c1", "content": "noise " * 200 + " ERROR keep this"})
+    meter = DeterministicTestMeter()
+
+    summary = build_structural_summary(ledger, [0, 1], meter=meter)
+
+    expected_source_tokens = sum(
+        meter.count_text(render_surface_node(node)) for node in ledger.surface
+    )
+    expected_replacement_tokens = meter.count_text(summary.rendered)
+    assert summary.source_tokens == expected_source_tokens
+    assert summary.replacement_tokens == expected_replacement_tokens
+    assert summary.gain_ratio == 1.0 - expected_replacement_tokens / expected_source_tokens
 
 
 def test_condition_e_structural_summary_is_deterministic(tmp_path):

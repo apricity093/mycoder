@@ -1019,7 +1019,7 @@ def test_anthropic_compatible_client_extracts_first_text_block():
     assert result == "<final>ok</final>"
 
 
-def test_build_agent_uses_openai_provider_and_cli_overrides(tmp_path):
+def test_build_agent_uses_openai_provider_and_cli_overrides(tmp_path, isolated_project_env):
     args = type(
         "Args",
         (),
@@ -1062,7 +1062,7 @@ def test_build_agent_uses_openai_provider_and_cli_overrides(tmp_path):
     assert agent.model_client is fake_client
 
 
-def test_build_agent_uses_ollama_with_unified_config(tmp_path):
+def test_build_agent_uses_ollama_with_unified_config(tmp_path, isolated_project_env):
     args = apricity_pkg.build_arg_parser().parse_args(
         ["--cwd", str(tmp_path), "--provider", "ollama"]
     )
@@ -1108,7 +1108,7 @@ def test_build_arg_parser_normalizes_provider_case(tmp_path):
     assert args.provider == "deepseek"
 
 
-def test_main_reports_missing_unified_api_key_without_traceback(tmp_path, capsys):
+def test_main_reports_missing_unified_api_key_without_traceback(tmp_path, capsys, isolated_project_env):
     (tmp_path / "README.md").write_text("demo\n", encoding="utf-8")
 
     with patch.dict(os.environ, {}, clear=True):
@@ -1121,7 +1121,7 @@ def test_main_reports_missing_unified_api_key_without_traceback(tmp_path, capsys
     assert "APRICITY_BASE_URL (or --base-url)" in captured.err
 
 
-def test_build_agent_uses_project_env_provider_when_cli_omitted(tmp_path):
+def test_build_agent_uses_project_env_provider_when_cli_omitted(tmp_path, isolated_project_env):
     (tmp_path / ".env").write_text(
         "\n".join(
             [
@@ -1154,7 +1154,7 @@ def test_build_agent_uses_project_env_provider_when_cli_omitted(tmp_path):
     assert agent.model_client is fake_client
 
 
-def test_build_agent_prefers_cli_provider_over_project_env_provider(tmp_path):
+def test_build_agent_prefers_cli_provider_over_project_env_provider(tmp_path, isolated_project_env):
     (tmp_path / ".env").write_text(
         "\n".join(
                 [
@@ -1189,7 +1189,7 @@ def test_build_agent_prefers_cli_provider_over_project_env_provider(tmp_path):
     assert agent.model_client is fake_client
 
 
-def test_build_agent_uses_anthropic_provider_and_anthropic_key(tmp_path):
+def test_build_agent_uses_anthropic_provider_and_anthropic_key(tmp_path, isolated_project_env):
     args = type(
         "Args",
         (),
@@ -1235,7 +1235,7 @@ def test_build_agent_uses_anthropic_provider_and_anthropic_key(tmp_path):
     assert agent.model_client is fake_client
 
 
-def test_build_agent_reports_missing_anthropic_model_and_base_url(tmp_path):
+def test_build_agent_reports_missing_anthropic_model_and_base_url(tmp_path, isolated_project_env):
     args = apricity_pkg.build_arg_parser().parse_args(["--cwd", str(tmp_path), "--provider", "anthropic"])
 
     with patch.dict(
@@ -1247,7 +1247,7 @@ def test_build_agent_reports_missing_anthropic_model_and_base_url(tmp_path):
             apricity_pkg.build_agent(args)
 
 
-def test_build_agent_uses_deepseek_provider_and_env_configuration(tmp_path):
+def test_build_agent_uses_deepseek_provider_and_env_configuration(tmp_path, isolated_project_env):
     (tmp_path / ".env").write_text(
         "\n".join(
             [
@@ -1302,7 +1302,7 @@ def test_build_agent_uses_deepseek_provider_and_env_configuration(tmp_path):
     assert agent.model_client is fake_client
 
 
-def test_build_agent_uses_native_deepseek_client_for_native_base_url(tmp_path):
+def test_build_agent_uses_native_deepseek_client_for_native_base_url(tmp_path, isolated_project_env):
     (tmp_path / ".env").write_text(
         "APRICITY_PROVIDER=deepseek\n"
         "APRICITY_BASE_URL=https://api.deepseek.com\n"
@@ -1327,7 +1327,7 @@ def test_build_agent_uses_native_deepseek_client_for_native_base_url(tmp_path):
     assert agent.model_client is fake_client
 
 
-def test_build_agent_reports_missing_deepseek_model_and_base_url(tmp_path):
+def test_build_agent_reports_missing_deepseek_model_and_base_url(tmp_path, isolated_project_env):
     args = apricity_pkg.build_arg_parser().parse_args(["--cwd", str(tmp_path), "--provider", "deepseek"])
 
     with patch.dict(os.environ, {"APRICITY_API_KEY": "sk-deepseek"}, clear=True):
@@ -1335,7 +1335,7 @@ def test_build_agent_reports_missing_deepseek_model_and_base_url(tmp_path):
             apricity_pkg.build_agent(args)
 
 
-def test_build_agent_uses_deepseek_provider_by_default(tmp_path):
+def test_build_agent_uses_deepseek_provider_by_default(tmp_path, isolated_project_env):
     args = apricity_pkg.build_arg_parser().parse_args(["--cwd", str(tmp_path)])
 
     with patch.dict(
@@ -2194,10 +2194,12 @@ def test_reviewer_skeleton_docs_exist():
     assert architecture.exists()
 
     review_text = review_pack.read_text(encoding="utf-8")
-    assert "Project pitch" in review_text
+    assert "30-second pitch" in review_text
+    assert "10-minute path" in review_text
     assert "Architecture map" in review_text
-    assert "Benchmark evidence" in review_text
-    assert "Sample run artifact list" in review_text
+    assert "Evidence index" in review_text
+    assert "Interview questions" in review_text
+    assert "Honest limitations" in review_text
 
     architecture_text = architecture.read_text(encoding="utf-8")
     assert "Agent Harness v1" in architecture_text

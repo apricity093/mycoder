@@ -18,7 +18,7 @@ def test_public_api_exports_current_names_only():
     assert "MiniAgent" not in apricity.__all__
 
 
-def test_build_agent_returns_apricity(tmp_path):
+def test_build_agent_returns_apricity(tmp_path, isolated_project_env):
     (tmp_path / "README.md").write_text("demo\n", encoding="utf-8")
     args = build_arg_parser().parse_args(["--cwd", str(tmp_path), "--approval", "auto"])
 

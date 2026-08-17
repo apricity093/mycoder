@@ -196,7 +196,7 @@ def compact_chunked_prefix(
             validate_summary_schema(data, renderings)
             rendered_chunks.append(render_summary(data))
         except Exception:
-            fallback = build_structural_summary(ledger, chunk_seqs)
+            fallback = build_structural_summary(ledger, chunk_seqs, meter=meter)
             if fallback is None:
                 return False
             rendered_chunks.append(fallback.rendered)

@@ -265,23 +265,6 @@ class SessionLedger:
         ledger._surface = []
         for raw in payload.get("events", []):
             event = Event.from_dict(raw)
+            ledger._accept(event)
             ledger._events.append(event)
-            op = event.surface_op
-            if op is None:
-                continue
-            if op == APPEND_FORM:
-                ledger._surface.append(SurfaceNode(seq=event.seq, event_type=event.type, data=event.data))
-                continue
-            if isinstance(op, dict) and op.get("op") == "replace":
-                start = int(op.get("start", -1))
-                end = int(op.get("end", -1))
-                start_index = next((index for index, node in enumerate(ledger._surface) if node.seq == start), None)
-                end_index = next((index for index, node in enumerate(ledger._surface) if node.seq == end), None)
-                if start_index is None or end_index is None or start_index > end_index:
-                    raise LedgerError(f"invalid replacement span in saved ledger ({start}, {end})")
-                replacement = SurfaceNode(seq=event.seq, event_type=event.type, data=event.data)
-                ledger._surface = (
-                    ledger._surface[:start_index] + [replacement] + ledger._surface[end_index + 1 :]
-                )
-                ledger.surface_generation += 1
         return ledger

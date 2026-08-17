@@ -60,7 +60,7 @@ def test_risky_tool_deny_behavior(tmp_path):
     assert result == "error: approval denied for run_shell"
 
 
-def test_cli_build_agent_wires_secret_env_names_from_parser(tmp_path):
+def test_cli_build_agent_wires_secret_env_names_from_parser(tmp_path, isolated_project_env):
     class DummyModelClient:
         def __init__(self, *args, **kwargs):
             self.args = args
@@ -100,7 +100,7 @@ def test_cli_build_agent_wires_secret_env_names_from_parser(tmp_path):
         assert set(agent.secret_env_summary()["secret_env_names"]) == {"GITHUB_PAT", "GH_PAT"}
 
 
-def test_cli_build_agent_uses_default_configured_secret_names(tmp_path):
+def test_cli_build_agent_uses_default_configured_secret_names(tmp_path, isolated_project_env):
     class DummyModelClient:
         def __init__(self, *args, **kwargs):
             self.args = args
@@ -128,7 +128,7 @@ def test_cli_build_agent_uses_default_configured_secret_names(tmp_path):
         assert agent.secret_env_summary()["secret_env_names"] == ["GH_PAT"]
 
 
-def test_cli_build_agent_loads_project_env_secrets_before_redaction_setup(tmp_path):
+def test_cli_build_agent_loads_project_env_secrets_before_redaction_setup(tmp_path, isolated_project_env):
     class DummyModelClient:
         def __init__(self, *args, **kwargs):
             self.args = args
@@ -150,7 +150,7 @@ def test_cli_build_agent_loads_project_env_secrets_before_redaction_setup(tmp_pa
         assert agent.secret_env_summary()["secret_env_names"] == ["APRICITY_API_KEY"]
 
 
-def test_cli_build_agent_reads_secret_names_from_environment_config(tmp_path):
+def test_cli_build_agent_reads_secret_names_from_environment_config(tmp_path, isolated_project_env):
     class DummyModelClient:
         def __init__(self, *args, **kwargs):
             self.args = args

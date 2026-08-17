@@ -94,7 +94,7 @@ def test_run_context_ablation_v2_writes_expected_artifact(tmp_path):
     assert "current_request_preserved_rate" in artifact["summary"]
 
 
-def test_provider_profile_loads_unified_project_env(tmp_path, monkeypatch):
+def test_provider_profile_loads_unified_project_env(tmp_path, monkeypatch, isolated_project_env):
     monkeypatch.chdir(tmp_path)
     (tmp_path / ".env").write_text(
         "\n".join(
@@ -122,7 +122,7 @@ def test_provider_profile_loads_unified_project_env(tmp_path, monkeypatch):
     assert profile["base_url"] == "https://api.deepseek.com/anthropic"
 
 
-def test_provider_profile_uses_unified_openai_config(tmp_path, monkeypatch):
+def test_provider_profile_uses_unified_openai_config(tmp_path, monkeypatch, isolated_project_env):
     monkeypatch.chdir(tmp_path)
 
     with patch.dict(
@@ -143,7 +143,7 @@ def test_provider_profile_uses_unified_openai_config(tmp_path, monkeypatch):
     assert profile["model"] == "gpt-5.4"
 
 
-def test_provider_experiments_runs_only_the_active_provider(tmp_path, monkeypatch):
+def test_provider_experiments_runs_only_the_active_provider(tmp_path, monkeypatch, isolated_project_env):
     monkeypatch.chdir(tmp_path)
     fake_payload = {
         "rows": [],

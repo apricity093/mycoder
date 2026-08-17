@@ -10,7 +10,8 @@ Apricity is a small local coding-agent harness built around three explicit seams
 
 ```powershell
 cd D:\Pythonprojects\yan_1\agent\mypico
-D:\anaconda3\envs\learn_claude\python.exe -m pytest tests -q
+D:\anaconda3\envs\learn_claude\python.exe -m pytest tests -q --basetemp tests\pytest\review-pack-<task-id>
+D:\anaconda3\envs\learn_claude\python.exe -m ruff check apricity tests scripts examples
 D:\anaconda3\envs\learn_claude\python.exe scripts\run_recovery_policy_experiment.py `
   --task-id readme_intro_locked `
   --task-id sample_beta_locked `
@@ -65,7 +66,7 @@ Then read:
 | Product works on real-model micro-tasks | `benchmarks/results/real-model-2026-08-13-full/` |
 | Window policy loses facts under pressure; E/D preserve them | `benchmarks/results/context-horizon-calibration-2026-08-16-162322/` |
 | Paid DeepSeek: A 0/6 vs E 3/6 run-pass, E cheaper | `benchmarks/results/context-horizon-paid-2026-08-16-175000/report.md` |
-| Test suite is green | `215 passed, 1 skipped` at commit `5953409` |
+| Test suite is green | `219 passed, 1 skipped` after the review fixes |
 
 ## Interview questions and where the answer lives
 

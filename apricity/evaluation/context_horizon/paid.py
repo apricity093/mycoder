@@ -46,6 +46,8 @@ class CostGuard:
         cache_miss_tokens = int(metadata.get("cache_miss_tokens", 0) or 0)
         if input_tokens and cached_tokens + cache_miss_tokens == 0:
             cache_miss_tokens = input_tokens
+        elif input_tokens and cache_miss_tokens == 0:
+            cache_miss_tokens = max(input_tokens - cached_tokens, 0)
         cost = (
             cache_miss_tokens / 1_000_000 * PRICING["input_cache_miss_cny_per_1m"]
             + cached_tokens / 1_000_000 * PRICING["input_cache_hit_cny_per_1m"]
@@ -152,14 +154,21 @@ def run_paid_run(
     tool_steps = 0
     stop_reason = "completed"
     observed_overflow = False
+    pressure_crossed = False
+    no_safe_range = False
     model_error = ""
     step_budget = int(task.get("step_budget", 1))
     while tool_steps < step_budget and attempts < step_budget * MAX_ATTEMPTS_PER_STEP:
         try:
             prepared = engine.prepare(str(task["prompt"]))
         except Exception as exc:
-            stop_reason = f"preparation_failed:{getattr(exc, 'code', type(exc).__name__)}"
+            code = getattr(exc, "code", type(exc).__name__)
+            if code == "no_safe_range":
+                no_safe_range = True
+            stop_reason = f"preparation_failed:{code}"
             break
+        if prepared.metadata.get("pressure"):
+            pressure_crossed = True
         attempts += 1
         try:
             raw = client.complete(prepared.prompt, max_new_tokens)
@@ -221,6 +230,8 @@ def run_paid_run(
         "tool_steps": tool_steps,
         "attempts": attempts,
         "observed_overflow": observed_overflow,
+        "pressure_crossed": pressure_crossed,
+        "no_safe_range": no_safe_range,
         "context": context,
         "artifact": artifact,
         "mechanics": mechanics,

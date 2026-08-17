@@ -1,5 +1,7 @@
 """Interface tests for the lean SessionLedger."""
 
+import json
+
 import pytest
 
 from apricity.context import (
@@ -83,6 +85,35 @@ def test_saved_ledger_round_trips_replacements(tmp_path):
     assert loaded.surface_generation == 1
     assert [node.event_type for node in loaded.surface] == ["context/summary"]
     assert [event.seq for event in loaded.events] == [0, 1, 2]
+
+
+def test_saved_ledger_rejects_non_contiguous_events(tmp_path):
+    path = tmp_path / "ledger.json"
+    ledger = make_ledger(tmp_path, persist=path)
+    ledger.append("user/message", {"content": "first"})
+    ledger.flush_dispatch()
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["events"][0]["seq"] = 7
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(LedgerError, match="not contiguous"):
+        SessionLedger.load(path)
+
+
+def test_saved_ledger_rejects_replacement_without_sources(tmp_path):
+    path = tmp_path / "ledger.json"
+    ledger = make_ledger(tmp_path, persist=path)
+    ledger.append("user/message", {"content": "first"})
+    ledger.append("context/summary", {"rendered": "summary"}, surface_op={"op": "replace", "start": 0, "end": 0}, source_event_seqs=(0,))
+    ledger.flush_dispatch()
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["events"][1]["source_event_seqs"] = []
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(LedgerError, match="must cite source_event_seqs"):
+        SessionLedger.load(path)
 
 
 def test_pairs_balanced_detects_orphan_results(tmp_path):

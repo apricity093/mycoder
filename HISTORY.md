@@ -26,7 +26,7 @@
 
 ### 9.fix：**Adding a new benchmark: evaluating small real-world models.**（26/7/21）
 
-增加了一组小型真实模型测试，任务定义：[real_model_tasks.json](D:\Pythonprojects\yan_1\agent\mypico\benchmarks\real_model_tasks.json)
+增加了一组小型真实模型测试，任务定义：[real_model_tasks.json](benchmarks/real_model_tasks.json)
 
 ### 10.Add resilient harness recovery experiments（26/8/14）
 
@@ -102,3 +102,12 @@
 - 重写 `docs/review-pack/README.md`：30 秒 pitch、10 分钟复现路径、生产/实验架构图、证据索引、5 个高频面试追问的代码定位，以及诚实限制。
 - 清理本地临时产物：`artifacts/`、`readme_intro_locked/`、全部 `tests/pytest/*`（重建空目录）、`.apricity/runs|sessions`、`__pycache__`、`.ruff_cache`；保留全部 `benchmarks/results/**`。
 - 将 `ziliao/`、面试题、`Redis.md`、`tiwen.md`、`yijian.md` 移到仓库外 `D:\Pythonprojects\yan_1\jobhunt\`，并创建本地求职漏斗 `funnel.md`。
+
+### 21.Review audit fixes and keep repository state consistent（26/8/17）
+
+- 修复 pytest 临时目录向上扫描到仓库 `.env` 导致的测试污染：新增共享 fixture `isolated_project_env`，把项目环境发现限定在 `tmp_path`，并应用到 12 个受影响的 CLI/provider/secret 测试及 1 个潜在受影响的公共 API 测试。
+- 对齐 `test_reviewer_skeleton_docs_exist` 与重写后的 review pack：改为校验 `30-second pitch`、`10-minute path`、`Architecture map`、`Evidence index`、`Interview questions`、`Honest limitations`；证据索引更新为 `219 passed, 1 skipped`。
+- 付费 Context Horizon 行补齐 `pressure_crossed`/`no_safe_range`，避免共享 `summarize_rows` 在 paid-summary.json 中写出全 false 的压力字段。
+- `CostGuard` 在 provider 只上报 cache hit 时从 input tokens 推导 miss tokens；`SessionLedger.load` 改为复用 `_accept` 校验，拒绝非连续 seq 或缺失 source 的持久化 ledger。
+- 结构压缩 E 的 `minimum_compaction_gain` 改为与 D 一致的 token 口径；`.env.example` 不再声称内置默认 URL；README/review-pack 的 pytest 命令按 AGENTS 规则带 `--basetemp tests/pytest/<task-id>`；修正 HISTORY 中的 Windows 绝对路径 markdown 链接。
+- 验证：`compileall`、`ruff` 通过，全量 pytest `219 passed, 1 skipped`。

@@ -139,6 +139,8 @@ class StructuralSummary:
     source_event_seqs: tuple[int, ...]
     source_chars: int
     replacement_chars: int
+    source_tokens: int
+    replacement_tokens: int
     gain_ratio: float
     replacement_sha256: str
     policy: str = COMPACTION_POLICY_NAME
@@ -172,12 +174,13 @@ def _result_excerpt(content: str, metadata: dict | None = None, max_chars: int =
     return excerpt + f"\n[... {len(content) - len(excerpt)} chars omitted; source retained in ledger]"
 
 
-def build_structural_summary(ledger, range_seqs: list[int]) -> StructuralSummary | None:
+def build_structural_summary(ledger, range_seqs: list[int], *, meter=None) -> StructuralSummary | None:
     """Build a deterministic, source-cited capsule for one old Surface range.
 
     No model is called and no hidden predicate is consulted. User messages and
     diagnostic tool-result lines are retained; repetitive assistant prose and
-    redundant output are dropped.
+    redundant output are dropped. Gain is token-based when a meter is supplied,
+    matching the token-based gain used by chunked LLM compaction.
     """
     selected = set(int(seq) for seq in range_seqs)
     nodes = [node for node in ledger.surface if node.seq in selected]
@@ -213,14 +216,24 @@ def build_structural_summary(ledger, range_seqs: list[int]) -> StructuralSummary
 
     rendered = "\n".join(lines)
     source_chars = sum(len(render_surface_node(node)) for node in nodes)
-    if rendered and len(rendered) >= source_chars:
+    if not rendered:
         return None
-    gain = 1.0 - (len(rendered) / source_chars if source_chars else 1.0)
+    if meter is None and len(rendered) >= source_chars:
+        return None
+    source_tokens = (
+        sum(int(meter.count_text(render_surface_node(node))) for node in nodes)
+        if meter is not None
+        else max(1, source_chars)
+    )
+    replacement_tokens = int(meter.count_text(rendered)) if meter is not None else len(rendered)
+    gain = 1.0 - (replacement_tokens / source_tokens if source_tokens else 0.0)
     return StructuralSummary(
         rendered=rendered,
         source_event_seqs=tuple(sorted(selected)),
         source_chars=source_chars,
         replacement_chars=len(rendered),
+        source_tokens=source_tokens,
+        replacement_tokens=replacement_tokens,
         gain_ratio=gain,
         replacement_sha256=sha256_text(rendered),
     )
@@ -256,15 +269,11 @@ def compact_structural_prefix(
     range_seqs = select_structural_range(units, retained_tail, request_seqs)
     if not range_seqs:
         return False
-    source_tokens = sum(
-        int(meter.count_text(render_surface_node(node)))
-        for node in ledger.surface
-        if node.seq in set(range_seqs)
-    )
-    summary = build_structural_summary(ledger, range_seqs)
+    summary = build_structural_summary(ledger, range_seqs, meter=meter)
     if summary is None:
         return False
-    replacement_tokens = int(meter.count_text(summary.rendered))
+    source_tokens = summary.source_tokens
+    replacement_tokens = summary.replacement_tokens
     if summary.gain_ratio < float(policy.minimum_compaction_gain):
         return False
 
