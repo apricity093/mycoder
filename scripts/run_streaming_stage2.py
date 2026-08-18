@@ -29,12 +29,15 @@ def _ratio(numerator, denominator):
     return numerator / denominator if denominator else 0.0
 
 
-def _condition_block(artifact, label):
+def _condition_block(artifact, label, output_dir):
     summary = artifact["summary"]
     rows = artifact["rows"]
+    artifact_path = artifact.get("artifact_path") or str(
+        Path(output_dir) / label / "real-model-benchmark.json"
+    )
     return {
         "label": label,
-        "artifact": str(artifact["artifact_path"]),
+        "artifact": str(artifact_path),
         "runs": len(rows),
         "pass_rate": summary["pass_rate"],
         "avg_duration_seconds": summary["avg_duration_seconds"],
@@ -169,7 +172,7 @@ def main(argv=None):
         "model": artifacts["streaming"]["provider"]["model"],
         "commit_sha": artifacts["streaming"]["runtime"]["commit_sha"],
         "conditions": {
-            label: _condition_block(artifacts[label], label)
+            label: _condition_block(artifacts[label], label, output_dir)
             for label in ("streaming", "no-stream")
         },
     }
