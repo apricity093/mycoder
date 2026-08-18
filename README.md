@@ -119,6 +119,19 @@ apricity --no-stream "summarize README.md"   # 强制完整响应路径
 
 流式失败会在 trace/report 中保留 `stream_interrupted` / `stream_cancelled`、已显示字符数和 request_id；`--no-stream` 作为稳定回滚开关。
 
+PRD Stage 2 首轮小矩阵（deepseek-v4-flash，5 个真实模型任务 × 每条件 1 次）：
+
+| 指标 | streaming | no-stream |
+| --- | ---: | ---: |
+| Pass rate | 80.00% | 80.00% |
+| Avg duration | 34.29s | 36.41s |
+| Avg TTFT / model response | 1.90s | 27.12s |
+| Provider error rate | 0.00% | 0.00% |
+| Partial-visible / cancel | 0 / 0 | 0 / 0 |
+| Duplicate side-effect rate | 0.00% | 0.00% |
+
+完整证据在 `benchmarks/results/streaming-stage2-2026-08-18-205103/`。
+
 ## 模型后端
 
 Apricity 启动时会读取项目根目录的 `.env`。本地真实 key 放在 `.env`，仓库只保留 `.env.example`。配置优先级是：

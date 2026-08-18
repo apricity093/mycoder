@@ -1,0 +1,326 @@
+{
+  "allowed_tools": [
+    "list_files",
+    "read_file",
+    "search",
+    "patch_file",
+    "run_process"
+  ],
+  "artifact_digest": "sha256:2801c1cc7c8976731ab1ac87d5ee3c411b58076b78300585bf36196ad0299525",
+  "artifact_exists": true,
+  "artifact_path": "miniapp/runtime.py",
+  "attempts": 13,
+  "category": "cross-file",
+  "duplicate_side_effects": 0,
+  "duration_seconds": 48.942125,
+  "expected_artifact": "config and runtime share one default timeout constant",
+  "expected_artifact_exists": true,
+  "failure_category": "verifier_failed",
+  "fault_injection": {
+    "events": [],
+    "injected": false,
+    "planned": "none"
+  },
+  "final_answer": "miniapp/config.py already contains `DEFAULT_REQUEST_TIMEOUT = 45`. miniapp/runtime.py is still hardcoding `30`; it needs to be updated to import and use that constant while preserving explicit overrides:\n\n```python\nfrom miniapp.config import DEFAULT_REQUEST_TIMEOUT\n\ndef request_options(timeout=None):\n    return {\"timeout\": DEFAULT_REQUEST_TIMEOUT if timeout is None else timeout}\n```\n\nI could not apply the patch because the tool step limit was reached, so the repository is not yet fully updated.",
+  "fixture_copy_relpath": "centralized_timeout_default\\real_model_bench_repo",
+  "fixture_repo": "tests/fixtures/real_model_bench_repo",
+  "id": "centralized_timeout_default",
+  "initial_episodic_notes_empty": true,
+  "initial_history_empty": true,
+  "initial_memory_empty": true,
+  "initial_task_summary_empty": true,
+  "model_response_ms": 39087,
+  "non_failure_stop_reason": true,
+  "partial_visible": false,
+  "passed": false,
+  "prompt": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test.",
+  "recovered": false,
+  "recovery_actions": 0,
+  "recovery_counts": {},
+  "recovery_mode": "compatible",
+  "repetition": 1,
+  "report": {
+    "attempts": 13,
+    "checkpoint_id": "ckpt_4036ca67",
+    "disabled_recovery_policies": [],
+    "durable_promotions": [],
+    "durable_rejections": [],
+    "durable_superseded": [],
+    "final_answer": "miniapp/config.py already contains `DEFAULT_REQUEST_TIMEOUT = 45`. miniapp/runtime.py is still hardcoding `30`; it needs to be updated to import and use that constant while preserving explicit overrides:\n\n```python\nfrom miniapp.config import DEFAULT_REQUEST_TIMEOUT\n\ndef request_options(timeout=None):\n    return {\"timeout\": DEFAULT_REQUEST_TIMEOUT if timeout is None else timeout}\n```\n\nI could not apply the patch because the tool step limit was reached, so the repository is not yet fully updated.",
+    "model_attempts": 13,
+    "prompt_metadata": {
+      "budget_reductions": [],
+      "cache_hit": true,
+      "cache_miss_tokens": 872,
+      "cache_telemetry_available": true,
+      "cached_tokens": 1024,
+      "current_request": {
+        "raw_chars": 256,
+        "rendered_chars": 256,
+        "section_chars": 278,
+        "text": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test."
+      },
+      "empty_content_retry_count": 0,
+      "finalization_only": true,
+      "finish_reason": "stop",
+      "history": {
+        "collapsed_duplicate_reads": 0,
+        "older_entries_count": 6,
+        "raw_chars": 1882,
+        "rendered_chars": 1371,
+        "reused_file_summary_count": 2,
+        "summarized_tool_count": 4
+      },
+      "history_chars": 1858,
+      "input_tokens": 1896,
+      "memory_chars": 565,
+      "model": "deepseek-v4-flash",
+      "output_tokens": 414,
+      "prefix_changed": false,
+      "prefix_chars": 3923,
+      "prefix_hash": "8c9c054846ccfede9b9f361c7da59ebfedf21b75b95ce221b9781ccf5a9b4a93",
+      "prompt_budget_chars": 12000,
+      "prompt_cache_key": "8c9c054846ccfede9b9f361c7da59ebfedf21b75b95ce221b9781ccf5a9b4a93",
+      "prompt_cache_mode": "automatic_prefix",
+      "prompt_cache_retention": null,
+      "prompt_cache_supported": true,
+      "prompt_chars": 6626,
+      "prompt_over_budget": false,
+      "provider": "deepseek",
+      "reasoning_content_chars": 1392,
+      "reasoning_tokens": 295,
+      "recent_commits": 5,
+      "reduction_order": [
+        "relevant_memory",
+        "history",
+        "memory",
+        "prefix"
+      ],
+      "relevant_memory": {
+        "limit": 3,
+        "query_features": {
+          "ascii_token_count": 34,
+          "cjk_bigram_count": 0,
+          "cjk_trigram_count": 0,
+          "concepts": [
+            "dependency-facts",
+            "testing"
+          ],
+          "identifier_count": 0,
+          "normalized": "the default request timeout must be 45 seconds everywhere. make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. preserve explicit timeout overrides and run the targeted test.",
+          "path_count": 6
+        },
+        "raw_chars": 188,
+        "rendered_chars": 188,
+        "rendered_count": 3,
+        "rendered_notes": [
+          "1: def request_options(timeout=None): | 2:     return {\"timeout\": 30 if timeout is None else timeout}",
+          "1: DEFAULT_REQUEST_TIMEOUT = 45",
+          "1: DEFAULT_REQUEST_TIMEOUT = 30"
+        ],
+        "selected_count": 3,
+        "selected_details": [
+          {
+            "kind": "episodic",
+            "rank": 1,
+            "score": 20.558167,
+            "signals": [
+              "tag:exact=miniapp/runtime.py",
+              "source:exact=miniapp/runtime.py",
+              "tag:concept=dependency-facts:5.000",
+              "text:ascii=0.261",
+              "tag:ascii=0.649",
+              "source:ascii=0.649"
+            ],
+            "source": "miniapp/runtime.py",
+            "text": "1: def request_options(timeout=None): | 2:     return {\"timeout\": 30 if timeout is None else timeout}",
+            "topic": ""
+          },
+          {
+            "kind": "episodic",
+            "rank": 2,
+            "score": 15.912682,
+            "signals": [
+              "tag:exact=miniapp/config.py",
+              "source:exact=miniapp/config.py",
+              "text:ascii=0.615",
+              "tag:ascii=0.649",
+              "source:ascii=0.649"
+            ],
+            "source": "miniapp/config.py",
+            "text": "1: DEFAULT_REQUEST_TIMEOUT = 45",
+            "topic": ""
+          },
+          {
+            "kind": "episodic",
+            "rank": 3,
+            "score": 15.758836,
+            "signals": [
+              "tag:exact=miniapp/config.py",
+              "source:exact=miniapp/config.py",
+              "text:ascii=0.462",
+              "tag:ascii=0.649",
+              "source:ascii=0.649"
+            ],
+            "source": "miniapp/config.py",
+            "text": "1: DEFAULT_REQUEST_TIMEOUT = 30",
+            "topic": ""
+          }
+        ],
+        "selected_durable_count": 0,
+        "selected_kinds": [
+          "episodic",
+          "episodic",
+          "episodic"
+        ],
+        "selected_notes": [
+          "1: def request_options(timeout=None): | 2:     return {\"timeout\": 30 if timeout is None else timeout}",
+          "1: DEFAULT_REQUEST_TIMEOUT = 45",
+          "1: DEFAULT_REQUEST_TIMEOUT = 30"
+        ],
+        "selected_sources": [
+          "miniapp/runtime.py",
+          "miniapp/config.py",
+          "miniapp/config.py"
+        ]
+      },
+      "request_chars": 256,
+      "requested_max_tokens": 512,
+      "resume_status": "full-valid",
+      "runtime_identity_mismatch_fields": [],
+      "secret_env_count": 1,
+      "secret_env_names": [
+        "APRICITY_API_KEY"
+      ],
+      "section_budgets": {
+        "current_request": null,
+        "history": 5200,
+        "memory": 1600,
+        "prefix": 3600,
+        "relevant_memory": 1200
+      },
+      "section_order": [
+        "prefix",
+        "memory",
+        "relevant_memory",
+        "history",
+        "current_request"
+      ],
+      "sections": {
+        "current_request": {
+          "budget_chars": null,
+          "raw_chars": 278,
+          "rendered_chars": 278
+        },
+        "history": {
+          "budget_chars": 5200,
+          "raw_chars": 1882,
+          "rendered_chars": 1371
+        },
+        "memory": {
+          "budget_chars": 1600,
+          "raw_chars": 565,
+          "rendered_chars": 565
+        },
+        "prefix": {
+          "budget_chars": 3600,
+          "raw_chars": 3923,
+          "rendered_chars": 3600
+        },
+        "relevant_memory": {
+          "budget_chars": 1200,
+          "raw_chars": 188,
+          "rendered_chars": 188
+        }
+      },
+      "stale_paths": [],
+      "stale_summary_invalidations": 0,
+      "tool_count": 5,
+      "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+      "total_tokens": 2310,
+      "workspace_changed": false,
+      "workspace_chars": 1364,
+      "workspace_docs": 2,
+      "workspace_fingerprint": "f310a96d3c627568d5a3fb7f80370cf05b71a348b2b8420de9ad67c735924c5e"
+    },
+    "recovery_actions": 0,
+    "recovery_counts": {},
+    "recovery_mode": "compatible",
+    "redacted_env": {
+      "secret_env_count": 1,
+      "secret_env_names": [
+        "APRICITY_API_KEY"
+      ]
+    },
+    "resume_status": "no-checkpoint",
+    "run_id": "run_20260818-205609-75b64b",
+    "status": "completed",
+    "stop_reason": "final_answer_returned",
+    "task_id": "task_20260818-205609-3c0363",
+    "task_state": {
+      "attempts": 13,
+      "checkpoint_id": "ckpt_4036ca67",
+      "final_answer": "miniapp/config.py already contains `DEFAULT_REQUEST_TIMEOUT = 45`. miniapp/runtime.py is still hardcoding `30`; it needs to be updated to import and use that constant while preserving explicit overrides:\n\n```python\nfrom miniapp.config import DEFAULT_REQUEST_TIMEOUT\n\ndef request_options(timeout=None):\n    return {\"timeout\": DEFAULT_REQUEST_TIMEOUT if timeout is None else timeout}\n```\n\nI could not apply the patch because the tool step limit was reached, so the repository is not yet fully updated.",
+      "invalid_tool_attempts": 0,
+      "last_tool": "read_file",
+      "partial_visible": false,
+      "recovery_actions": 0,
+      "recovery_counts": {},
+      "request_id": "req_9bbf755ab73b",
+      "resume_status": "no-checkpoint",
+      "run_id": "run_20260818-205609-75b64b",
+      "status": "completed",
+      "stop_reason": "final_answer_returned",
+      "task_id": "task_20260818-205609-3c0363",
+      "tool_steps": 12,
+      "user_request": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test.",
+      "visible_chars": 0
+    },
+    "tool_steps": 12
+  },
+  "report_relpath": "centralized_timeout_default\\real_model_bench_repo\\.apricity\\runs\\run_20260818-205609-75b64b\\report.json",
+  "run_dir_relpath": "centralized_timeout_default\\real_model_bench_repo\\.apricity\\runs\\run_20260818-205609-75b64b",
+  "run_id": "run_20260818-205609-75b64b",
+  "status": "fail",
+  "step_budget": 12,
+  "stop_reason": "final_answer_returned",
+  "stream_summary": null,
+  "streaming": false,
+  "task_state": {
+    "attempts": 13,
+    "checkpoint_id": "ckpt_4036ca67",
+    "final_answer": "miniapp/config.py already contains `DEFAULT_REQUEST_TIMEOUT = 45`. miniapp/runtime.py is still hardcoding `30`; it needs to be updated to import and use that constant while preserving explicit overrides:\n\n```python\nfrom miniapp.config import DEFAULT_REQUEST_TIMEOUT\n\ndef request_options(timeout=None):\n    return {\"timeout\": DEFAULT_REQUEST_TIMEOUT if timeout is None else timeout}\n```\n\nI could not apply the patch because the tool step limit was reached, so the repository is not yet fully updated.",
+    "invalid_tool_attempts": 0,
+    "last_tool": "read_file",
+    "partial_visible": false,
+    "recovery_actions": 0,
+    "recovery_counts": {},
+    "request_id": "req_9bbf755ab73b",
+    "resume_status": "no-checkpoint",
+    "run_id": "run_20260818-205609-75b64b",
+    "status": "completed",
+    "stop_reason": "final_answer_returned",
+    "task_id": "task_20260818-205609-3c0363",
+    "tool_steps": 12,
+    "user_request": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test.",
+    "visible_chars": 0
+  },
+  "task_state_relpath": "centralized_timeout_default\\real_model_bench_repo\\.apricity\\runs\\run_20260818-205609-75b64b\\task_state.json",
+  "tool_steps": 12,
+  "ttft_ms": null,
+  "verifier": [
+    "python3",
+    "-m",
+    "pytest",
+    "-q",
+    "verifiers/runtime_check.py"
+  ],
+  "verifier_exit_code": 1,
+  "verifier_passed": false,
+  "verifier_stderr": "",
+  "verifier_stdout": "FF                                                                       [100%]\n================================== FAILURES ===================================\n__________________ test_runtime_uses_central_timeout_default __________________\n\n    def test_runtime_uses_central_timeout_default():\n        assert DEFAULT_REQUEST_TIMEOUT == 45\n>       assert request_options() == {\"timeout\": DEFAULT_REQUEST_TIMEOUT}\nE       AssertionError: assert {'timeout': 30} == {'timeout': 45}\nE         \nE         Differing items:\nE         {'timeout': 30} != {'timeout': 45}\nE         Use -v to get more diff\n\n..\\..\\..\\..\\..\\..\\..\\tests\\fixtures\\real_model_bench_repo\\verifiers\\runtime_check.py:7: AssertionError\n_______________ test_runtime_does_not_duplicate_default_literal _______________\n\n    def test_runtime_does_not_duplicate_default_literal():\n        import inspect\n        import miniapp.runtime\n    \n        source = inspect.getsource(miniapp.runtime)\n>       assert \"DEFAULT_REQUEST_TIMEOUT\" in source\nE       assert 'DEFAULT_REQUEST_TIMEOUT' in 'def request_options(timeout=None):\\n    return {\"timeout\": 30 if timeout is None else timeout}\\n'\n\n..\\..\\..\\..\\..\\..\\..\\tests\\fixtures\\real_model_bench_repo\\verifiers\\runtime_check.py:16: AssertionError\n=========================== short test summary info ===========================\nFAILED verifiers/runtime_check.py::test_runtime_uses_central_timeout_default\nFAILED verifiers/runtime_check.py::test_runtime_does_not_duplicate_default_literal\n2 failed in 0.39s\n",
+  "verifier_timed_out": false,
+  "visible_chars": 0,
+  "within_budget": true,
+  "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\streaming-stage2-2026-08-18-205103-workspaces\\no-stream\\deepseek\\repetition-01"
+}

@@ -1,0 +1,1651 @@
+{
+  "artifact_type": "real-model-benchmark-v1",
+  "benchmark": {
+    "sha256": "1cfa9ad8ce1302490211998dfb1144453c3f05c3c9789e9ecb546672bea0a966",
+    "source": "benchmarks\\streaming_stage2_tasks.json",
+    "task_count": 5
+  },
+  "captured_at": "2026-08-18T12:51:03.101213+00:00",
+  "completed_at": "2026-08-18T12:53:54.843794+00:00",
+  "provider": {
+    "base_url": "https://api.deepseek.com",
+    "model": "deepseek-v4-flash",
+    "name": "deepseek"
+  },
+  "rows": [
+    {
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "artifact_digest": "sha256:cddc31fe31f4f327c5e1038109c197a55b535a40afd84be0968c8495e7e663f3",
+      "artifact_exists": true,
+      "artifact_path": "miniapp/calculator.py",
+      "attempts": 8,
+      "category": "bug-fix",
+      "duplicate_side_effects": 0,
+      "duration_seconds": 23.656542,
+      "expected_artifact": "miniapp/calculator.py implements the safe division contract",
+      "expected_artifact_exists": true,
+      "failure_category": null,
+      "fault_injection": {
+        "events": [],
+        "injected": false,
+        "planned": "none"
+      },
+      "final_answer": "Fixed `miniapp/calculator.py`: `safe_divide` now raises `ValueError('division by zero')` when the denominator is zero and returns `numerator / denominator` for normal inputs. Verified with `verifiers/calculator_check.py`: 1 passed.",
+      "fixture_copy_relpath": "safe_divide_contract\\real_model_bench_repo",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "id": "safe_divide_contract",
+      "initial_episodic_notes_empty": true,
+      "initial_history_empty": true,
+      "initial_memory_empty": true,
+      "initial_task_summary_empty": true,
+      "model_response_ms": 15873,
+      "non_failure_stop_reason": true,
+      "partial_visible": false,
+      "passed": true,
+      "prompt": "Fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises ValueError with message 'division by zero' when the denominator is zero. Run the targeted test before finishing.",
+      "recovered": false,
+      "recovery_actions": 0,
+      "recovery_counts": {},
+      "recovery_mode": "compatible",
+      "repetition": 1,
+      "report": {
+        "attempts": 8,
+        "checkpoint_id": "ckpt_d326fb62",
+        "disabled_recovery_policies": [],
+        "durable_promotions": [],
+        "durable_rejections": [],
+        "durable_superseded": [],
+        "final_answer": "Fixed `miniapp/calculator.py`: `safe_divide` now raises `ValueError('division by zero')` when the denominator is zero and returns `numerator / denominator` for normal inputs. Verified with `verifiers/calculator_check.py`: 1 passed.",
+        "model_attempts": 8,
+        "prompt_metadata": {
+          "budget_reductions": [],
+          "cache_hit": true,
+          "cache_miss_tokens": 769,
+          "cache_telemetry_available": true,
+          "cached_tokens": 1024,
+          "current_request": {
+            "raw_chars": 203,
+            "rendered_chars": 203,
+            "section_chars": 225,
+            "text": "Fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises ValueError with message 'division by zero' when the denominator is zero. Run the targeted test before finishing."
+          },
+          "empty_content_retry_count": 0,
+          "finish_reason": "stop",
+          "history": {
+            "collapsed_duplicate_reads": 0,
+            "older_entries_count": 2,
+            "raw_chars": 1959,
+            "rendered_chars": 1581,
+            "reused_file_summary_count": 0,
+            "summarized_tool_count": 2
+          },
+          "history_chars": 1947,
+          "input_tokens": 1793,
+          "memory_chars": 429,
+          "model": "deepseek-v4-flash",
+          "output_tokens": 82,
+          "prefix_changed": false,
+          "prefix_chars": 3836,
+          "prefix_hash": "4fad6ea7fd739dc04843dc625e6901459e3e3e25b0af13bc64157803aed721e1",
+          "prompt_budget_chars": 12000,
+          "prompt_cache_key": "4fad6ea7fd739dc04843dc625e6901459e3e3e25b0af13bc64157803aed721e1",
+          "prompt_cache_mode": "automatic_prefix",
+          "prompt_cache_retention": null,
+          "prompt_cache_supported": true,
+          "prompt_chars": 6521,
+          "prompt_over_budget": false,
+          "provider": "deepseek",
+          "reasoning_content_chars": 83,
+          "reasoning_tokens": 20,
+          "recent_commits": 5,
+          "reduction_order": [
+            "relevant_memory",
+            "history",
+            "memory",
+            "prefix"
+          ],
+          "relevant_memory": {
+            "limit": 3,
+            "query_features": {
+              "ascii_token_count": 30,
+              "cjk_bigram_count": 0,
+              "cjk_trigram_count": 0,
+              "concepts": [
+                "testing"
+              ],
+              "identifier_count": 1,
+              "normalized": "fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises value error with message 'division by zero' when the denominator is zero. run the targeted test before finishing.",
+              "path_count": 3
+            },
+            "raw_chars": 114,
+            "rendered_chars": 114,
+            "rendered_count": 1,
+            "rendered_notes": [
+              "1: def safe_divide(numerator, denominator): | 2:     if denominator == 0: | 3:         return 0"
+            ],
+            "selected_count": 1,
+            "selected_details": [
+              {
+                "kind": "episodic",
+                "rank": 1,
+                "score": 18.14357,
+                "signals": [
+                  "tag:exact=miniapp/calculator.py",
+                  "source:exact=miniapp/calculator.py",
+                  "text:ascii=0.439",
+                  "text:identifier=2.250",
+                  "tag:ascii=0.727",
+                  "source:ascii=0.727"
+                ],
+                "source": "miniapp/calculator.py",
+                "text": "1: def safe_divide(numerator, denominator): | 2:     if denominator == 0: | 3:         return 0",
+                "topic": ""
+              }
+            ],
+            "selected_durable_count": 0,
+            "selected_kinds": [
+              "episodic"
+            ],
+            "selected_notes": [
+              "1: def safe_divide(numerator, denominator): | 2:     if denominator == 0: | 3:         return 0"
+            ],
+            "selected_sources": [
+              "miniapp/calculator.py"
+            ]
+          },
+          "request_chars": 203,
+          "requested_max_tokens": 512,
+          "resume_status": "full-valid",
+          "runtime_identity_mismatch_fields": [],
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ],
+          "section_budgets": {
+            "current_request": null,
+            "history": 5200,
+            "memory": 1600,
+            "prefix": 3600,
+            "relevant_memory": 1200
+          },
+          "section_order": [
+            "prefix",
+            "memory",
+            "relevant_memory",
+            "history",
+            "current_request"
+          ],
+          "sections": {
+            "current_request": {
+              "budget_chars": null,
+              "raw_chars": 225,
+              "rendered_chars": 225
+            },
+            "history": {
+              "budget_chars": 5200,
+              "raw_chars": 1959,
+              "rendered_chars": 1581
+            },
+            "memory": {
+              "budget_chars": 1600,
+              "raw_chars": 429,
+              "rendered_chars": 429
+            },
+            "prefix": {
+              "budget_chars": 3600,
+              "raw_chars": 3836,
+              "rendered_chars": 3600
+            },
+            "relevant_memory": {
+              "budget_chars": 1200,
+              "raw_chars": 114,
+              "rendered_chars": 114
+            }
+          },
+          "stale_paths": [],
+          "stale_summary_invalidations": 0,
+          "tool_count": 5,
+          "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+          "total_tokens": 1875,
+          "workspace_changed": false,
+          "workspace_chars": 1277,
+          "workspace_docs": 2,
+          "workspace_fingerprint": "9f1abecb9934bc0a9ae7d9e33534f10afed9a4c187a491df4410e51f89635654"
+        },
+        "recovery_actions": 0,
+        "recovery_counts": {},
+        "recovery_mode": "compatible",
+        "redacted_env": {
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ]
+        },
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260818-205104-7230cc",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260818-205104-45322c",
+        "task_state": {
+          "attempts": 8,
+          "checkpoint_id": "ckpt_d326fb62",
+          "final_answer": "Fixed `miniapp/calculator.py`: `safe_divide` now raises `ValueError('division by zero')` when the denominator is zero and returns `numerator / denominator` for normal inputs. Verified with `verifiers/calculator_check.py`: 1 passed.",
+          "invalid_tool_attempts": 0,
+          "last_tool": "run_process",
+          "partial_visible": false,
+          "recovery_actions": 0,
+          "recovery_counts": {},
+          "request_id": "req_e3536bb71a30",
+          "resume_status": "no-checkpoint",
+          "run_id": "run_20260818-205104-7230cc",
+          "status": "completed",
+          "stop_reason": "final_answer_returned",
+          "task_id": "task_20260818-205104-45322c",
+          "tool_steps": 7,
+          "user_request": "Fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises ValueError with message 'division by zero' when the denominator is zero. Run the targeted test before finishing.",
+          "visible_chars": 231
+        },
+        "tool_steps": 7
+      },
+      "report_relpath": "safe_divide_contract\\real_model_bench_repo\\.apricity\\runs\\run_20260818-205104-7230cc\\report.json",
+      "run_dir_relpath": "safe_divide_contract\\real_model_bench_repo\\.apricity\\runs\\run_20260818-205104-7230cc",
+      "run_id": "run_20260818-205104-7230cc",
+      "status": "pass",
+      "step_budget": 10,
+      "stop_reason": "final_answer_returned",
+      "stream_summary": {
+        "chunk_count": 56,
+        "created_at": "2026-08-18T12:51:25.814837+00:00",
+        "event": "stream_summary",
+        "first_delta_at": 24588.0,
+        "last_delta_at": 24588.265,
+        "provider_event_count": 63,
+        "request_id": "req_e3536bb71a30",
+        "sink_errors": 0,
+        "streaming": true,
+        "tool_candidate_ready": false,
+        "ttft_ms": 1656,
+        "visible_chars": 231
+      },
+      "streaming": true,
+      "task_state": {
+        "attempts": 8,
+        "checkpoint_id": "ckpt_d326fb62",
+        "final_answer": "Fixed `miniapp/calculator.py`: `safe_divide` now raises `ValueError('division by zero')` when the denominator is zero and returns `numerator / denominator` for normal inputs. Verified with `verifiers/calculator_check.py`: 1 passed.",
+        "invalid_tool_attempts": 0,
+        "last_tool": "run_process",
+        "partial_visible": false,
+        "recovery_actions": 0,
+        "recovery_counts": {},
+        "request_id": "req_e3536bb71a30",
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260818-205104-7230cc",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260818-205104-45322c",
+        "tool_steps": 7,
+        "user_request": "Fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises ValueError with message 'division by zero' when the denominator is zero. Run the targeted test before finishing.",
+        "visible_chars": 231
+      },
+      "task_state_relpath": "safe_divide_contract\\real_model_bench_repo\\.apricity\\runs\\run_20260818-205104-7230cc\\task_state.json",
+      "tool_steps": 7,
+      "ttft_ms": 1656,
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/calculator_check.py"
+      ],
+      "verifier_exit_code": 0,
+      "verifier_passed": true,
+      "verifier_stderr": "",
+      "verifier_stdout": ".                                                                        [100%]\n1 passed in 0.04s\n",
+      "verifier_timed_out": false,
+      "visible_chars": 231,
+      "within_budget": true,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\streaming-stage2-2026-08-18-205103-workspaces\\streaming\\deepseek\\repetition-01"
+    },
+    {
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "artifact_digest": "sha256:db55c875b88fd84f364b5af70a82524ea2f10f31512b9e5a06825d0ab03e7857",
+      "artifact_exists": true,
+      "artifact_path": "miniapp/parser.py",
+      "attempts": 9,
+      "category": "bug-fix",
+      "duplicate_side_effects": 0,
+      "duration_seconds": 25.751716,
+      "expected_artifact": "miniapp/parser.py normalizes CSV fields",
+      "expected_artifact_exists": true,
+      "failure_category": null,
+      "fault_injection": {
+        "events": [],
+        "injected": false,
+        "planned": "none"
+      },
+      "final_answer": "Fixed parse_csv_line in miniapp/parser.py to strip whitespace, drop empty fields, and return [] for blank lines. Ran targeted test: 1 passed.",
+      "fixture_copy_relpath": "csv_field_normalization\\real_model_bench_repo",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "id": "csv_field_normalization",
+      "initial_episodic_notes_empty": true,
+      "initial_history_empty": true,
+      "initial_memory_empty": true,
+      "initial_task_summary_empty": true,
+      "model_response_ms": 18010,
+      "non_failure_stop_reason": true,
+      "partial_visible": false,
+      "passed": true,
+      "prompt": "Fix parse_csv_line in miniapp/parser.py. It must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. Run the targeted test before finishing.",
+      "recovered": false,
+      "recovery_actions": 0,
+      "recovery_counts": {},
+      "recovery_mode": "compatible",
+      "repetition": 1,
+      "report": {
+        "attempts": 9,
+        "checkpoint_id": "ckpt_199b4fed",
+        "disabled_recovery_policies": [],
+        "durable_promotions": [],
+        "durable_rejections": [],
+        "durable_superseded": [],
+        "final_answer": "Fixed parse_csv_line in miniapp/parser.py to strip whitespace, drop empty fields, and return [] for blank lines. Ran targeted test: 1 passed.",
+        "model_attempts": 9,
+        "prompt_metadata": {
+          "budget_reductions": [],
+          "cache_hit": true,
+          "cache_miss_tokens": 802,
+          "cache_telemetry_available": true,
+          "cached_tokens": 1024,
+          "current_request": {
+            "raw_chars": 184,
+            "rendered_chars": 184,
+            "section_chars": 206,
+            "text": "Fix parse_csv_line in miniapp/parser.py. It must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. Run the targeted test before finishing."
+          },
+          "empty_content_retry_count": 0,
+          "finish_reason": "stop",
+          "history": {
+            "collapsed_duplicate_reads": 0,
+            "older_entries_count": 3,
+            "raw_chars": 1939,
+            "rendered_chars": 1653,
+            "reused_file_summary_count": 0,
+            "summarized_tool_count": 3
+          },
+          "history_chars": 1927,
+          "input_tokens": 1826,
+          "memory_chars": 405,
+          "model": "deepseek-v4-flash",
+          "output_tokens": 61,
+          "prefix_changed": false,
+          "prefix_chars": 3915,
+          "prefix_hash": "242742e0c8e15b7c11b200ebf2a636aaac8c8797ce59044350f52c6e1e71a20b",
+          "prompt_budget_chars": 12000,
+          "prompt_cache_key": "242742e0c8e15b7c11b200ebf2a636aaac8c8797ce59044350f52c6e1e71a20b",
+          "prompt_cache_mode": "automatic_prefix",
+          "prompt_cache_retention": null,
+          "prompt_cache_supported": true,
+          "prompt_chars": 6560,
+          "prompt_over_budget": false,
+          "provider": "deepseek",
+          "reasoning_content_chars": 93,
+          "reasoning_tokens": 20,
+          "recent_commits": 5,
+          "reduction_order": [
+            "relevant_memory",
+            "history",
+            "memory",
+            "prefix"
+          ],
+          "relevant_memory": {
+            "limit": 3,
+            "query_features": {
+              "ascii_token_count": 29,
+              "cjk_bigram_count": 0,
+              "cjk_trigram_count": 0,
+              "concepts": [
+                "testing"
+              ],
+              "identifier_count": 1,
+              "normalized": "fix parse_csv_line in miniapp/parser.py. it must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. run the targeted test before finishing.",
+              "path_count": 3
+            },
+            "raw_chars": 136,
+            "rendered_chars": 136,
+            "rendered_count": 2,
+            "rendered_notes": [
+              "1: def parse_csv_line(line): | 2:     return line.split(\",\")",
+              "1: from miniapp.parser import parse_csv_line | 2: | 3:"
+            ],
+            "selected_count": 2,
+            "selected_details": [
+              {
+                "kind": "episodic",
+                "rank": 1,
+                "score": 18.398649,
+                "signals": [
+                  "tag:exact=miniapp/parser.py",
+                  "source:exact=miniapp/parser.py",
+                  "text:ascii=0.649",
+                  "text:identifier=2.250",
+                  "tag:ascii=0.750",
+                  "source:ascii=0.750"
+                ],
+                "source": "miniapp/parser.py",
+                "text": "1: def parse_csv_line(line): | 2:     return line.split(\",\")",
+                "topic": ""
+              },
+              {
+                "kind": "episodic",
+                "rank": 2,
+                "score": 3.988928,
+                "signals": [
+                  "text:ascii=0.769",
+                  "text:identifier=2.250",
+                  "tag:ascii=0.485",
+                  "source:ascii=0.485"
+                ],
+                "source": "verifiers/parser_check.py",
+                "text": "1: from miniapp.parser import parse_csv_line | 2: | 3:",
+                "topic": ""
+              }
+            ],
+            "selected_durable_count": 0,
+            "selected_kinds": [
+              "episodic",
+              "episodic"
+            ],
+            "selected_notes": [
+              "1: def parse_csv_line(line): | 2:     return line.split(\",\")",
+              "1: from miniapp.parser import parse_csv_line | 2: | 3:"
+            ],
+            "selected_sources": [
+              "miniapp/parser.py",
+              "verifiers/parser_check.py"
+            ]
+          },
+          "request_chars": 184,
+          "requested_max_tokens": 512,
+          "resume_status": "full-valid",
+          "runtime_identity_mismatch_fields": [],
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ],
+          "section_budgets": {
+            "current_request": null,
+            "history": 5200,
+            "memory": 1600,
+            "prefix": 3600,
+            "relevant_memory": 1200
+          },
+          "section_order": [
+            "prefix",
+            "memory",
+            "relevant_memory",
+            "history",
+            "current_request"
+          ],
+          "sections": {
+            "current_request": {
+              "budget_chars": null,
+              "raw_chars": 206,
+              "rendered_chars": 206
+            },
+            "history": {
+              "budget_chars": 5200,
+              "raw_chars": 1939,
+              "rendered_chars": 1653
+            },
+            "memory": {
+              "budget_chars": 1600,
+              "raw_chars": 405,
+              "rendered_chars": 405
+            },
+            "prefix": {
+              "budget_chars": 3600,
+              "raw_chars": 3915,
+              "rendered_chars": 3600
+            },
+            "relevant_memory": {
+              "budget_chars": 1200,
+              "raw_chars": 136,
+              "rendered_chars": 136
+            }
+          },
+          "stale_paths": [],
+          "stale_summary_invalidations": 0,
+          "tool_count": 5,
+          "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+          "total_tokens": 1887,
+          "workspace_changed": false,
+          "workspace_chars": 1356,
+          "workspace_docs": 2,
+          "workspace_fingerprint": "97d40a32cbae9d5fa866ddb2feb1efc36925fdfee4abb7425ab6c6d50158073f"
+        },
+        "recovery_actions": 0,
+        "recovery_counts": {},
+        "recovery_mode": "compatible",
+        "redacted_env": {
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ]
+        },
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260818-205127-39c7c0",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260818-205127-caf1c3",
+        "task_state": {
+          "attempts": 9,
+          "checkpoint_id": "ckpt_199b4fed",
+          "final_answer": "Fixed parse_csv_line in miniapp/parser.py to strip whitespace, drop empty fields, and return [] for blank lines. Ran targeted test: 1 passed.",
+          "invalid_tool_attempts": 0,
+          "last_tool": "run_process",
+          "partial_visible": false,
+          "recovery_actions": 0,
+          "recovery_counts": {},
+          "request_id": "req_3fc84918cdc6",
+          "resume_status": "no-checkpoint",
+          "run_id": "run_20260818-205127-39c7c0",
+          "status": "completed",
+          "stop_reason": "final_answer_returned",
+          "task_id": "task_20260818-205127-caf1c3",
+          "tool_steps": 8,
+          "user_request": "Fix parse_csv_line in miniapp/parser.py. It must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. Run the targeted test before finishing.",
+          "visible_chars": 141
+        },
+        "tool_steps": 8
+      },
+      "report_relpath": "csv_field_normalization\\real_model_bench_repo\\.apricity\\runs\\run_20260818-205127-39c7c0\\report.json",
+      "run_dir_relpath": "csv_field_normalization\\real_model_bench_repo\\.apricity\\runs\\run_20260818-205127-39c7c0",
+      "run_id": "run_20260818-205127-39c7c0",
+      "status": "pass",
+      "step_budget": 10,
+      "stop_reason": "final_answer_returned",
+      "stream_summary": {
+        "chunk_count": 36,
+        "created_at": "2026-08-18T12:51:51.587950+00:00",
+        "event": "stream_summary",
+        "first_delta_at": 24613.765,
+        "last_delta_at": 24614.031,
+        "provider_event_count": 42,
+        "request_id": "req_3fc84918cdc6",
+        "sink_errors": 0,
+        "streaming": true,
+        "tool_candidate_ready": false,
+        "ttft_ms": 1077,
+        "visible_chars": 141
+      },
+      "streaming": true,
+      "task_state": {
+        "attempts": 9,
+        "checkpoint_id": "ckpt_199b4fed",
+        "final_answer": "Fixed parse_csv_line in miniapp/parser.py to strip whitespace, drop empty fields, and return [] for blank lines. Ran targeted test: 1 passed.",
+        "invalid_tool_attempts": 0,
+        "last_tool": "run_process",
+        "partial_visible": false,
+        "recovery_actions": 0,
+        "recovery_counts": {},
+        "request_id": "req_3fc84918cdc6",
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260818-205127-39c7c0",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260818-205127-caf1c3",
+        "tool_steps": 8,
+        "user_request": "Fix parse_csv_line in miniapp/parser.py. It must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. Run the targeted test before finishing.",
+        "visible_chars": 141
+      },
+      "task_state_relpath": "csv_field_normalization\\real_model_bench_repo\\.apricity\\runs\\run_20260818-205127-39c7c0\\task_state.json",
+      "tool_steps": 8,
+      "ttft_ms": 1077,
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/parser_check.py"
+      ],
+      "verifier_exit_code": 0,
+      "verifier_passed": true,
+      "verifier_stderr": "",
+      "verifier_stdout": ".                                                                        [100%]\n1 passed in 0.04s\n",
+      "verifier_timed_out": false,
+      "visible_chars": 141,
+      "within_budget": true,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\streaming-stage2-2026-08-18-205103-workspaces\\streaming\\deepseek\\repetition-01"
+    },
+    {
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "artifact_digest": "sha256:693c40d74e19e494504a57cf62435c6d4a63f562904574cfb2c5f17897b3fe53",
+      "artifact_exists": true,
+      "artifact_path": "miniapp/retry.py",
+      "attempts": 9,
+      "category": "bug-fix",
+      "duplicate_side_effects": 0,
+      "duration_seconds": 29.206139,
+      "expected_artifact": "miniapp/retry.py obeys the total attempt budget",
+      "expected_artifact_exists": true,
+      "failure_category": null,
+      "fault_injection": {
+        "events": [],
+        "injected": false,
+        "planned": "none"
+      },
+      "final_answer": "Fixed run_with_retries in miniapp/retry.py: max_attempts is now the total call budget, ValueError is raised for max_attempts < 1, success returns immediately, and the final exception is re-raised after the budget is exhausted. Targeted test passes: 2 passed.",
+      "fixture_copy_relpath": "retry_attempt_budget\\real_model_bench_repo",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "id": "retry_attempt_budget",
+      "initial_episodic_notes_empty": true,
+      "initial_history_empty": true,
+      "initial_memory_empty": true,
+      "initial_task_summary_empty": true,
+      "model_response_ms": 21511,
+      "non_failure_stop_reason": true,
+      "partial_visible": false,
+      "passed": true,
+      "prompt": "Fix run_with_retries in miniapp/retry.py. max_attempts is the total number of calls, not the number of retries after the first call. Reject max_attempts below 1 with ValueError, return immediately on success, and re-raise the final exception after the budget is exhausted. Run the targeted test.",
+      "recovered": false,
+      "recovery_actions": 0,
+      "recovery_counts": {},
+      "recovery_mode": "compatible",
+      "repetition": 1,
+      "report": {
+        "attempts": 9,
+        "checkpoint_id": "ckpt_91d92979",
+        "disabled_recovery_policies": [],
+        "durable_promotions": [],
+        "durable_rejections": [],
+        "durable_superseded": [],
+        "final_answer": "Fixed run_with_retries in miniapp/retry.py: max_attempts is now the total call budget, ValueError is raised for max_attempts < 1, success returns immediately, and the final exception is re-raised after the budget is exhausted. Targeted test passes: 2 passed.",
+        "model_attempts": 9,
+        "prompt_metadata": {
+          "budget_reductions": [],
+          "cache_hit": true,
+          "cache_miss_tokens": 1329,
+          "cache_telemetry_available": true,
+          "cached_tokens": 1024,
+          "current_request": {
+            "raw_chars": 295,
+            "rendered_chars": 295,
+            "section_chars": 317,
+            "text": "Fix run_with_retries in miniapp/retry.py. max_attempts is the total number of calls, not the number of retries after the first call. Reject max_attempts below 1 with ValueError, return immediately on success, and re-raise the final exception after the budget is exhausted. Run the targeted test."
+          },
+          "empty_content_retry_count": 0,
+          "finish_reason": "stop",
+          "history": {
+            "collapsed_duplicate_reads": 0,
+            "older_entries_count": 3,
+            "raw_chars": 3499,
+            "rendered_chars": 2864,
+            "reused_file_summary_count": 0,
+            "summarized_tool_count": 3
+          },
+          "history_chars": 3343,
+          "input_tokens": 2353,
+          "memory_chars": 528,
+          "model": "deepseek-v4-flash",
+          "output_tokens": 103,
+          "prefix_changed": false,
+          "prefix_chars": 3909,
+          "prefix_hash": "bbb9801219b3a18468d06b4fa4d38a9bac923a5b63c955ca45913a7c38ed5b4b",
+          "prompt_budget_chars": 12000,
+          "prompt_cache_key": "bbb9801219b3a18468d06b4fa4d38a9bac923a5b63c955ca45913a7c38ed5b4b",
+          "prompt_cache_mode": "automatic_prefix",
+          "prompt_cache_retention": null,
+          "prompt_cache_supported": true,
+          "prompt_chars": 8189,
+          "prompt_over_budget": false,
+          "provider": "deepseek",
+          "reasoning_content_chars": 138,
+          "reasoning_tokens": 33,
+          "recent_commits": 5,
+          "reduction_order": [
+            "relevant_memory",
+            "history",
+            "memory",
+            "prefix"
+          ],
+          "relevant_memory": {
+            "limit": 3,
+            "query_features": {
+              "ascii_token_count": 38,
+              "cjk_bigram_count": 0,
+              "cjk_trigram_count": 0,
+              "concepts": [
+                "testing"
+              ],
+              "identifier_count": 2,
+              "normalized": "fix run_with_retries in miniapp/retry.py. max_attempts is the total number of calls, not the number of retries after the first call. reject max_attempts below 1 with value error, return immediately on success, and re-raise the final exception after the budget is exhausted. run the targeted test.",
+              "path_count": 3
+            },
+            "raw_chars": 210,
+            "rendered_chars": 210,
+            "rendered_count": 2,
+            "rendered_notes": [
+              "1: def run_with_retries(operation, max_attempts): | 2:     last_error = None | 3:     for _ in range(max_attempts + 1):",
+              "1: import pytest | 2: | 3: from miniapp.retry import run_with_retries"
+            ],
+            "selected_count": 2,
+            "selected_details": [
+              {
+                "kind": "episodic",
+                "rank": 1,
+                "score": 17.859621,
+                "signals": [
+                  "tag:exact=miniapp/retry.py",
+                  "source:exact=miniapp/retry.py",
+                  "text:ascii=0.889",
+                  "text:identifier=1.800",
+                  "tag:ascii=0.585",
+                  "source:ascii=0.585"
+                ],
+                "source": "miniapp/retry.py",
+                "text": "1: def run_with_retries(operation, max_attempts): | 2:     last_error = None | 3:     for _ in range(max_attempts + 1):",
+                "topic": ""
+              },
+              {
+                "kind": "episodic",
+                "rank": 2,
+                "score": 3.796599,
+                "signals": [
+                  "text:concept=testing:0.800",
+                  "text:ascii=0.735",
+                  "text:identifier=1.500",
+                  "tag:ascii=0.381",
+                  "source:ascii=0.381"
+                ],
+                "source": "verifiers/retry_check.py",
+                "text": "1: import pytest | 2: | 3: from miniapp.retry import run_with_retries",
+                "topic": ""
+              }
+            ],
+            "selected_durable_count": 0,
+            "selected_kinds": [
+              "episodic",
+              "episodic"
+            ],
+            "selected_notes": [
+              "1: def run_with_retries(operation, max_attempts): | 2:     last_error = None | 3:     for _ in range(max_attempts + 1):",
+              "1: import pytest | 2: | 3: from miniapp.retry import run_with_retries"
+            ],
+            "selected_sources": [
+              "miniapp/retry.py",
+              "verifiers/retry_check.py"
+            ]
+          },
+          "request_chars": 295,
+          "requested_max_tokens": 512,
+          "resume_status": "full-valid",
+          "runtime_identity_mismatch_fields": [],
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ],
+          "section_budgets": {
+            "current_request": null,
+            "history": 5200,
+            "memory": 1600,
+            "prefix": 3600,
+            "relevant_memory": 1200
+          },
+          "section_order": [
+            "prefix",
+            "memory",
+            "relevant_memory",
+            "history",
+            "current_request"
+          ],
+          "sections": {
+            "current_request": {
+              "budget_chars": null,
+              "raw_chars": 317,
+              "rendered_chars": 317
+            },
+            "history": {
+              "budget_chars": 5200,
+              "raw_chars": 3499,
+              "rendered_chars": 2864
+            },
+            "memory": {
+              "budget_chars": 1600,
+              "raw_chars": 528,
+              "rendered_chars": 528
+            },
+            "prefix": {
+              "budget_chars": 3600,
+              "raw_chars": 3909,
+              "rendered_chars": 3600
+            },
+            "relevant_memory": {
+              "budget_chars": 1200,
+              "raw_chars": 210,
+              "rendered_chars": 210
+            }
+          },
+          "stale_paths": [],
+          "stale_summary_invalidations": 0,
+          "tool_count": 5,
+          "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+          "total_tokens": 2456,
+          "workspace_changed": false,
+          "workspace_chars": 1350,
+          "workspace_docs": 2,
+          "workspace_fingerprint": "a63a990bf6a884c0bf38fb51cc86d57b5db1fdaba3e961de581f322ceb4eea69"
+        },
+        "recovery_actions": 0,
+        "recovery_counts": {},
+        "recovery_mode": "compatible",
+        "redacted_env": {
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ]
+        },
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260818-205153-fc2320",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260818-205153-5dd051",
+        "task_state": {
+          "attempts": 9,
+          "checkpoint_id": "ckpt_91d92979",
+          "final_answer": "Fixed run_with_retries in miniapp/retry.py: max_attempts is now the total call budget, ValueError is raised for max_attempts < 1, success returns immediately, and the final exception is re-raised after the budget is exhausted. Targeted test passes: 2 passed.",
+          "invalid_tool_attempts": 0,
+          "last_tool": "run_process",
+          "partial_visible": false,
+          "recovery_actions": 0,
+          "recovery_counts": {},
+          "request_id": "req_8b003facf92a",
+          "resume_status": "no-checkpoint",
+          "run_id": "run_20260818-205153-fc2320",
+          "status": "completed",
+          "stop_reason": "final_answer_returned",
+          "task_id": "task_20260818-205153-5dd051",
+          "tool_steps": 7,
+          "user_request": "Fix run_with_retries in miniapp/retry.py. max_attempts is the total number of calls, not the number of retries after the first call. Reject max_attempts below 1 with ValueError, return immediately on success, and re-raise the final exception after the budget is exhausted. Run the targeted test.",
+          "visible_chars": 258
+        },
+        "tool_steps": 7
+      },
+      "report_relpath": "retry_attempt_budget\\real_model_bench_repo\\.apricity\\runs\\run_20260818-205153-fc2320\\report.json",
+      "run_dir_relpath": "retry_attempt_budget\\real_model_bench_repo\\.apricity\\runs\\run_20260818-205153-fc2320",
+      "run_id": "run_20260818-205153-fc2320",
+      "status": "pass",
+      "step_budget": 12,
+      "stop_reason": "final_answer_returned",
+      "stream_summary": {
+        "chunk_count": 65,
+        "created_at": "2026-08-18T12:52:20.779823+00:00",
+        "event": "stream_summary",
+        "first_delta_at": 24642.796,
+        "last_delta_at": 24643.234,
+        "provider_event_count": 71,
+        "request_id": "req_8b003facf92a",
+        "sink_errors": 0,
+        "streaming": true,
+        "tool_candidate_ready": false,
+        "ttft_ms": 1436,
+        "visible_chars": 258
+      },
+      "streaming": true,
+      "task_state": {
+        "attempts": 9,
+        "checkpoint_id": "ckpt_91d92979",
+        "final_answer": "Fixed run_with_retries in miniapp/retry.py: max_attempts is now the total call budget, ValueError is raised for max_attempts < 1, success returns immediately, and the final exception is re-raised after the budget is exhausted. Targeted test passes: 2 passed.",
+        "invalid_tool_attempts": 0,
+        "last_tool": "run_process",
+        "partial_visible": false,
+        "recovery_actions": 0,
+        "recovery_counts": {},
+        "request_id": "req_8b003facf92a",
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260818-205153-fc2320",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260818-205153-5dd051",
+        "tool_steps": 7,
+        "user_request": "Fix run_with_retries in miniapp/retry.py. max_attempts is the total number of calls, not the number of retries after the first call. Reject max_attempts below 1 with ValueError, return immediately on success, and re-raise the final exception after the budget is exhausted. Run the targeted test.",
+        "visible_chars": 258
+      },
+      "task_state_relpath": "retry_attempt_budget\\real_model_bench_repo\\.apricity\\runs\\run_20260818-205153-fc2320\\task_state.json",
+      "tool_steps": 7,
+      "ttft_ms": 1436,
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/retry_check.py"
+      ],
+      "verifier_exit_code": 0,
+      "verifier_passed": true,
+      "verifier_stderr": "",
+      "verifier_stdout": "..                                                                       [100%]\n2 passed in 0.04s\n",
+      "verifier_timed_out": false,
+      "visible_chars": 258,
+      "within_budget": true,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\streaming-stage2-2026-08-18-205103-workspaces\\streaming\\deepseek\\repetition-01"
+    },
+    {
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "artifact_digest": "sha256:d0d065126bd2f0998e4e64626cb259879e7431285a440116f4714f85823da86b",
+      "artifact_exists": true,
+      "artifact_path": "miniapp/cache.py",
+      "attempts": 12,
+      "category": "bug-fix",
+      "duplicate_side_effects": 0,
+      "duration_seconds": 35.859404,
+      "expected_artifact": "miniapp/cache.py avoids shared mutable default state",
+      "expected_artifact_exists": true,
+      "failure_category": null,
+      "fault_injection": {
+        "events": [],
+        "injected": false,
+        "planned": "none"
+      },
+      "final_answer": "Fixed `miniapp/cache.py`: `BucketCache.__init__` now uses `storage=None` and creates a fresh dict per instance when no storage is passed, so separate default instances no longer share mutable state. Callers can still pass an explicit dict, which is shared as before.\n\nThe patch was applied successfully. I could not run the targeted test in this turn because the tool-step limit was reached, so no test result is reported.",
+      "fixture_copy_relpath": "cache_instance_isolation\\real_model_bench_repo",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "id": "cache_instance_isolation",
+      "initial_episodic_notes_empty": true,
+      "initial_history_empty": true,
+      "initial_memory_empty": true,
+      "initial_task_summary_empty": true,
+      "model_response_ms": 26946,
+      "non_failure_stop_reason": true,
+      "partial_visible": false,
+      "passed": true,
+      "prompt": "Fix BucketCache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. Run the targeted test before finishing.",
+      "recovered": false,
+      "recovery_actions": 0,
+      "recovery_counts": {},
+      "recovery_mode": "compatible",
+      "repetition": 1,
+      "report": {
+        "attempts": 12,
+        "checkpoint_id": "ckpt_aaea30dd",
+        "disabled_recovery_policies": [],
+        "durable_promotions": [],
+        "durable_rejections": [],
+        "durable_superseded": [],
+        "final_answer": "Fixed `miniapp/cache.py`: `BucketCache.__init__` now uses `storage=None` and creates a fresh dict per instance when no storage is passed, so separate default instances no longer share mutable state. Callers can still pass an explicit dict, which is shared as before.\n\nThe patch was applied successfully. I could not run the targeted test in this turn because the tool-step limit was reached, so no test result is reported.",
+        "model_attempts": 12,
+        "prompt_metadata": {
+          "budget_reductions": [],
+          "cache_hit": true,
+          "cache_miss_tokens": 1020,
+          "cache_telemetry_available": true,
+          "cached_tokens": 1024,
+          "current_request": {
+            "raw_chars": 203,
+            "rendered_chars": 203,
+            "section_chars": 225,
+            "text": "Fix BucketCache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. Run the targeted test before finishing."
+          },
+          "empty_content_retry_count": 0,
+          "finalization_only": true,
+          "finish_reason": "stop",
+          "history": {
+            "collapsed_duplicate_reads": 0,
+            "older_entries_count": 5,
+            "raw_chars": 2700,
+            "rendered_chars": 2093,
+            "reused_file_summary_count": 0,
+            "summarized_tool_count": 5
+          },
+          "history_chars": 2584,
+          "input_tokens": 2044,
+          "memory_chars": 417,
+          "model": "deepseek-v4-flash",
+          "output_tokens": 303,
+          "prefix_changed": false,
+          "prefix_chars": 3917,
+          "prefix_hash": "3599d8035b15e108eb9ebf9d51e8f7c196c59ec69e077575bd32e6a9b79c0df0",
+          "prompt_budget_chars": 12000,
+          "prompt_cache_key": "3599d8035b15e108eb9ebf9d51e8f7c196c59ec69e077575bd32e6a9b79c0df0",
+          "prompt_cache_mode": "automatic_prefix",
+          "prompt_cache_retention": null,
+          "prompt_cache_supported": true,
+          "prompt_chars": 7081,
+          "prompt_over_budget": false,
+          "provider": "deepseek",
+          "reasoning_content_chars": 1022,
+          "reasoning_tokens": 206,
+          "recent_commits": 5,
+          "reduction_order": [
+            "relevant_memory",
+            "history",
+            "memory",
+            "prefix"
+          ],
+          "relevant_memory": {
+            "limit": 3,
+            "query_features": {
+              "ascii_token_count": 31,
+              "cjk_bigram_count": 0,
+              "cjk_trigram_count": 0,
+              "concepts": [
+                "testing"
+              ],
+              "identifier_count": 0,
+              "normalized": "fix bucket cache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. run the targeted test before finishing.",
+              "path_count": 3
+            },
+            "raw_chars": 170,
+            "rendered_chars": 170,
+            "rendered_count": 2,
+            "rendered_notes": [
+              "1: class BucketCache: | 2:     def __init__(self, storage={}): | 3:         self.storage = storage",
+              "1: from miniapp.cache import BucketCache | 2: | 3:"
+            ],
+            "selected_count": 2,
+            "selected_details": [
+              {
+                "kind": "episodic",
+                "rank": 1,
+                "score": 15.850789,
+                "signals": [
+                  "tag:exact=miniapp/cache.py",
+                  "source:exact=miniapp/cache.py",
+                  "text:ascii=0.439",
+                  "tag:ascii=0.706",
+                  "source:ascii=0.706"
+                ],
+                "source": "miniapp/cache.py",
+                "text": "1: class BucketCache: | 2:     def __init__(self, storage={}): | 3:         self.storage = storage",
+                "topic": ""
+              },
+              {
+                "kind": "episodic",
+                "rank": 2,
+                "score": 1.375824,
+                "signals": [
+                  "text:ascii=0.462",
+                  "tag:ascii=0.457",
+                  "source:ascii=0.457"
+                ],
+                "source": "verifiers/cache_check.py",
+                "text": "1: from miniapp.cache import BucketCache | 2: | 3:",
+                "topic": ""
+              }
+            ],
+            "selected_durable_count": 0,
+            "selected_kinds": [
+              "episodic",
+              "episodic"
+            ],
+            "selected_notes": [
+              "1: class BucketCache: | 2:     def __init__(self, storage={}): | 3:         self.storage = storage",
+              "1: from miniapp.cache import BucketCache | 2: | 3:"
+            ],
+            "selected_sources": [
+              "miniapp/cache.py",
+              "verifiers/cache_check.py"
+            ]
+          },
+          "request_chars": 203,
+          "requested_max_tokens": 512,
+          "resume_status": "full-valid",
+          "runtime_identity_mismatch_fields": [],
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ],
+          "section_budgets": {
+            "current_request": null,
+            "history": 5200,
+            "memory": 1600,
+            "prefix": 3600,
+            "relevant_memory": 1200
+          },
+          "section_order": [
+            "prefix",
+            "memory",
+            "relevant_memory",
+            "history",
+            "current_request"
+          ],
+          "sections": {
+            "current_request": {
+              "budget_chars": null,
+              "raw_chars": 225,
+              "rendered_chars": 225
+            },
+            "history": {
+              "budget_chars": 5200,
+              "raw_chars": 2700,
+              "rendered_chars": 2093
+            },
+            "memory": {
+              "budget_chars": 1600,
+              "raw_chars": 417,
+              "rendered_chars": 417
+            },
+            "prefix": {
+              "budget_chars": 3600,
+              "raw_chars": 3917,
+              "rendered_chars": 3600
+            },
+            "relevant_memory": {
+              "budget_chars": 1200,
+              "raw_chars": 170,
+              "rendered_chars": 170
+            }
+          },
+          "stale_paths": [],
+          "stale_summary_invalidations": 0,
+          "tool_count": 5,
+          "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+          "total_tokens": 2347,
+          "workspace_changed": false,
+          "workspace_chars": 1358,
+          "workspace_docs": 2,
+          "workspace_fingerprint": "7b2adfe46d986f7ef469ddb35f3a8afaba154d38742271a7df55e6505e649c35"
+        },
+        "recovery_actions": 0,
+        "recovery_counts": {},
+        "recovery_mode": "compatible",
+        "redacted_env": {
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ]
+        },
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260818-205222-d53ec6",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260818-205222-adbb7c",
+        "task_state": {
+          "attempts": 12,
+          "checkpoint_id": "ckpt_aaea30dd",
+          "final_answer": "Fixed `miniapp/cache.py`: `BucketCache.__init__` now uses `storage=None` and creates a fresh dict per instance when no storage is passed, so separate default instances no longer share mutable state. Callers can still pass an explicit dict, which is shared as before.\n\nThe patch was applied successfully. I could not run the targeted test in this turn because the tool-step limit was reached, so no test result is reported.",
+          "invalid_tool_attempts": 1,
+          "last_tool": "patch_file",
+          "partial_visible": false,
+          "recovery_actions": 0,
+          "recovery_counts": {},
+          "request_id": "req_07021c385e2c",
+          "resume_status": "no-checkpoint",
+          "run_id": "run_20260818-205222-d53ec6",
+          "status": "completed",
+          "stop_reason": "final_answer_returned",
+          "task_id": "task_20260818-205222-adbb7c",
+          "tool_steps": 10,
+          "user_request": "Fix BucketCache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. Run the targeted test before finishing.",
+          "visible_chars": 422
+        },
+        "tool_steps": 10
+      },
+      "report_relpath": "cache_instance_isolation\\real_model_bench_repo\\.apricity\\runs\\run_20260818-205222-d53ec6\\report.json",
+      "run_dir_relpath": "cache_instance_isolation\\real_model_bench_repo\\.apricity\\runs\\run_20260818-205222-d53ec6",
+      "run_id": "run_20260818-205222-d53ec6",
+      "status": "pass",
+      "step_budget": 10,
+      "stop_reason": "final_answer_returned",
+      "stream_summary": {
+        "chunk_count": 90,
+        "created_at": "2026-08-18T12:52:56.053247+00:00",
+        "event": "stream_summary",
+        "first_delta_at": 24677.703,
+        "last_delta_at": 24678.5,
+        "provider_event_count": 98,
+        "request_id": "req_07021c385e2c",
+        "sink_errors": 0,
+        "streaming": true,
+        "tool_candidate_ready": false,
+        "ttft_ms": 3422,
+        "visible_chars": 422
+      },
+      "streaming": true,
+      "task_state": {
+        "attempts": 12,
+        "checkpoint_id": "ckpt_aaea30dd",
+        "final_answer": "Fixed `miniapp/cache.py`: `BucketCache.__init__` now uses `storage=None` and creates a fresh dict per instance when no storage is passed, so separate default instances no longer share mutable state. Callers can still pass an explicit dict, which is shared as before.\n\nThe patch was applied successfully. I could not run the targeted test in this turn because the tool-step limit was reached, so no test result is reported.",
+        "invalid_tool_attempts": 1,
+        "last_tool": "patch_file",
+        "partial_visible": false,
+        "recovery_actions": 0,
+        "recovery_counts": {},
+        "request_id": "req_07021c385e2c",
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260818-205222-d53ec6",
+        "status": "completed",
+        "stop_reason": "final_answer_returned",
+        "task_id": "task_20260818-205222-adbb7c",
+        "tool_steps": 10,
+        "user_request": "Fix BucketCache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. Run the targeted test before finishing.",
+        "visible_chars": 422
+      },
+      "task_state_relpath": "cache_instance_isolation\\real_model_bench_repo\\.apricity\\runs\\run_20260818-205222-d53ec6\\task_state.json",
+      "tool_steps": 10,
+      "ttft_ms": 3422,
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/cache_check.py"
+      ],
+      "verifier_exit_code": 0,
+      "verifier_passed": true,
+      "verifier_stderr": "",
+      "verifier_stdout": ".                                                                        [100%]\n1 passed in 0.04s\n",
+      "verifier_timed_out": false,
+      "visible_chars": 422,
+      "within_budget": true,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\streaming-stage2-2026-08-18-205103-workspaces\\streaming\\deepseek\\repetition-01"
+    },
+    {
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "artifact_digest": "sha256:2801c1cc7c8976731ab1ac87d5ee3c411b58076b78300585bf36196ad0299525",
+      "artifact_exists": true,
+      "artifact_path": "miniapp/runtime.py",
+      "attempts": 15,
+      "category": "cross-file",
+      "duplicate_side_effects": 0,
+      "duration_seconds": 56.965688,
+      "expected_artifact": "config and runtime share one default timeout constant",
+      "expected_artifact_exists": true,
+      "failure_category": "verifier_failed",
+      "fault_injection": {
+        "events": [],
+        "injected": false,
+        "planned": "none"
+      },
+      "final_answer": "Stopped by recovery policy: finalization_only.",
+      "fixture_copy_relpath": "centralized_timeout_default\\real_model_bench_repo",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "id": "centralized_timeout_default",
+      "initial_episodic_notes_empty": true,
+      "initial_history_empty": true,
+      "initial_memory_empty": true,
+      "initial_task_summary_empty": true,
+      "model_response_ms": 46416,
+      "non_failure_stop_reason": false,
+      "partial_visible": false,
+      "passed": false,
+      "prompt": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test.",
+      "recovered": false,
+      "recovery_actions": 0,
+      "recovery_counts": {},
+      "recovery_mode": "compatible",
+      "repetition": 1,
+      "report": {
+        "attempts": 15,
+        "checkpoint_id": "ckpt_5d41425a",
+        "disabled_recovery_policies": [],
+        "durable_promotions": [],
+        "durable_rejections": [],
+        "durable_superseded": [],
+        "final_answer": "Stopped by recovery policy: finalization_only.",
+        "model_attempts": 15,
+        "prompt_metadata": {
+          "budget_reductions": [],
+          "cache_hit": true,
+          "cache_miss_tokens": 531,
+          "cache_telemetry_available": true,
+          "cached_tokens": 1408,
+          "current_request": {
+            "raw_chars": 256,
+            "rendered_chars": 256,
+            "section_chars": 278,
+            "text": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test."
+          },
+          "empty_content_retry_count": 0,
+          "finalization_only": true,
+          "finish_reason": "length",
+          "history": {
+            "collapsed_duplicate_reads": 0,
+            "older_entries_count": 6,
+            "raw_chars": 2420,
+            "rendered_chars": 1458,
+            "reused_file_summary_count": 2,
+            "summarized_tool_count": 4
+          },
+          "history_chars": 2325,
+          "input_tokens": 1939,
+          "memory_chars": 565,
+          "model": "deepseek-v4-flash",
+          "output_tokens": 512,
+          "prefix_changed": false,
+          "prefix_chars": 3923,
+          "prefix_hash": "e524787b946dbf1b18884d1e4e2d41f009a79e0b5347df42ca23fd7d9b374f5c",
+          "prompt_budget_chars": 12000,
+          "prompt_cache_key": "e524787b946dbf1b18884d1e4e2d41f009a79e0b5347df42ca23fd7d9b374f5c",
+          "prompt_cache_mode": "automatic_prefix",
+          "prompt_cache_retention": null,
+          "prompt_cache_supported": true,
+          "prompt_chars": 6680,
+          "prompt_over_budget": false,
+          "provider": "deepseek",
+          "reasoning_content_chars": 2401,
+          "reasoning_tokens": 512,
+          "recent_commits": 5,
+          "reduction_order": [
+            "relevant_memory",
+            "history",
+            "memory",
+            "prefix"
+          ],
+          "relevant_memory": {
+            "limit": 3,
+            "query_features": {
+              "ascii_token_count": 34,
+              "cjk_bigram_count": 0,
+              "cjk_trigram_count": 0,
+              "concepts": [
+                "dependency-facts",
+                "testing"
+              ],
+              "identifier_count": 0,
+              "normalized": "the default request timeout must be 45 seconds everywhere. make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. preserve explicit timeout overrides and run the targeted test.",
+              "path_count": 6
+            },
+            "raw_chars": 154,
+            "rendered_chars": 154,
+            "rendered_count": 2,
+            "rendered_notes": [
+              "1: def request_options(timeout=None): | 2:     return {\"timeout\": 30 if timeout is None else timeout}",
+              "1: DEFAULT_REQUEST_TIMEOUT = 30"
+            ],
+            "selected_count": 2,
+            "selected_details": [
+              {
+                "kind": "episodic",
+                "rank": 1,
+                "score": 20.558167,
+                "signals": [
+                  "tag:exact=miniapp/runtime.py",
+                  "source:exact=miniapp/runtime.py",
+                  "tag:concept=dependency-facts:5.000",
+                  "text:ascii=0.261",
+                  "tag:ascii=0.649",
+                  "source:ascii=0.649"
+                ],
+                "source": "miniapp/runtime.py",
+                "text": "1: def request_options(timeout=None): | 2:     return {\"timeout\": 30 if timeout is None else timeout}",
+                "topic": ""
+              },
+              {
+                "kind": "episodic",
+                "rank": 2,
+                "score": 15.758836,
+                "signals": [
+                  "tag:exact=miniapp/config.py",
+                  "source:exact=miniapp/config.py",
+                  "text:ascii=0.462",
+                  "tag:ascii=0.649",
+                  "source:ascii=0.649"
+                ],
+                "source": "miniapp/config.py",
+                "text": "1: DEFAULT_REQUEST_TIMEOUT = 30",
+                "topic": ""
+              }
+            ],
+            "selected_durable_count": 0,
+            "selected_kinds": [
+              "episodic",
+              "episodic"
+            ],
+            "selected_notes": [
+              "1: def request_options(timeout=None): | 2:     return {\"timeout\": 30 if timeout is None else timeout}",
+              "1: DEFAULT_REQUEST_TIMEOUT = 30"
+            ],
+            "selected_sources": [
+              "miniapp/runtime.py",
+              "miniapp/config.py"
+            ]
+          },
+          "request_chars": 256,
+          "requested_max_tokens": 512,
+          "resume_status": "full-valid",
+          "runtime_identity_mismatch_fields": [],
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ],
+          "section_budgets": {
+            "current_request": null,
+            "history": 5200,
+            "memory": 1600,
+            "prefix": 3600,
+            "relevant_memory": 1200
+          },
+          "section_order": [
+            "prefix",
+            "memory",
+            "relevant_memory",
+            "history",
+            "current_request"
+          ],
+          "sections": {
+            "current_request": {
+              "budget_chars": null,
+              "raw_chars": 278,
+              "rendered_chars": 278
+            },
+            "history": {
+              "budget_chars": 5200,
+              "raw_chars": 2420,
+              "rendered_chars": 1458
+            },
+            "memory": {
+              "budget_chars": 1600,
+              "raw_chars": 565,
+              "rendered_chars": 565
+            },
+            "prefix": {
+              "budget_chars": 3600,
+              "raw_chars": 3923,
+              "rendered_chars": 3600
+            },
+            "relevant_memory": {
+              "budget_chars": 1200,
+              "raw_chars": 154,
+              "rendered_chars": 154
+            }
+          },
+          "stale_paths": [],
+          "stale_summary_invalidations": 0,
+          "tool_count": 5,
+          "tool_signature": "bb4592bd7d753abc73d5b2bd12effea070749b79d061a5a514a36f1b5dc1fbc0",
+          "total_tokens": 2451,
+          "workspace_changed": false,
+          "workspace_chars": 1364,
+          "workspace_docs": 2,
+          "workspace_fingerprint": "d317f1f475ea29f116eadaff6d08921a0426638dbc9063fcd5e4b1a7ec6168de"
+        },
+        "recovery_actions": 0,
+        "recovery_counts": {},
+        "recovery_mode": "compatible",
+        "redacted_env": {
+          "secret_env_count": 1,
+          "secret_env_names": [
+            "APRICITY_API_KEY"
+          ]
+        },
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260818-205258-075175",
+        "status": "stopped",
+        "stop_reason": "finalization_only",
+        "task_id": "task_20260818-205258-5c3ca0",
+        "task_state": {
+          "attempts": 15,
+          "checkpoint_id": "ckpt_5d41425a",
+          "final_answer": "Stopped by recovery policy: finalization_only.",
+          "invalid_tool_attempts": 0,
+          "last_tool": "list_files",
+          "partial_visible": false,
+          "recovery_actions": 0,
+          "recovery_counts": {},
+          "request_id": "req_65dcf98b7308",
+          "resume_status": "no-checkpoint",
+          "run_id": "run_20260818-205258-075175",
+          "status": "stopped",
+          "stop_reason": "finalization_only",
+          "task_id": "task_20260818-205258-5c3ca0",
+          "tool_steps": 12,
+          "user_request": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test.",
+          "visible_chars": 0
+        },
+        "tool_steps": 12
+      },
+      "report_relpath": "centralized_timeout_default\\real_model_bench_repo\\.apricity\\runs\\run_20260818-205258-075175\\report.json",
+      "run_dir_relpath": "centralized_timeout_default\\real_model_bench_repo\\.apricity\\runs\\run_20260818-205258-075175",
+      "run_id": "run_20260818-205258-075175",
+      "status": "fail",
+      "step_budget": 12,
+      "stop_reason": "finalization_only",
+      "stream_summary": {
+        "chunk_count": 0,
+        "created_at": "2026-08-18T12:53:53.296328+00:00",
+        "event": "stream_summary",
+        "first_delta_at": null,
+        "last_delta_at": null,
+        "provider_event_count": 2,
+        "request_id": "req_65dcf98b7308",
+        "sink_errors": 0,
+        "streaming": true,
+        "tool_candidate_ready": false,
+        "ttft_ms": null,
+        "visible_chars": 0
+      },
+      "streaming": true,
+      "task_state": {
+        "attempts": 15,
+        "checkpoint_id": "ckpt_5d41425a",
+        "final_answer": "Stopped by recovery policy: finalization_only.",
+        "invalid_tool_attempts": 0,
+        "last_tool": "list_files",
+        "partial_visible": false,
+        "recovery_actions": 0,
+        "recovery_counts": {},
+        "request_id": "req_65dcf98b7308",
+        "resume_status": "no-checkpoint",
+        "run_id": "run_20260818-205258-075175",
+        "status": "stopped",
+        "stop_reason": "finalization_only",
+        "task_id": "task_20260818-205258-5c3ca0",
+        "tool_steps": 12,
+        "user_request": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test.",
+        "visible_chars": 0
+      },
+      "task_state_relpath": "centralized_timeout_default\\real_model_bench_repo\\.apricity\\runs\\run_20260818-205258-075175\\task_state.json",
+      "tool_steps": 12,
+      "ttft_ms": null,
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/runtime_check.py"
+      ],
+      "verifier_exit_code": 1,
+      "verifier_passed": false,
+      "verifier_stderr": "",
+      "verifier_stdout": "FF                                                                       [100%]\n================================== FAILURES ===================================\n__________________ test_runtime_uses_central_timeout_default __________________\n\n    def test_runtime_uses_central_timeout_default():\n>       assert DEFAULT_REQUEST_TIMEOUT == 45\nE       assert 30 == 45\n\n..\\..\\..\\..\\..\\..\\..\\tests\\fixtures\\real_model_bench_repo\\verifiers\\runtime_check.py:6: AssertionError\n_______________ test_runtime_does_not_duplicate_default_literal _______________\n\n    def test_runtime_does_not_duplicate_default_literal():\n        import inspect\n        import miniapp.runtime\n    \n        source = inspect.getsource(miniapp.runtime)\n>       assert \"DEFAULT_REQUEST_TIMEOUT\" in source\nE       assert 'DEFAULT_REQUEST_TIMEOUT' in 'def request_options(timeout=None):\\n    return {\"timeout\": 30 if timeout is None else timeout}\\n'\n\n..\\..\\..\\..\\..\\..\\..\\tests\\fixtures\\real_model_bench_repo\\verifiers\\runtime_check.py:16: AssertionError\n=========================== short test summary info ===========================\nFAILED verifiers/runtime_check.py::test_runtime_uses_central_timeout_default\nFAILED verifiers/runtime_check.py::test_runtime_does_not_duplicate_default_literal\n2 failed in 0.35s\n",
+      "verifier_timed_out": false,
+      "visible_chars": 0,
+      "within_budget": true,
+      "workspace_root": "D:\\Pythonprojects\\yan_1\\agent\\mypico\\artifacts\\streaming-stage2-2026-08-18-205103-workspaces\\streaming\\deepseek\\repetition-01"
+    }
+  ],
+  "runtime": {
+    "branch": "main",
+    "commit_sha": "9e85b00ad134ba5be0307ad7e8978505706b776a",
+    "dirty": false,
+    "disabled_recovery_policies": [],
+    "fault_type": "none",
+    "recovery_mode": "compatible",
+    "streaming": true
+  },
+  "schema_version": 1,
+  "status": "completed",
+  "summary": {
+    "avg_attempts": 10.6,
+    "avg_duration_seconds": 34.287897799999996,
+    "avg_model_response_ms": 25751.2,
+    "avg_recovery_actions": 0.0,
+    "avg_tool_steps": 8.8,
+    "avg_ttft_ms": 1897.75,
+    "cache_miss_tokens": 4451,
+    "cache_telemetry_run_count": 5,
+    "cached_tokens": 5504,
+    "cancelled_runs": 0,
+    "categories": {
+      "bug-fix": {
+        "avg_duration_seconds": 28.61845025,
+        "avg_tool_steps": 8.0,
+        "pass_rate": 1.0,
+        "passed": 4,
+        "runs": 4
+      },
+      "cross-file": {
+        "avg_duration_seconds": 56.965688,
+        "avg_tool_steps": 12.0,
+        "pass_rate": 0.0,
+        "passed": 0,
+        "runs": 1
+      }
+    },
+    "duplicate_side_effect_rate": 0.0,
+    "failed_runs": 1,
+    "failure_category_counts": {
+      "verifier_failed": 1
+    },
+    "false_intervention_rate": 0.0,
+    "faulted_runs": 0,
+    "input_tokens": 9955,
+    "output_tokens": 1061,
+    "partial_visible_rate": 0.0,
+    "partial_visible_runs": 0,
+    "pass_at_1": 0.8,
+    "pass_rate": 0.8,
+    "passed_runs": 4,
+    "provider_error_rate": 0.0,
+    "provider_error_runs": 0,
+    "recovered_runs": 0,
+    "recovery_rate": 0.0,
+    "repetitions": 1,
+    "stable_pass_rate": 0.8,
+    "task_count": 5,
+    "total_runs": 5,
+    "total_tokens": 11016,
+    "verifier_pass_rate": 0.8,
+    "within_budget_rate": 1.0
+  }
+}

@@ -126,3 +126,10 @@
 - 流式传输改为增量 UTF-8 行解码器，任意字节分块下多字节字符跨 chunk 不损坏；SSE 兼容 `\r\n`、多行 `data:`、重复 done 与 malformed line，JSON fallback 覆盖四个 provider。
 - `BenchmarkEvaluator` / real-model benchmark runner 支持 `stream` 参数，行记录新增 `ttft_ms`、`model_response_ms`、`partial_visible`、`visible_chars`、`stream_summary`；summary 新增 TTFT、partial/cancel 与 provider error 指标。
 - 新增 `benchmarks/streaming_stage2_tasks.json`（前 5 个 real-model 任务）与 `scripts/run_streaming_stage2.py`，用于 PRD Stage 2 的 streaming vs `--no-stream` 小矩阵。验证：`compileall`、`ruff` 通过，全量 pytest `254 passed, 1 skipped`。
+
+### 24.Run DeepSeek streaming Stage 2 first wave（26/8/18）
+
+- 使用 deepseek-v4-flash 运行 PRD Stage 2 首轮小矩阵：5 个真实模型任务 × 每条件 1 次，streaming 与 `--no-stream` 各 5 次。产物位于 `benchmarks/results/streaming-stage2-2026-08-18-205103/`。
+- 结果：两组 pass rate 均为 80%；streaming 平均 TTFT 1.90s，相比 no-stream 平均单轮模型响应 27.12s 显著下降；provider 错误率、partial/cancel、重复副作用率均为 0；平均总耗时 34.29s vs 36.41s。
+- 首轮 runner 在模型运行完成后渲染汇总报告时触发 `KeyError('no_stream')`，已保留原 run 全部证据；修复后通过 `--from-existing` 复用原工件完成汇总，未重复调用 provider，并在 summary 中记录 recovery 原因。
+- 验证：API key 未出现在 Stage 2 任意 artifact；canonical run 前 git 工作区干净；`compileall`、`ruff` 通过，全量 pytest `254 passed, 1 skipped`。

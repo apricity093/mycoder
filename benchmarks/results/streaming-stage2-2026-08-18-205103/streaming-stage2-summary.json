@@ -1,0 +1,61 @@
+{
+  "artifact_type": "streaming-stage2-v1",
+  "captured_at": "2026-08-18T20:58:41.477087",
+  "commit_sha": "9e85b00ad134ba5be0307ad7e8978505706b776a",
+  "comparison": {
+    "cached_token_delta": 384,
+    "duplicate_side_effect_rate_delta": 0.0,
+    "duration_ratio": 0.9417567888045658,
+    "output_token_delta": 263,
+    "pass_rate_delta": 0.0,
+    "provider_error_rate_delta": 0.0,
+    "ttft_vs_no_stream_model_response_ratio": 0.06998016107144964
+  },
+  "conditions": {
+    "no-stream": {
+      "artifact": "benchmarks\\results\\streaming-stage2-2026-08-18-205103\\no-stream\\real-model-benchmark.json",
+      "avg_duration_seconds": 36.4084424,
+      "avg_model_response_ms": 27118.4,
+      "avg_tool_steps": 8.6,
+      "avg_ttft_ms": 0.0,
+      "cache_miss_tokens": 5076,
+      "cache_telemetry_run_count": 5,
+      "cached_tokens": 5120,
+      "cancelled_runs": 0,
+      "duplicate_side_effect_rate": 0.0,
+      "input_tokens": 10196,
+      "label": "no-stream",
+      "output_tokens": 798,
+      "partial_visible_rate": 0.0,
+      "pass_rate": 0.8,
+      "provider_error_rate": 0.0,
+      "runs": 5,
+      "total_tokens": 10994
+    },
+    "streaming": {
+      "artifact": "benchmarks\\results\\streaming-stage2-2026-08-18-205103\\streaming\\real-model-benchmark.json",
+      "avg_duration_seconds": 34.287897799999996,
+      "avg_model_response_ms": 25751.2,
+      "avg_tool_steps": 8.8,
+      "avg_ttft_ms": 1897.75,
+      "cache_miss_tokens": 4451,
+      "cache_telemetry_run_count": 5,
+      "cached_tokens": 5504,
+      "cancelled_runs": 0,
+      "duplicate_side_effect_rate": 0.0,
+      "input_tokens": 9955,
+      "label": "streaming",
+      "output_tokens": 1061,
+      "partial_visible_rate": 0.0,
+      "pass_rate": 0.8,
+      "provider_error_rate": 0.0,
+      "runs": 5,
+      "total_tokens": 11016
+    }
+  },
+  "model": "deepseek-v4-flash",
+  "provider": "deepseek",
+  "reused_original_artifacts": true,
+  "runner_error_recovery": "v1 report renderer raised KeyError('no_stream') after all model runs completed; original run artifacts were preserved and reused to finish the summary/report without calling the provider again.",
+  "schema_version": 1
+}
