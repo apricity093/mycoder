@@ -28,6 +28,7 @@ from .recovery import (
 )
 from .security import REDACTED_VALUE
 from .session_store import SessionStore
+from .streaming import DSML_MARKER_RE, TOOL_OPEN_RE
 from .tool_context import ToolContext
 from .tool_executor import ToolExecutor
 from . import tools as toolkit
@@ -531,10 +532,18 @@ class Apricity:
         self.last_durable_superseded = superseded
         return promoted, rejections, superseded
 
-    def ask(self, user_message):
+    def ask(self, user_message, event_sink=None, *, stream=None):
+        """运行一次 agent 循环。
+
+        ``event_sink`` 是实验性接口：接收 ``{"type": "visible_delta", "text": ...}``
+        事件；``stream`` 为 None 时，仅当提供 event_sink 才走流式路径，
+        以保持无 UI 调用方与旧测试的现有行为。
+        """
         from .agent_loop import AgentLoop
 
-        return AgentLoop(self).run(user_message)
+        if stream is None:
+            stream = event_sink is not None
+        return AgentLoop(self).run(user_message, event_sink=event_sink, stream=bool(stream))
 
     def execute_tool(self, name, args):
         result = self.tool_executor.execute(name, args)
@@ -749,40 +758,66 @@ class Apricity:
         # uses the text-only compatibility protocol. Parse the first invoke
         # as one runtime step; subsequent invokes remain in the raw assistant
         # message and can be handled by later turns.
-        dsml_payload = Apricity.parse_dsml_tool(raw)
-        if dsml_payload is not None:
-            return "tool", dsml_payload
-        if re.search(r"\uFF5C+DSML", raw):
+        #
+        # PRD v1.1 统一了流式与非流式的解析语义：首个协议标记 commit。
+        # 因此这里不再让 DSML 全局优先，而是比较 DSML、<tool>、<final>
+        # 三者的首次出现位置，由最早出现者决定本轮协议类型。
+        candidates = []
+        dsml_match = DSML_MARKER_RE.search(raw)
+        if dsml_match:
+            candidates.append((dsml_match.start(), "dsml"))
+        tool_match = TOOL_OPEN_RE.search(raw)
+        if tool_match:
+            candidates.append((tool_match.start(), "tool"))
+        final_pos = raw.find("<final>")
+        if final_pos >= 0:
+            candidates.append((final_pos, "final"))
+
+        if candidates:
+            kind = min(candidates, key=lambda item: item[0])[1]
+        else:
+            kind = "fallback"
+
+        if kind == "dsml":
+            dsml_payload = Apricity.parse_dsml_tool(raw)
+            if dsml_payload is not None:
+                return "tool", dsml_payload
             return "retry", Apricity.retry_notice("model returned malformed DSML tool output")
-        # 这里支持两种工具格式：
-        # 1. <tool>...</tool> 里包 JSON，适合简短调用
-        # 2. XML 风格属性/子标签，适合写文件这类多行内容
-        if "<tool>" in raw and ("<final>" not in raw or raw.find("<tool>") < raw.find("<final>")):
-            body = Apricity.extract(raw, "tool")
-            try:
-                payload = json.loads(body)
-            except Exception:
-                return "retry", Apricity.retry_notice("model returned malformed tool JSON")
-            if not isinstance(payload, dict):
-                return "retry", Apricity.retry_notice("tool payload must be a JSON object")
-            if not str(payload.get("name", "")).strip():
-                return "retry", Apricity.retry_notice("tool payload is missing a tool name")
-            args = payload.get("args", {})
-            if args is None:
-                payload["args"] = {}
-            elif not isinstance(args, dict):
-                return "retry", Apricity.retry_notice()
-            return "tool", payload
-        if "<tool" in raw and ("<final>" not in raw or raw.find("<tool") < raw.find("<final>")):
+
+        if kind == "tool":
+            # 这里支持两种工具格式：
+            # 1. <tool>...</tool> 里包 JSON，适合简短调用
+            # 2. XML 风格属性/子标签，适合写文件这类多行内容
+            if "<tool>" in raw:
+                body = Apricity.extract(raw, "tool")
+                try:
+                    payload = json.loads(body)
+                except Exception:
+                    return "retry", Apricity.retry_notice("model returned malformed tool JSON")
+                if not isinstance(payload, dict):
+                    return "retry", Apricity.retry_notice("tool payload must be a JSON object")
+                if not str(payload.get("name", "")).strip():
+                    return "retry", Apricity.retry_notice("tool payload is missing a tool name")
+                args = payload.get("args", {})
+                if args is None:
+                    payload["args"] = {}
+                elif not isinstance(args, dict):
+                    return "retry", Apricity.retry_notice()
+                return "tool", payload
             payload = Apricity.parse_xml_tool(raw)
             if payload is not None:
                 return "tool", payload
             return "retry", Apricity.retry_notice()
-        if "<final>" in raw:
+
+        if kind == "final":
+            final_start = final_pos + len("<final>")
+            if raw.find("</final>", final_start) == -1:
+                return "retry", Apricity.retry_notice("model returned an unclosed <final> answer")
             final = Apricity.extract(raw, "final").strip()
             if final:
                 return "final", final
             return "retry", Apricity.retry_notice("model returned an empty <final> answer")
+
         raw = raw.strip()
         if raw:
             return "final", raw

@@ -28,6 +28,8 @@ STOP_REASON_APPROVAL_DENIED = "approval_denied"
 STOP_REASON_DELEGATE_FAILED = "delegate_failed"
 STOP_REASON_PERSISTENCE_ERROR = "persistence_error"
 STOP_REASON_RESUME_LOAD_ERROR = "resume_load_error"
+STOP_REASON_STREAM_INTERRUPTED = "stream_interrupted"
+STOP_REASON_STREAM_CANCELLED = "stream_cancelled"
 
 
 @dataclass
@@ -46,6 +48,9 @@ class TaskState:
     final_answer: str = ""
     checkpoint_id: str = ""
     resume_status: str = ""
+    partial_visible: bool = False
+    visible_chars: int = 0
+    request_id: str = ""
 
     @classmethod
     def create(cls, task_id, user_request, run_id=""):
@@ -70,6 +75,9 @@ class TaskState:
             final_answer=str(data.get("final_answer", "")),
             checkpoint_id=str(data.get("checkpoint_id", "")),
             resume_status=str(data.get("resume_status", "")),
+            partial_visible=bool(data.get("partial_visible", False)),
+            visible_chars=int(data.get("visible_chars", 0)),
+            request_id=str(data.get("request_id", "")),
         )
 
     def record_attempt(self):
@@ -135,4 +143,7 @@ class TaskState:
             "final_answer": self.final_answer,
             "checkpoint_id": self.checkpoint_id,
             "resume_status": self.resume_status,
+            "partial_visible": bool(self.partial_visible),
+            "visible_chars": int(self.visible_chars),
+            "request_id": str(self.request_id),
         }

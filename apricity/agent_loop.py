@@ -1,17 +1,40 @@
 """Agent control loop extracted from the runtime facade."""
 
 import time
+import uuid
 
 from .checkpoint import CHECKPOINT_NONE_STATUS, CHECKPOINT_PARTIAL_STALE_STATUS, CHECKPOINT_WORKSPACE_MISMATCH_STATUS
 from .recovery import (
     DECISION_CORRECT_PROTOCOL,
     DECISION_REBUILD_CONTEXT,
     DECISION_RETRY_MODEL,
+    FAILURE_PERMANENT_PROVIDER,
     FAILURE_PROTOCOL,
+    FAILURE_TRANSIENT_PROVIDER,
     Failure,
+    ProviderRequestError,
     failure_from_exception,
 )
-from .task_state import STATUS_FAILED, TaskState
+from .streaming import (
+    EVENT_CONTENT_DELTA,
+    EVENT_RESPONSE_COMPLETED,
+    EVENT_RESPONSE_FAILED,
+    EVENT_RESPONSE_STARTED,
+    EVENT_TOOL_CANDIDATE_READY,
+    EVENT_VISIBLE_DELTA,
+    IncrementalRedactor,
+    PARSER_STATUS_UNCLOSED_FINAL,
+    StreamCancelledError,
+    StreamInterruptedError,
+    StreamingResponseParser,
+)
+from .task_state import (
+    STATUS_FAILED,
+    STATUS_STOPPED,
+    STOP_REASON_STREAM_CANCELLED,
+    STOP_REASON_STREAM_INTERRUPTED,
+    TaskState,
+)
 from .workspace import clip, now
 
 
@@ -112,10 +135,296 @@ class AgentLoop:
         agent.run_store.write_report(task_state, agent.redact_artifact(agent.build_report(task_state)))
         return final
 
+    @staticmethod
+    def _persist_stream_terminal(
+        agent,
+        task_state,
+        user_message,
+        stop_reason,
+        final,
+        *,
+        status=STATUS_FAILED,
+        partial_visible=False,
+        visible_chars=0,
+        request_id="",
+        error_type="",
+    ):
+        task_state.stop(stop_reason, status=status, final_answer=final)
+        task_state.partial_visible = bool(partial_visible)
+        task_state.visible_chars = int(visible_chars)
+        task_state.request_id = str(request_id)
+        agent.record({"role": "assistant", "content": final, "created_at": now()})
+        agent.run_store.write_task_state(task_state)
+        agent.emit_trace(
+            task_state,
+            "stream_terminal",
+            {
+                "stop_reason": stop_reason,
+                "error_type": error_type,
+                "partial_visible": task_state.partial_visible,
+                "visible_chars": task_state.visible_chars,
+                "request_id": task_state.request_id,
+            },
+        )
+        checkpoint = agent.create_checkpoint(task_state, user_message, trigger=stop_reason)
+        agent.run_store.write_task_state(task_state)
+        agent.emit_trace(
+            task_state,
+            "checkpoint_created",
+            {"checkpoint_id": checkpoint["checkpoint_id"], "trigger": stop_reason},
+        )
+        agent.emit_trace(
+            task_state,
+            "run_finished",
+            {
+                "status": task_state.status,
+                "stop_reason": task_state.stop_reason,
+                "final_answer": final,
+            },
+        )
+        agent.run_store.write_report(task_state, agent.redact_artifact(agent.build_report(task_state)))
+        return final
+
     def __init__(self, agent):
         self.agent = agent
 
-    def run(self, user_message):
+    def _emit_visible(self, agent, task_state, redactor, event_sink, text, stats):
+        visible = redactor.feed(text)
+        if not visible:
+            return
+        stats["visible_chars"] += len(visible)
+        stats["chunk_count"] += 1
+        task_state.partial_visible = True
+        task_state.visible_chars = stats["visible_chars"]
+        now_monotonic = time.monotonic()
+        if stats["first_delta_at"] is None:
+            stats["first_delta_at"] = now_monotonic
+            agent.emit_trace(
+                task_state,
+                "first_token",
+                {
+                    "request_id": stats["request_id"],
+                    "ttft_ms": int((now_monotonic - stats["model_started_at"]) * 1000),
+                },
+            )
+        stats["last_delta_at"] = now_monotonic
+        if event_sink is None:
+            return
+        try:
+            event_sink({"type": EVENT_VISIBLE_DELTA, "text": visible})
+        except (BrokenPipeError, OSError) as exc:
+            raise StreamCancelledError(
+                f"visible output sink failed: {type(exc).__name__}",
+                partial_visible=task_state.partial_visible,
+                visible_chars=stats["visible_chars"],
+            ) from exc
+        except Exception as exc:
+            stats["sink_errors"] += 1
+            agent.emit_trace(
+                task_state,
+                "sink_error",
+                {
+                    "request_id": stats["request_id"],
+                    "error": clip(f"{type(exc).__name__}: {exc}", 300),
+                },
+            )
+
+    def _handle_parser_events(self, agent, task_state, events, redactor, event_sink, stats):
+        for event in events or []:
+            if event.get("type") == EVENT_VISIBLE_DELTA:
+                self._emit_visible(agent, task_state, redactor, event_sink, event.get("text", ""), stats)
+            elif event.get("type") == EVENT_TOOL_CANDIDATE_READY:
+                # candidate 只做缓冲标记；工具执行必须等 response_completed。
+                stats["tool_candidate_ready"] = True
+
+    def _emit_stream_summary(self, agent, task_state, stats):
+        agent.emit_trace(
+            task_state,
+            "stream_summary",
+            {
+                "request_id": stats["request_id"],
+                "streaming": True,
+                "visible_chars": stats["visible_chars"],
+                "chunk_count": stats["chunk_count"],
+                "provider_event_count": stats["provider_event_count"],
+                "sink_errors": stats["sink_errors"],
+                "ttft_ms": (
+                    int((stats["first_delta_at"] - stats["model_started_at"]) * 1000)
+                    if stats["first_delta_at"] is not None
+                    else None
+                ),
+                "first_delta_at": stats["first_delta_at"],
+                "last_delta_at": stats["last_delta_at"],
+                "tool_candidate_ready": stats["tool_candidate_ready"],
+            },
+        )
+
+    def _stream_model_call(
+        self,
+        agent,
+        task_state,
+        prompt,
+        prompt_cache_key,
+        prompt_cache_retention,
+        event_sink,
+        request_id,
+        model_started_at,
+    ):
+        parser = StreamingResponseParser()
+        redactor = IncrementalRedactor.from_env(getattr(agent, "secret_env_names", ()))
+        stats = {
+            "request_id": request_id,
+            "model_started_at": model_started_at,
+            "visible_chars": 0,
+            "chunk_count": 0,
+            "provider_event_count": 0,
+            "sink_errors": 0,
+            "first_delta_at": None,
+            "last_delta_at": None,
+            "tool_candidate_ready": False,
+        }
+        generator = agent.model_client.stream_complete(
+            prompt,
+            agent.max_new_tokens,
+            prompt_cache_key=prompt_cache_key,
+            prompt_cache_retention=prompt_cache_retention,
+            request_id=request_id,
+        )
+        try:
+            for event in generator:
+                stats["provider_event_count"] += 1
+                event_type = str(event.get("type", ""))
+                if event_type == EVENT_CONTENT_DELTA:
+                    self._handle_parser_events(
+                        agent,
+                        task_state,
+                        parser.feed(event.get("text", "")),
+                        redactor,
+                        event_sink,
+                        stats,
+                    )
+                elif event_type == EVENT_RESPONSE_COMPLETED:
+                    metadata = dict(event.get("metadata") or {})
+                    if metadata:
+                        agent.model_client.last_completion_metadata = metadata
+                    agent.last_completion_metadata = metadata
+                elif event_type == EVENT_RESPONSE_FAILED:
+                    raise ProviderRequestError(
+                        str(event.get("message", "") or "provider stream failed"),
+                        kind=(
+                            FAILURE_TRANSIENT_PROVIDER
+                            if bool(event.get("retryable", False))
+                            else FAILURE_PERMANENT_PROVIDER
+                        ),
+                        status_code=event.get("status_code"),
+                        retry_after=event.get("retry_after"),
+                    )
+                elif event_type == EVENT_RESPONSE_STARTED:
+                    continue
+        except Exception as exc:
+            if isinstance(exc, (StreamCancelledError, StreamInterruptedError)):
+                raise
+            if parser.visible_emitted:
+                raise StreamInterruptedError(
+                    clip(str(exc), 500),
+                    error_type=type(exc).__name__,
+                    visible_chars=stats["visible_chars"],
+                ) from exc
+            raise
+        finally:
+            close = getattr(generator, "close", None)
+            if callable(close):
+                close()
+
+        self._handle_parser_events(
+            agent,
+            task_state,
+            parser.finish(),
+            redactor,
+            event_sink,
+            stats,
+        )
+        tail = redactor.flush()
+        if tail:
+            self._emit_visible(agent, task_state, redactor, event_sink, tail, stats)
+        self._emit_stream_summary(agent, task_state, stats)
+
+        if parser.status == PARSER_STATUS_UNCLOSED_FINAL and stats["visible_chars"]:
+            raise StreamInterruptedError(
+                "model stream ended before the <final> envelope was closed",
+                error_type="unclosed_final",
+                visible_chars=stats["visible_chars"],
+            )
+        return parser.full_raw()
+
+    def _complete_model(
+        self,
+        agent,
+        task_state,
+        prompt,
+        prompt_cache_key,
+        prompt_cache_retention,
+        event_sink,
+        stream,
+        request_id,
+        model_started_at,
+    ):
+        if not stream or not hasattr(agent.model_client, "stream_complete"):
+            raw = agent.model_client.complete(
+                prompt,
+                agent.max_new_tokens,
+                prompt_cache_key=prompt_cache_key,
+                prompt_cache_retention=prompt_cache_retention,
+            )
+            if stream:
+                # 旧 adapter 兼容路径：把完整响应包装成单个增量，经 parser 走一遍
+                # 展示与协议缓冲，保证带 event_sink 的调用行为一致。
+                parser = StreamingResponseParser()
+                redactor = IncrementalRedactor.from_env(getattr(agent, "secret_env_names", ()))
+                stats = {
+                    "request_id": request_id,
+                    "model_started_at": model_started_at,
+                    "visible_chars": 0,
+                    "chunk_count": 0,
+                    "provider_event_count": 1,
+                    "sink_errors": 0,
+                    "first_delta_at": None,
+                    "last_delta_at": None,
+                    "tool_candidate_ready": False,
+                }
+                self._handle_parser_events(
+                    agent,
+                    task_state,
+                    parser.feed(raw),
+                    redactor,
+                    event_sink,
+                    stats,
+                )
+                self._handle_parser_events(
+                    agent,
+                    task_state,
+                    parser.finish(),
+                    redactor,
+                    event_sink,
+                    stats,
+                )
+                tail = redactor.flush()
+                if tail:
+                    self._emit_visible(agent, task_state, redactor, event_sink, tail, stats)
+                self._emit_stream_summary(agent, task_state, stats)
+            return raw
+        return self._stream_model_call(
+            agent,
+            task_state,
+            prompt,
+            prompt_cache_key,
+            prompt_cache_retention,
+            event_sink,
+            request_id,
+            model_started_at,
+        )
+
+    def run(self, user_message, event_sink=None, stream=False):
         agent = self.agent
         run_started_at = time.monotonic()
         agent.memory.set_task_summary(user_message)
@@ -220,17 +529,6 @@ class AgentLoop:
                         "trigger": "context_reduction",
                     },
                 )
-            agent.emit_trace(
-                task_state,
-                "model_requested",
-                {
-                    "attempts": task_state.attempts,
-                    "tool_steps": task_state.tool_steps,
-                    "invalid_tool_attempts": task_state.invalid_tool_attempts,
-                    "finalization_only": final_only,
-                    "prompt_cache_key": prompt_metadata.get("prompt_cache_key"),
-                },
-            )
             prompt_cache_key = None
             prompt_cache_retention = None
             cache_mode = getattr(
@@ -245,13 +543,65 @@ class AgentLoop:
             elif cache_mode == "automatic_prefix":
                 # 自动前缀缓存不接收控制参数，但保留本地 key 供 trace 关联。
                 prompt_cache_key = prompt_metadata.get("prompt_cache_key")
+            request_id = "req_" + uuid.uuid4().hex[:12]
+            task_state.request_id = request_id
+            task_state.partial_visible = False
+            task_state.visible_chars = 0
+            agent.emit_trace(
+                task_state,
+                "model_requested",
+                {
+                    "attempts": task_state.attempts,
+                    "tool_steps": task_state.tool_steps,
+                    "invalid_tool_attempts": task_state.invalid_tool_attempts,
+                    "finalization_only": final_only,
+                    "prompt_cache_key": prompt_metadata.get("prompt_cache_key"),
+                    "request_id": request_id,
+                    "streaming": bool(stream),
+                },
+            )
             model_started_at = time.monotonic()
             try:
-                raw = agent.model_client.complete(
+                raw = self._complete_model(
+                    agent,
+                    task_state,
                     prompt,
-                    agent.max_new_tokens,
-                    prompt_cache_key=prompt_cache_key,
-                    prompt_cache_retention=prompt_cache_retention,
+                    prompt_cache_key,
+                    prompt_cache_retention,
+                    event_sink,
+                    stream,
+                    request_id,
+                    model_started_at,
+                )
+            except (StreamCancelledError, KeyboardInterrupt) as exc:
+                partial_visible = bool(getattr(exc, "partial_visible", False) or task_state.partial_visible)
+                visible_chars = int(getattr(exc, "visible_chars", 0) or task_state.visible_chars)
+                final = "Stopped: the stream was cancelled before the answer completed."
+                return self._persist_stream_terminal(
+                    agent,
+                    task_state,
+                    user_message,
+                    STOP_REASON_STREAM_CANCELLED,
+                    final,
+                    status=STATUS_STOPPED,
+                    partial_visible=partial_visible,
+                    visible_chars=visible_chars,
+                    request_id=request_id,
+                    error_type=type(exc).__name__,
+                )
+            except StreamInterruptedError as exc:
+                final = f"Stopped: the model stream was interrupted ({exc.error_type})."
+                return self._persist_stream_terminal(
+                    agent,
+                    task_state,
+                    user_message,
+                    STOP_REASON_STREAM_INTERRUPTED,
+                    final,
+                    status=STATUS_FAILED,
+                    partial_visible=exc.partial_visible,
+                    visible_chars=exc.visible_chars,
+                    request_id=request_id,
+                    error_type=exc.error_type,
                 )
             except Exception as exc:
                 failure = failure_from_exception(exc)

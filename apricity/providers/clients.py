@@ -10,13 +10,74 @@ from http.client import RemoteDisconnected
 import urllib.error
 import urllib.request
 
-from ..recovery import FAILURE_TRANSIENT_PROVIDER, ProviderRequestError, provider_http_error
+from ..recovery import FAILURE_TRANSIENT_PROVIDER, FAILURE_UNKNOWN_PROVIDER, ProviderRequestError, provider_http_error
 
 OPENAI_COMPATIBLE_USER_AGENT = "apricity/0.1"
 PROMPT_CACHE_NONE = "none"
 PROMPT_CACHE_EXPLICIT_KEY = "explicit_key"
 PROMPT_CACHE_AUTOMATIC_PREFIX = "automatic_prefix"
 DEEPSEEK_EMPTY_CONTENT_RETRY_MIN_TOKENS = 2048
+
+EVENT_RESPONSE_STARTED = "response_started"
+EVENT_CONTENT_DELTA = "content_delta"
+EVENT_RESPONSE_COMPLETED = "response_completed"
+EVENT_RESPONSE_FAILED = "response_failed"
+
+
+def _decode_line(raw_line):
+    if isinstance(raw_line, bytes):
+        return raw_line.decode("utf-8", errors="replace")
+    return str(raw_line)
+
+
+def _sse_payloads(lines):
+    """按 SSE 规范把行流聚合成 data payload 字符串序列。"""
+    data_lines = []
+    for raw_line in lines:
+        line = _decode_line(raw_line).rstrip("\r\n")
+        if line == "":
+            if data_lines:
+                yield "\n".join(data_lines)
+                data_lines = []
+            continue
+        if line.startswith(":"):
+            continue
+        if line.startswith("data:"):
+            data_lines.append(line[len("data:"):].lstrip(" "))
+    if data_lines:
+        yield "\n".join(data_lines)
+
+
+def _sse_json_payloads(lines):
+    """把 SSE payload 解析为 JSON dict；忽略 [DONE]、注释和无效行。"""
+    for payload in _sse_payloads(lines):
+        payload = payload.strip()
+        if not payload or payload == "[DONE]":
+            continue
+        try:
+            event = json.loads(payload)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(event, dict):
+            yield event
+
+
+def _ndjson_payloads(lines):
+    for raw_line in lines:
+        line = _decode_line(raw_line).strip()
+        if not line:
+            continue
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(event, dict):
+            yield event
+
+
+def _with_first(first, iterable):
+    yield first
+    yield from iterable
 
 
 class FakeModelClient:
@@ -87,6 +148,120 @@ class OllamaModelClient:
         if data.get("error"):
             raise provider_http_error("Ollama", 400, str(data["error"]))
         return data.get("response", "")
+
+    def stream_complete(
+        self,
+        prompt,
+        max_new_tokens,
+        prompt_cache_key=None,
+        prompt_cache_retention=None,
+        request_id=None,
+        **kwargs,
+    ):
+        # Ollama 没有 prompt cache 参数，但统一接口必须接受并忽略它们。
+        del prompt_cache_key, prompt_cache_retention, kwargs
+        self.last_completion_metadata = {}
+        payload = {
+            "model": self.model,
+            "prompt": prompt,
+            "stream": True,
+            "raw": False,
+            "think": False,
+            "options": {
+                "num_predict": max_new_tokens,
+                "temperature": self.temperature,
+                "top_p": self.top_p,
+            },
+        }
+        request = urllib.request.Request(
+            self.base_url + "/api/generate",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                yield {
+                    "type": EVENT_RESPONSE_STARTED,
+                    "request_id": request_id,
+                    "provider": "ollama",
+                    "model": self.model,
+                }
+                first_line = response.readline()
+                first_text = _decode_line(first_line).lstrip()
+                if first_text.startswith("{"):
+                    finish_reason = ""
+                    metadata = {}
+                    for event in _ndjson_payloads(_with_first(first_line, response)):
+                        if event.get("error"):
+                            raise provider_http_error("Ollama", 400, str(event["error"]))
+                        text = event.get("response")
+                        if isinstance(text, str) and text:
+                            yield {"type": EVENT_CONTENT_DELTA, "text": text}
+                        if event.get("done"):
+                            metadata = {
+                                "provider": "ollama",
+                                "model": self.model,
+                                "prompt_cache_supported": False,
+                                "prompt_cache_mode": PROMPT_CACHE_NONE,
+                                "input_tokens": event.get("prompt_eval_count"),
+                                "output_tokens": event.get("eval_count"),
+                                "total_tokens": (
+                                    int(event.get("prompt_eval_count") or 0)
+                                    + int(event.get("eval_count") or 0)
+                                ),
+                                "cached_tokens": 0,
+                                "cache_miss_tokens": 0,
+                                "cache_hit": False,
+                                "cache_telemetry_available": False,
+                            }
+                            finish_reason = str(event.get("done_reason") or "done")
+                else:
+                    body_text = first_text + response.read().decode("utf-8", errors="replace")
+                    try:
+                        data = json.loads(body_text)
+                    except json.JSONDecodeError as exc:
+                        raise RuntimeError("Ollama error: backend returned non-JSON content") from exc
+                    if data.get("error"):
+                        raise provider_http_error("Ollama", 400, str(data["error"]))
+                    text = data.get("response", "")
+                    if text:
+                        yield {"type": EVENT_CONTENT_DELTA, "text": text}
+                    metadata = {
+                        "provider": "ollama",
+                        "model": self.model,
+                        "prompt_cache_supported": False,
+                        "prompt_cache_mode": PROMPT_CACHE_NONE,
+                        "input_tokens": data.get("prompt_eval_count"),
+                        "output_tokens": data.get("eval_count"),
+                        "total_tokens": (
+                            int(data.get("prompt_eval_count") or 0)
+                            + int(data.get("eval_count") or 0)
+                        ),
+                        "cached_tokens": 0,
+                        "cache_miss_tokens": 0,
+                        "cache_hit": False,
+                        "cache_telemetry_available": False,
+                    }
+                    finish_reason = str(data.get("done_reason") or "done")
+                self.last_completion_metadata = metadata
+                yield {
+                    "type": EVENT_RESPONSE_COMPLETED,
+                    "metadata": metadata,
+                    "finish_reason": finish_reason,
+                    "request_id": request_id,
+                }
+        except urllib.error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace")
+            raise provider_http_error("Ollama", exc.code, body) from exc
+        except urllib.error.URLError as exc:
+            raise ProviderRequestError(
+                "Could not reach Ollama.\n"
+                "Make sure `ollama serve` is running and the model is available.\n"
+                f"Base URL: {self.base_url}\n"
+                f"Model: {self.model}",
+                kind=FAILURE_TRANSIENT_PROVIDER,
+            ) from exc
 
 
 def _normalize_versioned_base_url(base_url):
@@ -388,6 +563,153 @@ class OpenAICompatibleModelClient:
         }
         return _extract_openai_text(data)
 
+    def stream_complete(
+        self,
+        prompt,
+        max_new_tokens,
+        prompt_cache_key=None,
+        prompt_cache_retention=None,
+        request_id=None,
+        **kwargs,
+    ):
+        del kwargs
+        self.last_completion_metadata = {}
+        payload = {
+            "model": self.model,
+            "input": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": prompt,
+                        }
+                    ],
+                }
+            ],
+            "max_output_tokens": max_new_tokens,
+            "stream": True,
+        }
+        if self.temperature is not None:
+            payload["temperature"] = self.temperature
+        if self.supports_prompt_cache and prompt_cache_key:
+            payload["prompt_cache_key"] = prompt_cache_key
+        if self.supports_prompt_cache and prompt_cache_retention:
+            payload["prompt_cache_retention"] = prompt_cache_retention
+
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": OPENAI_COMPATIBLE_USER_AGENT,
+        }
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+
+        request = urllib.request.Request(
+            self.base_url + "/responses",
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                content_type = getattr(response, "headers", {}).get("Content-Type", "")
+                first_line = response.readline()
+                first_text = _decode_line(first_line).lstrip()
+                yield {
+                    "type": EVENT_RESPONSE_STARTED,
+                    "request_id": request_id,
+                    "provider": "openai",
+                    "model": self.model,
+                }
+                if content_type.startswith("text/event-stream") or first_text.startswith("data:"):
+                    events = _sse_json_payloads(_with_first(first_line, response))
+                    deltas = []
+                    metadata = {}
+                    finish_reason = ""
+                    for event in events:
+                        event_type = str(event.get("type", ""))
+                        if event_type == "response.output_text.delta":
+                            text = event.get("delta")
+                            if isinstance(text, str) and text:
+                                deltas.append(text)
+                                yield {"type": EVENT_CONTENT_DELTA, "text": text}
+                            continue
+                        if event_type == "response.output_text.done":
+                            text = event.get("text")
+                            if not deltas and isinstance(text, str) and text:
+                                deltas.append(text)
+                                yield {"type": EVENT_CONTENT_DELTA, "text": text}
+                            metadata = self._stream_metadata(
+                                prompt_cache_key, prompt_cache_retention, event
+                            )
+                            finish_reason = str(event.get("status") or "")
+                            continue
+                        if event_type == "response.completed":
+                            response_data = event.get("response") or event
+                            text = _extract_openai_text(response_data)
+                            if not deltas and text:
+                                deltas.append(text)
+                                yield {"type": EVENT_CONTENT_DELTA, "text": text}
+                            metadata = self._stream_metadata(
+                                prompt_cache_key, prompt_cache_retention, response_data
+                            )
+                            finish_reason = str(response_data.get("status") or finish_reason or "completed")
+                            continue
+                        text = _extract_openai_text(event)
+                        if not deltas and text:
+                            deltas.append(text)
+                            yield {"type": EVENT_CONTENT_DELTA, "text": text}
+                            metadata = self._stream_metadata(
+                                prompt_cache_key, prompt_cache_retention, event
+                            )
+                            finish_reason = str(event.get("status") or finish_reason or "")
+                else:
+                    body_text = first_text + response.read().decode("utf-8", errors="replace")
+                    try:
+                        data = json.loads(body_text)
+                    except json.JSONDecodeError as exc:
+                        raise RuntimeError(
+                            "OpenAI-compatible error: backend returned non-JSON content that could not be parsed"
+                        ) from exc
+                    if data.get("error"):
+                        raise RuntimeError(f"OpenAI-compatible error: {data['error']}")
+                    text = _extract_openai_text(data)
+                    metadata = self._stream_metadata(prompt_cache_key, prompt_cache_retention, data)
+                    finish_reason = "completed"
+                    if text:
+                        yield {"type": EVENT_CONTENT_DELTA, "text": text}
+                if not metadata:
+                    metadata = self._stream_metadata(prompt_cache_key, prompt_cache_retention, {})
+                self.last_completion_metadata = metadata
+                yield {
+                    "type": EVENT_RESPONSE_COMPLETED,
+                    "metadata": metadata,
+                    "finish_reason": finish_reason,
+                    "request_id": request_id,
+                }
+        except urllib.error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace")
+            raise provider_http_error("OpenAI-compatible", exc.code, body) from exc
+        except (urllib.error.URLError, RemoteDisconnected) as exc:
+            raise ProviderRequestError(
+                "Could not reach the OpenAI-compatible backend.\n"
+                f"Base URL: {self.base_url}\n"
+                f"Model: {self.model}",
+                kind=FAILURE_TRANSIENT_PROVIDER,
+            ) from exc
+
+    def _stream_metadata(self, prompt_cache_key, prompt_cache_retention, data):
+        return {
+            "provider": "openai",
+            "model": self.model,
+            "prompt_cache_supported": self.supports_prompt_cache,
+            "prompt_cache_mode": self.prompt_cache_mode,
+            "prompt_cache_key": prompt_cache_key,
+            "prompt_cache_retention": prompt_cache_retention,
+            **_extract_usage_cache_details(data or {}, self.prompt_cache_mode),
+        }
+
 
 class DeepSeekModelClient:
     """DeepSeek native chat-completions adapter with automatic cache telemetry."""
@@ -515,6 +837,121 @@ class DeepSeekModelClient:
             + (f" ({diagnostics})" if diagnostics else "")
         )
 
+    def stream_complete(
+        self,
+        prompt,
+        max_new_tokens,
+        prompt_cache_key=None,
+        prompt_cache_retention=None,
+        request_id=None,
+        **kwargs,
+    ):
+        del kwargs
+        # PRD v1.1：流式路径不再复制 complete() 里“空 content 后把 max_tokens
+        # 放大到 2048 并重发”的语义；空响应统一交给 AgentLoop protocol correction。
+        self.last_completion_metadata = {}
+        payload = {
+            "model": self.model,
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": max_new_tokens,
+            "stream": True,
+            "stream_options": {"include_usage": True},
+        }
+        if self.temperature is not None:
+            payload["temperature"] = self.temperature
+
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": OPENAI_COMPATIBLE_USER_AGENT,
+        }
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+
+        request = urllib.request.Request(
+            self.base_url + "/chat/completions",
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                content_type = getattr(response, "headers", {}).get("Content-Type", "")
+                first_line = response.readline()
+                first_text = _decode_line(first_line).lstrip()
+                yield {
+                    "type": EVENT_RESPONSE_STARTED,
+                    "request_id": request_id,
+                    "provider": "deepseek",
+                    "model": self.model,
+                }
+                usage = {}
+                finish_reason = ""
+                reasoning_content_chars = 0
+                if content_type.startswith("text/event-stream") or first_text.startswith("data:"):
+                    for event in _sse_json_payloads(_with_first(first_line, response)):
+                        choices = event.get("choices") or []
+                        choice = choices[0] if choices else {}
+                        delta = choice.get("delta") or {}
+                        if choice.get("finish_reason"):
+                            finish_reason = str(choice.get("finish_reason"))
+                        if event.get("usage"):
+                            usage = event.get("usage")
+                        reasoning = delta.get("reasoning_content")
+                        if isinstance(reasoning, str):
+                            reasoning_content_chars += len(reasoning)
+                        text = delta.get("content")
+                        if isinstance(text, str) and text:
+                            yield {"type": EVENT_CONTENT_DELTA, "text": text}
+                else:
+                    body_text = first_text + response.read().decode("utf-8", errors="replace")
+                    try:
+                        data = json.loads(body_text)
+                    except json.JSONDecodeError as exc:
+                        raise ProviderRequestError("DeepSeek error: backend returned non-JSON content") from exc
+                    if data.get("error"):
+                        raise provider_http_error("DeepSeek", 400, str(data["error"]))
+                    choice = (data.get("choices") or [{}])[0]
+                    message = choice.get("message") or {}
+                    finish_reason = str(choice.get("finish_reason") or "")
+                    reasoning_content_chars = len(message.get("reasoning_content") or "")
+                    usage = data.get("usage") or {}
+                    text = _extract_openai_text(data)
+                    if text:
+                        yield {"type": EVENT_CONTENT_DELTA, "text": text}
+
+                metadata = {
+                    "provider": "deepseek",
+                    "model": self.model,
+                    "prompt_cache_supported": True,
+                    "prompt_cache_mode": self.prompt_cache_mode,
+                    "prompt_cache_key": prompt_cache_key,
+                    "prompt_cache_retention": None,
+                    "empty_content_retry_count": 0,
+                    "finish_reason": finish_reason,
+                    "reasoning_content_chars": reasoning_content_chars,
+                    "reasoning_tokens": int((usage or {}).get("completion_tokens_details", {}).get("reasoning_tokens", 0) or 0),
+                    "requested_max_tokens": int(max_new_tokens),
+                    **_extract_usage_cache_details({"usage": usage}, self.prompt_cache_mode),
+                }
+                self.last_completion_metadata = metadata
+                yield {
+                    "type": EVENT_RESPONSE_COMPLETED,
+                    "metadata": metadata,
+                    "finish_reason": finish_reason,
+                    "request_id": request_id,
+                }
+        except urllib.error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace")
+            raise provider_http_error("DeepSeek", exc.code, body) from exc
+        except (urllib.error.URLError, RemoteDisconnected) as exc:
+            raise ProviderRequestError(
+                "Could not reach DeepSeek.\n"
+                f"Base URL: {self.base_url}\n"
+                f"Model: {self.model}",
+                kind=FAILURE_TRANSIENT_PROVIDER,
+            ) from exc
+
 
 def _extract_anthropic_text(data):
     for item in data.get("content", []):
@@ -608,3 +1045,139 @@ class AnthropicCompatibleModelClient:
         if text:
             return text
         raise RuntimeError("Anthropic-compatible error: could not extract text from response")
+
+    def stream_complete(
+        self,
+        prompt,
+        max_new_tokens,
+        prompt_cache_key=None,
+        prompt_cache_retention=None,
+        request_id=None,
+        **kwargs,
+    ):
+        del prompt_cache_key, prompt_cache_retention, kwargs
+        self.last_completion_metadata = {}
+        payload = {
+            "model": self.model,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": prompt,
+                        }
+                    ],
+                }
+            ],
+            "max_tokens": max_new_tokens,
+            "stream": True,
+        }
+        if self.temperature is not None:
+            payload["temperature"] = self.temperature
+
+        headers = {
+            "Content-Type": "application/json",
+            "x-api-key": self.api_key,
+            "anthropic-version": "2023-06-01",
+        }
+
+        request = urllib.request.Request(
+            self.base_url + "/messages",
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                content_type = getattr(response, "headers", {}).get("Content-Type", "")
+                first_line = response.readline()
+                first_text = _decode_line(first_line).lstrip()
+                yield {
+                    "type": EVENT_RESPONSE_STARTED,
+                    "request_id": request_id,
+                    "provider": "anthropic",
+                    "model": self.model,
+                }
+                input_tokens = None
+                output_tokens = None
+                finish_reason = ""
+                if content_type.startswith("text/event-stream") or first_text.startswith("data:"):
+                    for event in _sse_json_payloads(_with_first(first_line, response)):
+                        event_type = str(event.get("type", ""))
+                        if event_type == "message_start":
+                            message = event.get("message") or {}
+                            usage = message.get("usage") or {}
+                            input_tokens = usage.get("input_tokens")
+                        elif event_type == "content_block_delta":
+                            delta = event.get("delta") or {}
+                            if delta.get("type") == "text_delta" and isinstance(delta.get("text"), str):
+                                text = delta.get("text")
+                                if text:
+                                    yield {"type": EVENT_CONTENT_DELTA, "text": text}
+                        elif event_type == "message_delta":
+                            usage = event.get("usage") or {}
+                            output_tokens = usage.get("output_tokens")
+                            delta = event.get("delta") or {}
+                            if delta.get("stop_reason"):
+                                finish_reason = str(delta.get("stop_reason"))
+                        elif event_type == "error":
+                            error = event.get("error") or {}
+                            raise ProviderRequestError(
+                                f"Anthropic-compatible stream error: {error.get('type')}: {error.get('message')}",
+                                kind=FAILURE_UNKNOWN_PROVIDER,
+                            )
+                else:
+                    body_text = first_text + response.read().decode("utf-8", errors="replace")
+                    try:
+                        data = json.loads(body_text)
+                    except json.JSONDecodeError as exc:
+                        raise ProviderRequestError(
+                            "Anthropic-compatible error: backend returned non-JSON content that could not be parsed"
+                        ) from exc
+                    if data.get("error"):
+                        raise provider_http_error("Anthropic-compatible", 400, str(data["error"]))
+                    text = _extract_anthropic_text(data)
+                    if text:
+                        yield {"type": EVENT_CONTENT_DELTA, "text": text}
+                    usage = data.get("usage") or {}
+                    input_tokens = usage.get("input_tokens")
+                    output_tokens = usage.get("output_tokens")
+                    finish_reason = str(data.get("stop_reason") or "")
+
+                metadata = {
+                    "provider": "anthropic",
+                    "model": self.model,
+                    "prompt_cache_supported": False,
+                    "prompt_cache_mode": self.prompt_cache_mode,
+                    "finish_reason": finish_reason,
+                    **_extract_usage_cache_details(
+                        {
+                            "usage": {
+                                "input_tokens": input_tokens,
+                                "output_tokens": output_tokens,
+                                "total_tokens": (
+                                    int(input_tokens or 0) + int(output_tokens or 0)
+                                ),
+                            }
+                        },
+                        self.prompt_cache_mode,
+                    ),
+                }
+                self.last_completion_metadata = metadata
+                yield {
+                    "type": EVENT_RESPONSE_COMPLETED,
+                    "metadata": metadata,
+                    "finish_reason": finish_reason,
+                    "request_id": request_id,
+                }
+        except urllib.error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace")
+            raise provider_http_error("Anthropic-compatible", exc.code, body) from exc
+        except (urllib.error.URLError, RemoteDisconnected) as exc:
+            raise ProviderRequestError(
+                "Could not reach the Anthropic-compatible backend.\n"
+                f"Base URL: {self.base_url}\n"
+                f"Model: {self.model}",
+                kind=FAILURE_TRANSIENT_PROVIDER,
+            ) from exc

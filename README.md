@@ -16,6 +16,7 @@
 - 包名是 `apricity`
 - CLI 命令是 `apricity`
 - 模块入口是 `python -m apricity`
+- 流式输出：交互式 TTY 默认逐字显示最终回答，支持 `--stream` / `--no-stream`
 - 会话保存在 `.apricity/sessions/`
 - 每次运行的工件保存在 `.apricity/runs/<run_id>/`
 - 可选 `resilient` 模式：统一处理 provider retry、context recovery、tool-result spill 和 protocol correction
@@ -106,6 +107,17 @@ uv run apricity "inspect the test failures and propose a fix"
 ```bash
 python -m apricity
 ```
+
+## 流式输出
+
+交互式终端（TTY）默认启用流式输出：模型生成 `<final>` 内容时逐字显示，`<tool>` / DSML / reasoning 内容始终缓冲，不会泄漏到终端。管道、重定向和 CI 等非 TTY 场景默认走原有完整响应路径，保证输出稳定：
+
+```bash
+apricity --stream "summarize README.md"      # 显式开启流式
+apricity --no-stream "summarize README.md"   # 强制完整响应路径
+```
+
+流式失败会在 trace/report 中保留 `stream_interrupted` / `stream_cancelled`、已显示字符数和 request_id；`--no-stream` 作为稳定回滚开关。
 
 ## 模型后端
 

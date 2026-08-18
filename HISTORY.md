@@ -111,3 +111,11 @@
 - `CostGuard` 在 provider 只上报 cache hit 时从 input tokens 推导 miss tokens；`SessionLedger.load` 改为复用 `_accept` 校验，拒绝非连续 seq 或缺失 source 的持久化 ledger。
 - 结构压缩 E 的 `minimum_compaction_gain` 改为与 D 一致的 token 口径；`.env.example` 不再声称内置默认 URL；README/review-pack 的 pytest 命令按 AGENTS 规则带 `--basetemp tests/pytest/<task-id>`；修正 HISTORY 中的 Windows 绝对路径 markdown 链接。
 - 验证：`compileall`、`ruff` 通过，全量 pytest `219 passed, 1 skipped`。
+
+### 22.Add streaming output for four providers（26/8/18）
+
+- 新增 `apricity/streaming.py`：`StreamingResponseParser` 按“首个协议标记 commit”增量解析 `<final>`/`<tool>`/DSML，tool envelope 整体缓冲并限制在 1 MiB；`IncrementalRedactor` 对可见文本做跨 chunk 脱敏。
+- 四个 provider adapter 新增 `stream_complete`：逐行消费 SSE/NDJSON，支持普通 JSON fallback；DeepSeek 流式请求带 `stream_options.include_usage=true`，空响应不再复制 2048 token 放大重试。
+- `AgentLoop` 接入流事件：工具 candidate 等 `response_completed` 后才执行，`first_token` + `stream_summary` 聚合 trace；可见文本中断后禁止自动重试，新增 `stream_interrupted` / `stream_cancelled` stop reason 与 `partial_visible` / `visible_chars` / `request_id` 字段。
+- CLI 新增互斥 `--stream` / `--no-stream`：TTY 默认流式，非 TTY 默认完整响应；`Apricity.ask(message, event_sink=...)` 作为实验性接口，旧同步 API 与 FakeModelClient 保持兼容。
+- 新增 `tests/test_streaming.py` 覆盖 parser、脱敏、AgentLoop、四 provider 流式 adapter 与 CLI 参数。验证：`compileall`、`ruff` 通过，全量 pytest `238 passed, 1 skipped`。

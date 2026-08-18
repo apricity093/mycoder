@@ -58,6 +58,26 @@ HELP_DETAILS = textwrap.dedent(
 SECRET_ENV_NAMES_VAR = "APRICITY_SECRET_ENV_NAMES"
 
 
+class TerminalStreamSink:
+    """把 runtime 的 visible_delta 事件增量写到终端，不输出任何 ANSI。"""
+
+    def __init__(self, stream=None):
+        self.stream = stream or sys.stdout
+        self.wrote_any = False
+        self.text = ""
+
+    def __call__(self, event):
+        if str(event.get("type", "")) != "visible_delta":
+            return
+        text = str(event.get("text", ""))
+        if not text:
+            return
+        self.text += text
+        self.wrote_any = True
+        self.stream.write(text)
+        self.stream.flush()
+
+
 def _configured_secret_names(args):
     configured_secret_names = set(DEFAULT_SECRET_ENV_NAMES)
     configured_secret_names.update(str(name).upper() for name in args.secret_env_names)
@@ -276,6 +296,23 @@ def build_arg_parser():
     parser.add_argument("--max-new-tokens", type=int, default=512, help="Maximum model output tokens per step.")
     parser.add_argument("--temperature", type=float, default=0.2, help="Sampling temperature sent to the selected provider.")
     parser.add_argument("--top-p", type=float, default=0.9, help="Top-p sampling value sent to Ollama.")
+    stream_group = parser.add_mutually_exclusive_group()
+    stream_group.add_argument(
+        "--stream",
+        dest="stream_mode",
+        action="store_const",
+        const=True,
+        default=None,
+        help="Enable incremental terminal output.",
+    )
+    stream_group.add_argument(
+        "--no-stream",
+        dest="stream_mode",
+        action="store_const",
+        const=False,
+        default=None,
+        help="Disable streaming and use the legacy complete-response path.",
+    )
     return parser
 
 
@@ -287,6 +324,10 @@ def main(argv=None):
         print(f"Configuration error: {exc}", file=sys.stderr)
         return 2
 
+    stream_mode = args.stream_mode
+    if stream_mode is None:
+        stream_mode = bool(sys.stdout.isatty())
+
     model = getattr(agent.model_client, "model", PROVIDER_DEFAULTS["ollama"].model)
     base_url = getattr(agent.model_client, "base_url", PROVIDER_DEFAULTS["ollama"].base_url)
     print(build_welcome(agent, model=model, base_url=base_url))
@@ -296,8 +337,13 @@ def main(argv=None):
         prompt = " ".join(args.prompt).strip()
         if prompt:
             print()
+            sink = TerminalStreamSink() if stream_mode else None
             try:
-                print(agent.ask(prompt))
+                answer = agent.ask(prompt, event_sink=sink, stream=stream_mode)
+                if sink is not None and sink.wrote_any and sink.text.strip() == answer.strip():
+                    print()
+                else:
+                    print(answer)
             except RuntimeError as exc:
                 print(str(exc), file=sys.stderr)
                 return 1
@@ -331,7 +377,12 @@ def main(argv=None):
             continue
 
         print()
+        sink = TerminalStreamSink() if stream_mode else None
         try:
-            print(agent.ask(user_input))
+            answer = agent.ask(user_input, event_sink=sink, stream=stream_mode)
+            if sink is not None and sink.wrote_any and sink.text.strip() == answer.strip():
+                print()
+            else:
+                print(answer)
         except RuntimeError as exc:
             print(str(exc), file=sys.stderr)
