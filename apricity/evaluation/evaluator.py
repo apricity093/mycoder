@@ -444,6 +444,8 @@ class BenchmarkEvaluator:
         recovery_mode="compatible",
         fault_plan=None,
         disabled_recovery_policies=(),
+        stream=False,
+        event_sink=None,
     ):
         self.benchmark_path = Path(benchmark_path)
         self.artifact_path = Path(artifact_path)
@@ -460,6 +462,8 @@ class BenchmarkEvaluator:
         self.recovery_mode = str(recovery_mode)
         self.fault_plan = fault_plan or FaultPlan(kind=FAULT_NONE)
         self.disabled_recovery_policies = tuple(str(value) for value in disabled_recovery_policies)
+        self.stream = bool(stream)
+        self.event_sink = event_sink
         self.repo_root = self.benchmark_path.resolve().parent.parent
 
     def load(self):
@@ -545,7 +549,11 @@ class BenchmarkEvaluator:
         initial_task_summary_empty = not str(initial_memory_state["working"]["task_summary"]).strip()
         initial_episodic_notes_empty = not initial_memory_state["episodic_notes"]
 
-        final_answer = agent.ask(task["prompt"])
+        final_answer = agent.ask(
+            task["prompt"],
+            event_sink=self.event_sink,
+            stream=self.stream,
+        )
         task_state = agent.current_task_state
         run_dir = Path(agent.current_run_dir)
         task_state_path = agent.run_store.task_state_path(task_state)
@@ -555,6 +563,13 @@ class BenchmarkEvaluator:
         trace_events = [
             json.loads(line)
             for line in agent.run_store.trace_path(task_state).read_text(encoding="utf-8").splitlines()
+        ]
+        first_token_events = [event for event in trace_events if event.get("event") == "first_token"]
+        stream_summary_events = [event for event in trace_events if event.get("event") == "stream_summary"]
+        model_durations_ms = [
+            int(event.get("duration_ms", 0) or 0)
+            for event in trace_events
+            if event.get("event") == "model_parsed" and event.get("duration_ms") is not None
         ]
         side_effect_calls = set()
         duplicate_side_effects = 0
@@ -653,6 +668,22 @@ class BenchmarkEvaluator:
             "duplicate_side_effects": duplicate_side_effects,
             "final_answer": final_answer,
             "stop_reason": task_state.stop_reason,
+            "streaming": self.stream,
+            "partial_visible": task_state.partial_visible,
+            "visible_chars": task_state.visible_chars,
+            "ttft_ms": (
+                int(first_token_events[0].get("ttft_ms", 0) or 0)
+                if first_token_events
+                else None
+            ),
+            "stream_summary": (
+                stream_summary_events[-1]
+                if stream_summary_events
+                else None
+            ),
+            "model_response_ms": (
+                sum(model_durations_ms) if model_durations_ms else None
+            ),
             "initial_history_empty": initial_history_empty,
             "initial_memory_empty": initial_memory_empty,
             "initial_task_summary_empty": initial_task_summary_empty,

@@ -194,7 +194,7 @@ class AgentLoop:
             return
         stats["visible_chars"] += len(visible)
         stats["chunk_count"] += 1
-        task_state.partial_visible = True
+        stats["visible_started"] = True
         task_state.visible_chars = stats["visible_chars"]
         now_monotonic = time.monotonic()
         if stats["first_delta_at"] is None:
@@ -215,7 +215,7 @@ class AgentLoop:
         except (BrokenPipeError, OSError) as exc:
             raise StreamCancelledError(
                 f"visible output sink failed: {type(exc).__name__}",
-                partial_visible=task_state.partial_visible,
+                partial_visible=stats["visible_started"],
                 visible_chars=stats["visible_chars"],
             ) from exc
         except Exception as exc:
@@ -276,6 +276,7 @@ class AgentLoop:
             "request_id": request_id,
             "model_started_at": model_started_at,
             "visible_chars": 0,
+            "visible_started": False,
             "chunk_count": 0,
             "provider_event_count": 0,
             "sink_errors": 0,
@@ -283,6 +284,7 @@ class AgentLoop:
             "last_delta_at": None,
             "tool_candidate_ready": False,
         }
+        self._last_stream_stats = stats
         generator = agent.model_client.stream_complete(
             prompt,
             agent.max_new_tokens,
@@ -290,10 +292,15 @@ class AgentLoop:
             prompt_cache_retention=prompt_cache_retention,
             request_id=request_id,
         )
+        completion_seen = False
         try:
             for event in generator:
                 stats["provider_event_count"] += 1
                 event_type = str(event.get("type", ""))
+                if completion_seen:
+                    # response_completed 之后出现的事件（重复 done、尾部 delta 等）
+                    # 只计数，不重新打开 parser。
+                    continue
                 if event_type == EVENT_CONTENT_DELTA:
                     self._handle_parser_events(
                         agent,
@@ -304,6 +311,7 @@ class AgentLoop:
                         stats,
                     )
                 elif event_type == EVENT_RESPONSE_COMPLETED:
+                    completion_seen = True
                     metadata = dict(event.get("metadata") or {})
                     if metadata:
                         agent.model_client.last_completion_metadata = metadata
@@ -324,10 +332,11 @@ class AgentLoop:
         except Exception as exc:
             if isinstance(exc, (StreamCancelledError, StreamInterruptedError)):
                 raise
-            if parser.visible_emitted:
+            if stats["visible_started"]:
                 raise StreamInterruptedError(
                     clip(str(exc), 500),
                     error_type=type(exc).__name__,
+                    partial_visible=True,
                     visible_chars=stats["visible_chars"],
                 ) from exc
             raise
@@ -335,6 +344,19 @@ class AgentLoop:
             close = getattr(generator, "close", None)
             if callable(close):
                 close()
+
+        if not completion_seen:
+            if stats["visible_started"]:
+                raise StreamInterruptedError(
+                    "provider stream ended before response_completed",
+                    error_type="missing_response_completed",
+                    partial_visible=True,
+                    visible_chars=stats["visible_chars"],
+                )
+            raise ProviderRequestError(
+                "provider stream ended before response_completed",
+                kind=FAILURE_TRANSIENT_PROVIDER,
+            )
 
         self._handle_parser_events(
             agent,
@@ -349,10 +371,11 @@ class AgentLoop:
             self._emit_visible(agent, task_state, redactor, event_sink, tail, stats)
         self._emit_stream_summary(agent, task_state, stats)
 
-        if parser.status == PARSER_STATUS_UNCLOSED_FINAL and stats["visible_chars"]:
+        if parser.status == PARSER_STATUS_UNCLOSED_FINAL and stats["visible_started"]:
             raise StreamInterruptedError(
                 "model stream ended before the <final> envelope was closed",
                 error_type="unclosed_final",
+                partial_visible=True,
                 visible_chars=stats["visible_chars"],
             )
         return parser.full_raw()
@@ -385,6 +408,7 @@ class AgentLoop:
                     "request_id": request_id,
                     "model_started_at": model_started_at,
                     "visible_chars": 0,
+                    "visible_started": False,
                     "chunk_count": 0,
                     "provider_event_count": 1,
                     "sink_errors": 0,
@@ -392,6 +416,7 @@ class AgentLoop:
                     "last_delta_at": None,
                     "tool_candidate_ready": False,
                 }
+                self._last_stream_stats = stats
                 self._handle_parser_events(
                     agent,
                     task_state,
@@ -574,8 +599,16 @@ class AgentLoop:
                     model_started_at,
                 )
             except (StreamCancelledError, KeyboardInterrupt) as exc:
-                partial_visible = bool(getattr(exc, "partial_visible", False) or task_state.partial_visible)
-                visible_chars = int(getattr(exc, "visible_chars", 0) or task_state.visible_chars)
+                stream_stats = getattr(self, "_last_stream_stats", {}) or {}
+                partial_visible = bool(
+                    getattr(exc, "partial_visible", False)
+                    or stream_stats.get("visible_started", False)
+                )
+                visible_chars = int(
+                    getattr(exc, "visible_chars", 0)
+                    or stream_stats.get("visible_chars", 0)
+                    or task_state.visible_chars
+                )
                 final = "Stopped: the stream was cancelled before the answer completed."
                 return self._persist_stream_terminal(
                     agent,

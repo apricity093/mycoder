@@ -47,6 +47,7 @@ def _prompt_usage(row):
         "output_tokens": int(metadata.get("output_tokens", 0) or 0),
         "total_tokens": int(metadata.get("total_tokens", 0) or 0),
         "cached_tokens": int(metadata.get("cached_tokens", 0) or 0),
+        "cache_miss_tokens": int(metadata.get("cache_miss_tokens", 0) or 0),
         "cache_telemetry_available": metadata.get("cache_telemetry_available") is True,
     }
 
@@ -72,6 +73,21 @@ def _summarize(rows, tasks, repetitions):
     usage_rows = [_prompt_usage(row) for row in rows]
     cache_rows = [usage for usage in usage_rows if usage["cache_telemetry_available"]]
     first_rows = [min(items, key=lambda item: int(item["repetition"])) for items in task_rows.values()]
+    ttft_values = [
+        int(row.get("ttft_ms"))
+        for row in rows
+        if row.get("ttft_ms") is not None
+    ]
+    model_response_values = [
+        int(row.get("model_response_ms"))
+        for row in rows
+        if row.get("model_response_ms") is not None
+    ]
+    provider_error_stop_reasons = {
+        "model_error",
+        "provider_retry_exhausted",
+        "stream_interrupted",
+    }
     stable_passes = sum(
         1
         for task in tasks
@@ -114,10 +130,27 @@ def _summarize(rows, tasks, repetitions):
             len(rows),
         ),
         "avg_duration_seconds": _mean(float(row.get("duration_seconds", 0.0)) for row in rows),
+        "avg_ttft_ms": _mean(ttft_values),
+        "avg_model_response_ms": _mean(model_response_values),
+        "partial_visible_runs": sum(1 for row in rows if row.get("partial_visible")),
+        "partial_visible_rate": _ratio(
+            sum(1 for row in rows if row.get("partial_visible")), len(rows)
+        ),
+        "cancelled_runs": sum(
+            1 for row in rows if str(row.get("stop_reason")) == "stream_cancelled"
+        ),
+        "provider_error_runs": sum(
+            1 for row in rows if str(row.get("stop_reason")) in provider_error_stop_reasons
+        ),
+        "provider_error_rate": _ratio(
+            sum(1 for row in rows if str(row.get("stop_reason")) in provider_error_stop_reasons),
+            len(rows),
+        ),
         "input_tokens": sum(usage["input_tokens"] for usage in usage_rows),
         "output_tokens": sum(usage["output_tokens"] for usage in usage_rows),
         "total_tokens": sum(usage["total_tokens"] for usage in usage_rows),
         "cached_tokens": sum(usage["cached_tokens"] for usage in cache_rows),
+        "cache_miss_tokens": sum(usage["cache_miss_tokens"] for usage in cache_rows),
         "cache_telemetry_run_count": len(cache_rows),
         "failure_category_counts": dict(sorted(failure_counts.items())),
         "categories": {
@@ -209,6 +242,8 @@ def run_real_model_benchmark(
     recovery_mode="compatible",
     fault_plan=None,
     disabled_recovery_policies=(),
+    stream=False,
+    event_sink=None,
 ):
     """Run all tasks repeatedly, persist artifacts, and return one aggregate result.
 
@@ -262,6 +297,8 @@ def run_real_model_benchmark(
             raise ValueError("cannot resume: repetition count differs from the existing artifact")
         if existing_runtime.get("recovery_mode", "compatible") != recovery_mode:
             raise ValueError("cannot resume: recovery mode differs from the existing artifact")
+        if bool(existing_runtime.get("streaming", False)) != bool(stream):
+            raise ValueError("cannot resume: streaming mode differs from the existing artifact")
         if existing_runtime.get("fault_type", "none") != getattr(fault_plan, "kind", "none"):
             raise ValueError("cannot resume: fault plan differs from the existing artifact")
         if existing_runtime.get("disabled_recovery_policies", []) != sorted(disabled_recovery_policies):
@@ -289,6 +326,7 @@ def run_real_model_benchmark(
             "branch": _git_value(repo_root, "branch", "--show-current"),
             "dirty": bool(_git_value(repo_root, "status", "--porcelain")),
             "recovery_mode": recovery_mode,
+            "streaming": bool(stream),
             "fault_type": getattr(fault_plan, "kind", "none"),
             "disabled_recovery_policies": sorted(disabled_recovery_policies),
         },
@@ -312,6 +350,8 @@ def run_real_model_benchmark(
             recovery_mode=recovery_mode,
             fault_plan=fault_plan,
             disabled_recovery_policies=disabled_recovery_policies,
+            stream=stream,
+            event_sink=event_sink,
         )
         for task in benchmark["tasks"]:
             if (task["id"], repetition) in completed_keys:

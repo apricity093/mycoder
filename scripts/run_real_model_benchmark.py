@@ -26,6 +26,9 @@ def build_arg_parser():
     parser.add_argument("--request-timeout-seconds", type=int, default=300)
     parser.add_argument("--resume", action="store_true", help="Resume an interrupted artifact in --output.")
     parser.add_argument("--recovery-mode", choices=("compatible", "resilient"), default="compatible")
+    stream_group = parser.add_mutually_exclusive_group()
+    stream_group.add_argument("--stream", dest="stream_mode", action="store_const", const=True, default=False)
+    stream_group.add_argument("--no-stream", dest="stream_mode", action="store_const", const=False, default=False)
     parser.add_argument("--fault", choices=sorted(FAULT_KINDS), default="none")
     parser.add_argument(
         "--disable-recovery-policy",
@@ -62,6 +65,7 @@ def main(argv=None):
         recovery_mode=args.recovery_mode,
         fault_plan=FaultPlan(kind=args.fault),
         disabled_recovery_policies=args.disabled_recovery_policies,
+        stream=bool(args.stream_mode),
     )
     summary = payload["summary"]
     print(f"Results: {Path(payload['artifact_path']).resolve()}")

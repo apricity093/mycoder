@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "description": "Stage 2 streaming matrix subset: first five real-model tasks.",
+  "tasks": [
+    {
+      "id": "safe_divide_contract",
+      "prompt": "Fix miniapp/calculator.py so safe_divide returns the quotient for normal inputs and raises ValueError with message 'division by zero' when the denominator is zero. Run the targeted test before finishing.",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "step_budget": 10,
+      "expected_artifact": "miniapp/calculator.py implements the safe division contract",
+      "artifact_path": "miniapp/calculator.py",
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/calculator_check.py"
+      ],
+      "verifier_timeout_seconds": 30,
+      "category": "bug-fix"
+    },
+    {
+      "id": "csv_field_normalization",
+      "prompt": "Fix parse_csv_line in miniapp/parser.py. It must trim whitespace around fields, discard empty fields, and return an empty list for a blank line. Run the targeted test before finishing.",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "step_budget": 10,
+      "expected_artifact": "miniapp/parser.py normalizes CSV fields",
+      "artifact_path": "miniapp/parser.py",
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/parser_check.py"
+      ],
+      "verifier_timeout_seconds": 30,
+      "category": "bug-fix"
+    },
+    {
+      "id": "retry_attempt_budget",
+      "prompt": "Fix run_with_retries in miniapp/retry.py. max_attempts is the total number of calls, not the number of retries after the first call. Reject max_attempts below 1 with ValueError, return immediately on success, and re-raise the final exception after the budget is exhausted. Run the targeted test.",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "step_budget": 12,
+      "expected_artifact": "miniapp/retry.py obeys the total attempt budget",
+      "artifact_path": "miniapp/retry.py",
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/retry_check.py"
+      ],
+      "verifier_timeout_seconds": 30,
+      "category": "bug-fix"
+    },
+    {
+      "id": "cache_instance_isolation",
+      "prompt": "Fix BucketCache in miniapp/cache.py so separate instances never share their default storage, while callers may still pass an explicit dictionary to use as storage. Run the targeted test before finishing.",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "step_budget": 10,
+      "expected_artifact": "miniapp/cache.py avoids shared mutable default state",
+      "artifact_path": "miniapp/cache.py",
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/cache_check.py"
+      ],
+      "verifier_timeout_seconds": 30,
+      "category": "bug-fix"
+    },
+    {
+      "id": "centralized_timeout_default",
+      "prompt": "The default request timeout must be 45 seconds everywhere. Make miniapp/config.py the single source of truth and update miniapp/runtime.py to use that constant instead of duplicating a literal. Preserve explicit timeout overrides and run the targeted test.",
+      "fixture_repo": "tests/fixtures/real_model_bench_repo",
+      "allowed_tools": [
+        "list_files",
+        "read_file",
+        "search",
+        "patch_file",
+        "run_process"
+      ],
+      "step_budget": 12,
+      "expected_artifact": "config and runtime share one default timeout constant",
+      "artifact_path": "miniapp/runtime.py",
+      "verifier": [
+        "python3",
+        "-m",
+        "pytest",
+        "-q",
+        "verifiers/runtime_check.py"
+      ],
+      "verifier_timeout_seconds": 30,
+      "category": "cross-file"
+    }
+  ]
+}

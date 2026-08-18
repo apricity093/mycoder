@@ -5,6 +5,7 @@ runtime 只关心一件事：给我一个 prompt，我拿回一段文本。
 这些差异都在这里被抹平成统一的 complete() 接口。
 """
 
+import codecs
 import json
 from http.client import RemoteDisconnected
 import urllib.error
@@ -78,6 +79,27 @@ def _ndjson_payloads(lines):
 def _with_first(first, iterable):
     yield first
     yield from iterable
+
+
+def _iter_decoded_lines(iterable):
+    """把任意 bytes 分块流解码为按行拆分的文本流。
+
+    urllib 的 HTTPResponse 按行迭代，但测试与兼容后端可能给出任意分块；
+    增量 decoder 保证多字节 UTF-8 字符被网络 chunk 切开时不会变成替换符。
+    """
+    decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
+    pending = b""
+    for chunk in iterable:
+        if isinstance(chunk, str):
+            chunk = chunk.encode("utf-8")
+        if not isinstance(chunk, (bytes, bytearray)):
+            chunk = bytes(chunk)
+        pending += bytes(chunk)
+        while b"\n" in pending:
+            raw, pending = pending.split(b"\n", 1)
+            yield decoder.decode(raw + b"\n")
+    if pending:
+        yield decoder.decode(pending)
 
 
 class FakeModelClient:
@@ -187,12 +209,13 @@ class OllamaModelClient:
                     "provider": "ollama",
                     "model": self.model,
                 }
-                first_line = response.readline()
-                first_text = _decode_line(first_line).lstrip()
+                line_iter = _iter_decoded_lines(response)
+                first_line = next(line_iter, "")
+                first_text = first_line.lstrip()
                 if first_text.startswith("{"):
                     finish_reason = ""
                     metadata = {}
-                    for event in _ndjson_payloads(_with_first(first_line, response)):
+                    for event in _ndjson_payloads(_with_first(first_line, line_iter)):
                         if event.get("error"):
                             raise provider_http_error("Ollama", 400, str(event["error"]))
                         text = event.get("response")
@@ -217,7 +240,7 @@ class OllamaModelClient:
                             }
                             finish_reason = str(event.get("done_reason") or "done")
                 else:
-                    body_text = first_text + response.read().decode("utf-8", errors="replace")
+                    body_text = first_text + "".join(line_iter)
                     try:
                         data = json.loads(body_text)
                     except json.JSONDecodeError as exc:
@@ -614,8 +637,9 @@ class OpenAICompatibleModelClient:
         try:
             with urllib.request.urlopen(request, timeout=self.timeout) as response:
                 content_type = getattr(response, "headers", {}).get("Content-Type", "")
-                first_line = response.readline()
-                first_text = _decode_line(first_line).lstrip()
+                line_iter = _iter_decoded_lines(response)
+                first_line = next(line_iter, "")
+                first_text = first_line.lstrip()
                 yield {
                     "type": EVENT_RESPONSE_STARTED,
                     "request_id": request_id,
@@ -623,7 +647,7 @@ class OpenAICompatibleModelClient:
                     "model": self.model,
                 }
                 if content_type.startswith("text/event-stream") or first_text.startswith("data:"):
-                    events = _sse_json_payloads(_with_first(first_line, response))
+                    events = _sse_json_payloads(_with_first(first_line, line_iter))
                     deltas = []
                     metadata = {}
                     finish_reason = ""
@@ -665,7 +689,7 @@ class OpenAICompatibleModelClient:
                             )
                             finish_reason = str(event.get("status") or finish_reason or "")
                 else:
-                    body_text = first_text + response.read().decode("utf-8", errors="replace")
+                    body_text = first_text + "".join(line_iter)
                     try:
                         data = json.loads(body_text)
                     except json.JSONDecodeError as exc:
@@ -877,8 +901,9 @@ class DeepSeekModelClient:
         try:
             with urllib.request.urlopen(request, timeout=self.timeout) as response:
                 content_type = getattr(response, "headers", {}).get("Content-Type", "")
-                first_line = response.readline()
-                first_text = _decode_line(first_line).lstrip()
+                line_iter = _iter_decoded_lines(response)
+                first_line = next(line_iter, "")
+                first_text = first_line.lstrip()
                 yield {
                     "type": EVENT_RESPONSE_STARTED,
                     "request_id": request_id,
@@ -889,7 +914,7 @@ class DeepSeekModelClient:
                 finish_reason = ""
                 reasoning_content_chars = 0
                 if content_type.startswith("text/event-stream") or first_text.startswith("data:"):
-                    for event in _sse_json_payloads(_with_first(first_line, response)):
+                    for event in _sse_json_payloads(_with_first(first_line, line_iter)):
                         choices = event.get("choices") or []
                         choice = choices[0] if choices else {}
                         delta = choice.get("delta") or {}
@@ -904,7 +929,7 @@ class DeepSeekModelClient:
                         if isinstance(text, str) and text:
                             yield {"type": EVENT_CONTENT_DELTA, "text": text}
                 else:
-                    body_text = first_text + response.read().decode("utf-8", errors="replace")
+                    body_text = first_text + "".join(line_iter)
                     try:
                         data = json.loads(body_text)
                     except json.JSONDecodeError as exc:
@@ -1091,8 +1116,9 @@ class AnthropicCompatibleModelClient:
         try:
             with urllib.request.urlopen(request, timeout=self.timeout) as response:
                 content_type = getattr(response, "headers", {}).get("Content-Type", "")
-                first_line = response.readline()
-                first_text = _decode_line(first_line).lstrip()
+                line_iter = _iter_decoded_lines(response)
+                first_line = next(line_iter, "")
+                first_text = first_line.lstrip()
                 yield {
                     "type": EVENT_RESPONSE_STARTED,
                     "request_id": request_id,
@@ -1103,7 +1129,7 @@ class AnthropicCompatibleModelClient:
                 output_tokens = None
                 finish_reason = ""
                 if content_type.startswith("text/event-stream") or first_text.startswith("data:"):
-                    for event in _sse_json_payloads(_with_first(first_line, response)):
+                    for event in _sse_json_payloads(_with_first(first_line, line_iter)):
                         event_type = str(event.get("type", ""))
                         if event_type == "message_start":
                             message = event.get("message") or {}
@@ -1128,7 +1154,7 @@ class AnthropicCompatibleModelClient:
                                 kind=FAILURE_UNKNOWN_PROVIDER,
                             )
                 else:
-                    body_text = first_text + response.read().decode("utf-8", errors="replace")
+                    body_text = first_text + "".join(line_iter)
                     try:
                         data = json.loads(body_text)
                     except json.JSONDecodeError as exc:

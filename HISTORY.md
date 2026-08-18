@@ -119,3 +119,10 @@
 - `AgentLoop` 接入流事件：工具 candidate 等 `response_completed` 后才执行，`first_token` + `stream_summary` 聚合 trace；可见文本中断后禁止自动重试，新增 `stream_interrupted` / `stream_cancelled` stop reason 与 `partial_visible` / `visible_chars` / `request_id` 字段。
 - CLI 新增互斥 `--stream` / `--no-stream`：TTY 默认流式，非 TTY 默认完整响应；`Apricity.ask(message, event_sink=...)` 作为实验性接口，旧同步 API 与 FakeModelClient 保持兼容。
 - 新增 `tests/test_streaming.py` 覆盖 parser、脱敏、AgentLoop、四 provider 流式 adapter 与 CLI 参数。验证：`compileall`、`ruff` 通过，全量 pytest `238 passed, 1 skipped`。
+
+### 23.Harden streaming semantics and Stage 2 benchmark prep（26/8/18）
+
+- 修正 `partial_visible` 语义：正常完成保持 `false`，仅在断流/取消且已展示 partial final 时置 `true`；补充正常完成、BrokenPipe、Ctrl-C、缺失 `response_completed` 三态断言。
+- 流式传输改为增量 UTF-8 行解码器，任意字节分块下多字节字符跨 chunk 不损坏；SSE 兼容 `\r\n`、多行 `data:`、重复 done 与 malformed line，JSON fallback 覆盖四个 provider。
+- `BenchmarkEvaluator` / real-model benchmark runner 支持 `stream` 参数，行记录新增 `ttft_ms`、`model_response_ms`、`partial_visible`、`visible_chars`、`stream_summary`；summary 新增 TTFT、partial/cancel 与 provider error 指标。
+- 新增 `benchmarks/streaming_stage2_tasks.json`（前 5 个 real-model 任务）与 `scripts/run_streaming_stage2.py`，用于 PRD Stage 2 的 streaming vs `--no-stream` 小矩阵。验证：`compileall`、`ruff` 通过，全量 pytest `254 passed, 1 skipped`。

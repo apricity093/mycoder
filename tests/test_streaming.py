@@ -1,9 +1,13 @@
 """流式输出功能测试：parser、增量脱敏、AgentLoop 与 provider adapter。"""
 
+import io
+import sys
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
+from apricity import cli as cli_module
 from apricity.cli import build_arg_parser
 from apricity.providers.clients import (
     AnthropicCompatibleModelClient,
@@ -22,7 +26,10 @@ from apricity.streaming import (
     PARSER_STATUS_UNCLOSED_FINAL,
     StreamingResponseParser,
 )
-from apricity.task_state import STOP_REASON_STREAM_INTERRUPTED
+from apricity.task_state import (
+    STOP_REASON_STREAM_CANCELLED,
+    STOP_REASON_STREAM_INTERRUPTED,
+)
 from apricity.workspace import WorkspaceContext
 
 
@@ -66,6 +73,36 @@ def _tool_turn():
     ]
 
 
+class FakeCLIAgent:
+    def __init__(self):
+        self.last_ask = None
+        self.model_client = type("Model", (), {"model": "fake", "base_url": "http://fake"})()
+        self.workspace = type("Workspace", (), {"cwd": str(Path(".")), "branch": "main"})()
+        self.approval_policy = "never"
+        self.session = {"id": "fake-session"}
+        self.session_path = "fake-session.json"
+
+    def memory_text(self):
+        return "memory"
+
+    def ask(self, message, event_sink=None, stream=None):
+        self.last_ask = {"message": message, "event_sink": event_sink, "stream": stream}
+        return "OK"
+
+
+class TTYStringIO(io.StringIO):
+    def isatty(self):
+        return True
+
+
+def run_cli_main(monkeypatch, argv, stdout):
+    agent = FakeCLIAgent()
+    monkeypatch.setattr(sys, "stdout", stdout)
+    monkeypatch.setattr(cli_module, "build_agent", lambda args: agent)
+    cli_module.main(argv)
+    return agent
+
+
 def build_stream_agent(tmp_path, client):
     workspace = WorkspaceContext.build(tmp_path)
     agent = Apricity(
@@ -89,6 +126,17 @@ def test_parser_streams_final_without_tail_marker_and_handles_cross_chunk_marker
     assert [event["text"] for event in events] == ["Hello world"]
     assert parser.status == PARSER_STATUS_FINAL_COMPLETE
     assert parser.finish() == []
+
+
+def test_parser_handles_unicode_content_split_across_chunks():
+    parser = StreamingResponseParser()
+
+    events = parser.feed("<final>\u4f60")
+    events.extend(parser.feed("\u597d</final>"))
+    events.extend(parser.finish())
+
+    assert parser.status == PARSER_STATUS_FINAL_COMPLETE
+    assert "".join(event["text"] for event in events) == "\u4f60\u597d"
 
 
 def test_parser_buffers_json_tool_until_closed():
@@ -180,7 +228,7 @@ def test_agent_streams_final_and_returns_same_answer(tmp_path):
 
     assert answer == "Hello stream"
     assert seen == [{"type": "visible_delta", "text": "Hello stream"}]
-    assert agent.current_task_state.partial_visible is True
+    assert agent.current_task_state.partial_visible is False
     assert agent.current_task_state.visible_chars == len("Hello stream")
 
 
@@ -213,6 +261,83 @@ def test_agent_does_not_retry_after_visible_text(tmp_path):
     assert agent.current_task_state.partial_visible is True
     assert "Stopped" in answer
     assert seen
+
+
+def test_agent_cancels_when_sink_raises_broken_pipe_after_visible_text(tmp_path):
+    client = FakeStreamModelClient([_final_turn("<final>hello pipe</final>")])
+    agent = build_stream_agent(tmp_path, client)
+
+    def broken_sink(event):
+        raise BrokenPipeError("pipe closed")
+
+    answer = agent.ask("hi", event_sink=broken_sink, stream=True)
+
+    assert agent.current_task_state.stop_reason == STOP_REASON_STREAM_CANCELLED
+    assert agent.current_task_state.partial_visible is True
+    assert "Stopped" in answer
+
+
+def test_agent_cancels_on_keyboard_interrupt_after_visible_text(tmp_path):
+    def interrupt_turn():
+        yield {"type": "content_delta", "text": "<final>partial answer long enough"}
+        raise KeyboardInterrupt
+
+    client = FakeStreamModelClient([interrupt_turn()])
+    agent = build_stream_agent(tmp_path, client)
+    seen = []
+
+    answer = agent.ask("hi", event_sink=seen.append, stream=True)
+
+    assert agent.current_task_state.stop_reason == STOP_REASON_STREAM_CANCELLED
+    assert agent.current_task_state.partial_visible is True
+    assert agent.current_task_state.visible_chars > 0
+    assert "Stopped" in answer
+
+
+def test_agent_treats_missing_response_completed_as_interruption_after_visible(tmp_path):
+    def incomplete_turn():
+        yield {"type": "content_delta", "text": "<final>partial answer long enough"}
+        # 故意不产出 response_completed
+
+    client = FakeStreamModelClient([incomplete_turn()])
+    agent = build_stream_agent(tmp_path, client)
+    seen = []
+
+    answer = agent.ask("hi", event_sink=seen.append, stream=True)
+
+    assert client.calls == 1
+    assert agent.current_task_state.stop_reason == STOP_REASON_STREAM_INTERRUPTED
+    assert agent.current_task_state.partial_visible is True
+    assert "Stopped" in answer
+
+
+def test_agent_retries_when_stream_ends_before_any_content(tmp_path):
+    client = FakeStreamModelClient([[], _final_turn("<final>recovered</final>")])
+    agent = build_stream_agent(tmp_path, client)
+    seen = []
+
+    answer = agent.ask("hi", event_sink=seen.append, stream=True)
+
+    assert client.calls == 2
+    assert answer == "recovered"
+    assert seen == [{"type": "visible_delta", "text": "recovered"}]
+
+
+def test_agent_ignores_events_after_response_completed(tmp_path):
+    def trailing_turn():
+        yield {"type": "content_delta", "text": "<final>OK</final>"}
+        yield {"type": "response_completed", "metadata": _complete_metadata(), "finish_reason": "stop"}
+        yield {"type": "content_delta", "text": "<final>SHOULD NOT SHOW</final>"}
+        yield {"type": "response_completed", "metadata": _complete_metadata(), "finish_reason": "stop"}
+
+    client = FakeStreamModelClient([trailing_turn()])
+    agent = build_stream_agent(tmp_path, client)
+    seen = []
+
+    answer = agent.ask("hi", event_sink=seen.append, stream=True)
+
+    assert answer == "OK"
+    assert seen == [{"type": "visible_delta", "text": "OK"}]
 
 
 def test_agent_retries_transient_failure_before_visible_text(tmp_path):
@@ -275,6 +400,31 @@ class _SSEResponse:
 
 class _NDJSONResponse(_SSEResponse):
     headers = {"Content-Type": "application/x-ndjson"}
+
+
+class _JSONResponse(_SSEResponse):
+    headers = {"Content-Type": "application/json"}
+
+
+class _ChunkedResponse:
+    """模拟 HTTP body 按任意字节分块到达，而不是按行到达。"""
+
+    headers = {"Content-Type": "text/event-stream"}
+
+    def __init__(self, chunks):
+        self.chunks = iter(chunks)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return next(self.chunks)
 
 
 def test_deepseek_stream_complete_sends_stream_options_and_extracts_deltas():
@@ -395,6 +545,178 @@ def test_openai_stream_complete_extracts_deltas_without_duplicate_full_text():
     assert texts == ["<final>", "OK"]
     assert client.last_completion_metadata["input_tokens"] == 100
     assert client.last_completion_metadata["output_tokens"] == 10
+
+
+def test_ollama_stream_complete_handles_plain_json_fallback():
+    response = _JSONResponse(
+        [
+            b'{"response":"<final>ok</final>","done":true,"prompt_eval_count":100,"eval_count":10}\n'
+        ]
+    )
+    client = OllamaModelClient(
+        model="qwen3.5:4b",
+        base_url="http://127.0.0.1:11434",
+        temperature=0.0,
+        top_p=0.9,
+        timeout=30,
+    )
+
+    with patch("urllib.request.urlopen", return_value=response):
+        events = list(client.stream_complete("prompt", 32, request_id="r1"))
+
+    texts = [event["text"] for event in events if event["type"] == "content_delta"]
+    assert texts == ["<final>ok</final>"]
+    assert client.last_completion_metadata["input_tokens"] == 100
+
+
+def test_openai_stream_complete_handles_plain_json_fallback():
+    response = _JSONResponse(
+        [
+            b'{"output_text":"<final>ok</final>","usage":{"input_tokens":100,"output_tokens":10}}\n'
+        ]
+    )
+    client = OpenAICompatibleModelClient(
+        model="gpt-test",
+        base_url="https://api.openai.com/v1",
+        api_key="sk-test",
+        temperature=0.0,
+        timeout=30,
+    )
+
+    with patch("urllib.request.urlopen", return_value=response):
+        events = list(client.stream_complete("prompt", 32, request_id="r1"))
+
+    texts = [event["text"] for event in events if event["type"] == "content_delta"]
+    assert texts == ["<final>ok</final>"]
+    assert client.last_completion_metadata["input_tokens"] == 100
+
+
+def test_deepseek_stream_complete_handles_plain_json_fallback():
+    response = _JSONResponse(
+        [
+            b'{"choices":[{"message":{"content":"<final>ok</final>"}}],'
+            b'"usage":{"prompt_tokens":100,"completion_tokens":10,'
+            b'"prompt_cache_hit_tokens":90,"prompt_cache_miss_tokens":10}}\n'
+        ]
+    )
+    client = DeepSeekModelClient(
+        model="deepseek-v4-flash",
+        base_url="https://api.deepseek.com",
+        api_key="sk-test",
+        temperature=0.0,
+        timeout=30,
+    )
+
+    with patch("urllib.request.urlopen", return_value=response):
+        events = list(client.stream_complete("prompt", 32, request_id="r1"))
+
+    texts = [event["text"] for event in events if event["type"] == "content_delta"]
+    assert texts == ["<final>ok</final>"]
+    assert client.last_completion_metadata["cache_hit"] is True
+
+
+def test_anthropic_stream_complete_handles_plain_json_fallback():
+    response = _JSONResponse(
+        [
+            b'{"content":[{"type":"text","text":"<final>ok</final>"}],'
+            b'"usage":{"input_tokens":100,"output_tokens":10}}\n'
+        ]
+    )
+    client = AnthropicCompatibleModelClient(
+        model="claude-test",
+        base_url="https://api.anthropic.com/v1",
+        api_key="sk-test",
+        temperature=0.0,
+        timeout=30,
+    )
+
+    with patch("urllib.request.urlopen", return_value=response):
+        events = list(client.stream_complete("prompt", 32, request_id="r1"))
+
+    texts = [event["text"] for event in events if event["type"] == "content_delta"]
+    assert texts == ["<final>ok</final>"]
+    assert client.last_completion_metadata["input_tokens"] == 100
+
+
+def test_deepseek_stream_handles_crlf_multiline_data_malformed_line_and_duplicate_done():
+    response = _SSEResponse(
+        [
+            b'data: {"choices":[{"delta":{"content":"<final>"}}],\r\n',
+            b'data: "usage":{"prompt_tokens":100,"completion_tokens":10}}\r\n',
+            b"\r\n",
+            b"data: {this is not valid json}\r\n",
+            b"\r\n",
+            b"data: [DONE]\r\n",
+            b"data: [DONE]\r\n",
+            b"\r\n",
+        ]
+    )
+    client = DeepSeekModelClient(
+        model="deepseek-v4-flash",
+        base_url="https://api.deepseek.com",
+        api_key="sk-test",
+        temperature=0.0,
+        timeout=30,
+    )
+
+    with patch("urllib.request.urlopen", return_value=response):
+        events = list(client.stream_complete("prompt", 32, request_id="r1"))
+
+    texts = [event["text"] for event in events if event["type"] == "content_delta"]
+    assert texts == ["<final>"]
+    assert client.last_completion_metadata["input_tokens"] == 100
+
+
+def test_stream_transport_decodes_multibyte_utf8_split_across_chunks():
+    response = _ChunkedResponse(
+        [
+            b'data: {"choices":[{"delta":{"content":"<final>\xe4\xbd',
+            b'\xa0\xe5\xa5\xbd</final>"}}]}\n',
+            b"\n",
+            b"data: [DONE]\n",
+        ]
+    )
+    client = DeepSeekModelClient(
+        model="deepseek-v4-flash",
+        base_url="https://api.deepseek.com",
+        api_key="sk-test",
+        temperature=0.0,
+        timeout=30,
+    )
+
+    with patch("urllib.request.urlopen", return_value=response):
+        events = list(client.stream_complete("prompt", 32, request_id="r1"))
+
+    texts = [event["text"] for event in events if event["type"] == "content_delta"]
+    assert texts == ["<final>\u4f60\u597d</final>"]
+
+
+def test_cli_tty_default_uses_streaming(monkeypatch):
+    agent = run_cli_main(monkeypatch, ["--model", "fake", "hello"], TTYStringIO())
+
+    assert agent.last_ask["stream"] is True
+    assert agent.last_ask["event_sink"] is not None
+
+
+def test_cli_non_tty_default_uses_no_stream(monkeypatch):
+    agent = run_cli_main(monkeypatch, ["--model", "fake", "hello"], io.StringIO())
+
+    assert agent.last_ask["stream"] is False
+    assert agent.last_ask["event_sink"] is None
+
+
+def test_cli_stream_flag_forces_streaming_on_non_tty(monkeypatch):
+    agent = run_cli_main(monkeypatch, ["--model", "fake", "--stream", "hello"], io.StringIO())
+
+    assert agent.last_ask["stream"] is True
+    assert agent.last_ask["event_sink"] is not None
+
+
+def test_cli_no_stream_flag_never_calls_event_sink(monkeypatch):
+    agent = run_cli_main(monkeypatch, ["--model", "fake", "--no-stream", "hello"], TTYStringIO())
+
+    assert agent.last_ask["stream"] is False
+    assert agent.last_ask["event_sink"] is None
 
 
 def test_cli_stream_flags_are_mutually_exclusive_with_auto_default():
