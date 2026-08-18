@@ -56,7 +56,7 @@ def _condition_block(artifact, label):
 
 def _render_report(payload):
     stream = payload["conditions"]["streaming"]
-    no_stream = payload["conditions"]["no_stream"]
+    no_stream = payload["conditions"]["no-stream"]
     lines = [
         "# Apricity Streaming Stage 2 Matrix",
         "",
@@ -112,6 +112,11 @@ def build_arg_parser():
         default=None,
         help="Workspace copy root. Defaults to artifacts/streaming-stage2-<timestamp>-workspaces/.",
     )
+    parser.add_argument(
+        "--from-existing",
+        default=None,
+        help="Reuse already-completed run artifacts in this directory instead of calling the provider.",
+    )
     parser.add_argument("--repetitions", type=int, default=1)
     parser.add_argument("--max-new-tokens", type=int, default=512)
     parser.add_argument("--request-timeout-seconds", type=int, default=300)
@@ -132,21 +137,29 @@ def main(argv=None):
         ("no-stream", False),
     ]
     artifacts = {}
-    for label, stream in conditions:
-        condition_dir = output_dir / label
-        payload = run_real_model_benchmark(
-            benchmark_path=args.benchmark_path,
-            output_dir=condition_dir,
-            workspace_root=workspace_root / label,
-            provider=args.provider,
-            repetitions=args.repetitions,
-            max_new_tokens=args.max_new_tokens,
-            request_timeout_seconds=args.request_timeout_seconds,
-            recovery_mode=args.recovery_mode,
-            fault_plan=FaultPlan(kind="none"),
-            stream=stream,
-        )
-        artifacts[label] = payload
+    reused_existing = False
+    if args.from_existing:
+        output_dir = Path(args.from_existing)
+        reused_existing = True
+        for label, _stream in conditions:
+            artifact_path = output_dir / label / "real-model-benchmark.json"
+            artifacts[label] = json.loads(artifact_path.read_text(encoding="utf-8"))
+    else:
+        for label, stream in conditions:
+            condition_dir = output_dir / label
+            payload = run_real_model_benchmark(
+                benchmark_path=args.benchmark_path,
+                output_dir=condition_dir,
+                workspace_root=workspace_root / label,
+                provider=args.provider,
+                repetitions=args.repetitions,
+                max_new_tokens=args.max_new_tokens,
+                request_timeout_seconds=args.request_timeout_seconds,
+                recovery_mode=args.recovery_mode,
+                fault_plan=FaultPlan(kind="none"),
+                stream=stream,
+            )
+            artifacts[label] = payload
 
     summary = {
         "schema_version": 1,
@@ -160,6 +173,13 @@ def main(argv=None):
             for label in ("streaming", "no-stream")
         },
     }
+    if reused_existing:
+        summary["reused_original_artifacts"] = True
+        summary["runner_error_recovery"] = (
+            "v1 report renderer raised KeyError('no_stream') after all model runs "
+            "completed; original run artifacts were preserved and reused to finish "
+            "the summary/report without calling the provider again."
+        )
     stream_block = summary["conditions"]["streaming"]
     no_stream_block = summary["conditions"]["no-stream"]
     summary["comparison"] = {
