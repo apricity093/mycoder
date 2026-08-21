@@ -18,10 +18,10 @@ from typing import Any
 
 import pytest
 
-from pico.agent.loop import AgentLoop
-from pico.providers.base import LLMProvider, LLMResponse
-from pico.spine.message import ChatType, Source
-from pico.spine.turn import Origin, TurnRequest
+from mycoder.agent.loop import AgentLoop
+from mycoder.providers.base import LLMProvider, LLMResponse
+from mycoder.spine.message import ChatType, Source
+from mycoder.spine.turn import Origin, TurnRequest
 
 
 class StubProvider(LLMProvider):

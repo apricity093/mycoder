@@ -17,20 +17,20 @@ from pathlib import Path
 
 import pytest
 
-from pico.agent.context import ContextBuilder
-from pico.config.pico import ContextConfig
-from pico.context_engine import ContextAssembler, TurnContext
-from pico.context_engine.base import AssemblyContext, Segment
-from pico.context_engine.segments import (
+from mycoder.agent.context import ContextBuilder
+from mycoder.config.mycoder import ContextConfig
+from mycoder.context_engine import ContextAssembler, TurnContext
+from mycoder.context_engine.base import AssemblyContext, Segment
+from mycoder.context_engine.segments import (
     ActiveSkillsSegmentBuilder,
     BootstrapSegmentBuilder,
     IdentitySegmentBuilder,
     MemorySegmentBuilder,
     SkillsSegmentBuilder,
 )
-from pico.context_engine.segments.curator import CuratorSegmentBuilder
-from pico.memory_engine import Memory, TokenBudget
-from pico.memory_engine.skill_forge import RouterHit, SkillForgeRouter
+from mycoder.context_engine.segments.curator import CuratorSegmentBuilder
+from mycoder.memory_engine import Memory, TokenBudget
+from mycoder.memory_engine.skill_forge import RouterHit, SkillForgeRouter
 
 
 @pytest.fixture

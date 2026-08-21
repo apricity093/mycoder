@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import pytest
 
-from pico.tui_rpc.dispatcher import Dispatcher
-from pico.tui_rpc.methods import terminal as terminal_mod
-from pico.tui_rpc.methods.terminal import (
+from mycoder.tui_rpc.dispatcher import Dispatcher
+from mycoder.tui_rpc.methods import terminal as terminal_mod
+from mycoder.tui_rpc.methods.terminal import (
     get_latest_cols,
     get_latest_rows,
     register_terminal_methods,

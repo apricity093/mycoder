@@ -7,8 +7,8 @@ import json
 import numpy as np
 import pytest
 
-from pico.config.schema import ModelEndpoint, RoutingConfig
-from pico.routing.knn_router import KNNModelRouter
+from mycoder.config.schema import ModelEndpoint, RoutingConfig
+from mycoder.routing.knn_router import KNNModelRouter
 
 ENTRIES = [
     {
@@ -216,7 +216,7 @@ def _fake_urlopen(text_to_vec):
 
 @pytest.mark.asyncio
 async def test_text_memory_embeds_at_load(tmp_path, monkeypatch):
-    from pico.routing import knn_router as knn_mod
+    from mycoder.routing import knn_router as knn_mod
 
     vecs = {"alpha": [1.0, 0.0], "beta": [0.0, 1.0], "gamma": [1.0, 1.0]}
     monkeypatch.setattr(knn_mod.urllib.request, "urlopen", _fake_urlopen(lambda t: vecs[t]))

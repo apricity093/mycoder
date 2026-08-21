@@ -55,11 +55,11 @@ class InstallPlan:
 
 
 _REQUIRED_FILES = {
-    "pico/__init__.py",
-    "pico/templates/AGENTS.md",
-    "pico/templates/SOUL.md",
-    "pico/tracing/viewer/server.js",
-    "pico/tracing/viewer/ui/app.js",
+    "mycoder/__init__.py",
+    "mycoder/templates/AGENTS.md",
+    "mycoder/templates/SOUL.md",
+    "mycoder/tracing/viewer/server.js",
+    "mycoder/tracing/viewer/ui/app.js",
 }
 _RETIRED_MEMORY_DEPENDENCIES = ("codecairn", "everalgo", "everos")
 
@@ -207,8 +207,8 @@ def _validate_wheel(snapshot: WheelSnapshot, entrypoint: str) -> None:
     if forbidden:
         raise VerificationError(f"wheel contains forbidden files such as {sorted(forbidden)[0]}")
 
-    tui_files = {name for name in names if name.startswith("pico/ui-tui/")}
-    expected_tui = {"pico/ui-tui/dist/entry.js"}
+    tui_files = {name for name in names if name.startswith("mycoder/ui-tui/")}
+    expected_tui = {"mycoder/ui-tui/dist/entry.js"}
     if tui_files != expected_tui:
         raise VerificationError(f"wheel must contain exactly one TUI bundle, found {sorted(tui_files)}")
 
@@ -238,12 +238,12 @@ def _validate_wheel(snapshot: WheelSnapshot, entrypoint: str) -> None:
     removed_everos_runtime = sorted(
         name
         for name in names
-        if name.startswith("pico/plugin/memory/everos/")
+        if name.startswith("mycoder/plugin/memory/everos/")
         or name
         in {
-            "pico/config/update_everos.py",
-            "pico/memory_engine/skill_forge/everos_source.py",
-            "pico/tracing/viewer/everos-deposits.js",
+            "mycoder/config/update_everos.py",
+            "mycoder/memory_engine/skill_forge/everos_source.py",
+            "mycoder/tracing/viewer/everos-deposits.js",
         }
     )
     if removed_everos_runtime:
@@ -262,8 +262,8 @@ def _validate_wheel(snapshot: WheelSnapshot, entrypoint: str) -> None:
         raise VerificationError(f"wheel is missing required attribution files: {missing_attribution}")
 
     metadata = Parser().parsestr(snapshot.metadata)
-    if metadata.get("Name", "").lower() != "pico-harness":
-        raise VerificationError("wheel METADATA does not describe the pico-harness distribution")
+    if metadata.get("Name", "").lower() != "mycoder-harness":
+        raise VerificationError("wheel METADATA does not describe the mycoder-harness distribution")
     provided_extras = set(metadata.get_all("Provides-Extra", []))
     if removed_extras := sorted(provided_extras.intersection(_REMOVED_CHANNEL_EXTRAS)):
         raise VerificationError(f"wheel advertises removed Channel extra: {removed_extras[0]}")
@@ -286,7 +286,7 @@ def _validate_wheel(snapshot: WheelSnapshot, entrypoint: str) -> None:
 
     parser = configparser.ConfigParser()
     parser.read_string(snapshot.entry_points)
-    expected_target = "pico.cli.commands:run"
+    expected_target = "mycoder.cli.commands:run"
     if parser.get("console_scripts", entrypoint, fallback="").strip() != expected_target:
         raise VerificationError(f"console entrypoint {entrypoint!r} does not target {expected_target}")
 
@@ -332,7 +332,7 @@ def _is_removed_channel_path(name: str) -> bool:
     return any(
         candidate[:1] == ("bridge",)
         or (
-            candidate[:3] == ("pico", "channels", "adapters")
+            candidate[:3] == ("mycoder", "channels", "adapters")
             and len(candidate) > 3
             and candidate[3] in _REMOVED_CHANNELS
         )
@@ -342,16 +342,16 @@ def _is_removed_channel_path(name: str) -> bool:
 
 def _is_removed_media_generation_path(name: str) -> bool:
     parts = PurePosixPath(name).parts
-    return ("pico", "agent", "tools", "media_gen.py") in (parts, parts[1:])
+    return ("mycoder", "agent", "tools", "media_gen.py") in (parts, parts[1:])
 
 
 def _is_removed_skill_hub_path(name: str) -> bool:
     parts = PurePosixPath(name).parts
     candidates = (parts, parts[1:])
     return any(
-        candidate[:2] == ("pico", "skill_hub")
-        or candidate == ("pico", "agent", "tools", "skill_hub.py")
-        or candidate == ("pico", "memory_engine", "skill_forge", "hub_source.py")
+        candidate[:2] == ("mycoder", "skill_hub")
+        or candidate == ("mycoder", "agent", "tools", "skill_hub.py")
+        or candidate == ("mycoder", "memory_engine", "skill_forge", "hub_source.py")
         for candidate in candidates
     )
 
@@ -362,9 +362,9 @@ def _is_removed_deep_research_path(name: str) -> bool:
     return any(
         candidate
         in {
-            ("pico", "agent", "tools", "deep_research.py"),
-            ("pico", "cli", "deep_research_commands.py"),
-            ("pico", "config", "update_tools.py"),
+            ("mycoder", "agent", "tools", "deep_research.py"),
+            ("mycoder", "cli", "deep_research_commands.py"),
+            ("mycoder", "config", "update_tools.py"),
         }
         for candidate in candidates
     )
@@ -374,14 +374,14 @@ def _is_removed_sentinel_path(name: str) -> bool:
     parts = PurePosixPath(name).parts
     candidates = (parts, parts[1:])
     return any(
-        candidate[:3] == ("pico", "proactive_engine", "sentinel")
+        candidate[:3] == ("mycoder", "proactive_engine", "sentinel")
         or candidate
         in {
-            ("pico", "cli", "sentinel_commands.py"),
-            ("pico", "cli", "_proactive_stack.py"),
-            ("pico", "memory_engine", "consolidate", "attention.py"),
-            ("pico", "memory_engine", "consolidate", "behaviors.py"),
-            ("pico", "memory_engine", "consolidate", "behaviors_extractor.py"),
+            ("mycoder", "cli", "sentinel_commands.py"),
+            ("mycoder", "cli", "_proactive_stack.py"),
+            ("mycoder", "memory_engine", "consolidate", "attention.py"),
+            ("mycoder", "memory_engine", "consolidate", "behaviors.py"),
+            ("mycoder", "memory_engine", "consolidate", "behaviors_extractor.py"),
         }
         for candidate in candidates
     )
@@ -391,12 +391,12 @@ def _is_removed_heartbeat_path(name: str) -> bool:
     parts = PurePosixPath(name).parts
     candidates = (parts, parts[1:])
     return any(
-        candidate[:4] == ("pico", "proactive_engine", "schedulers", "heartbeat")
+        candidate[:4] == ("mycoder", "proactive_engine", "schedulers", "heartbeat")
         or candidate
         in {
-            ("pico", "proactive_engine", "system_events.py"),
-            ("pico", "proactive_engine", "wake.py"),
-            ("pico", "templates", "HEARTBEAT.md"),
+            ("mycoder", "proactive_engine", "system_events.py"),
+            ("mycoder", "proactive_engine", "wake.py"),
+            ("mycoder", "templates", "HEARTBEAT.md"),
         }
         for candidate in candidates
     )
@@ -404,7 +404,7 @@ def _is_removed_heartbeat_path(name: str) -> bool:
 
 def _is_removed_cli_path(name: str) -> bool:
     parts = PurePosixPath(name).parts
-    return ("pico", "cli", "upgrade_commands.py") in (parts, parts[1:])
+    return ("mycoder", "cli", "upgrade_commands.py") in (parts, parts[1:])
 
 
 def _validate_sdist(sdist: Path) -> None:
@@ -672,7 +672,7 @@ def _validate_doctor_probe(completed: object, expected_config_path: Path) -> dic
     if not isinstance(paths, dict) or paths.get("config_exists") is not False:
         raise VerificationError("doctor probe did not report an absent config")
     if paths.get("config_path") != str(expected_config_path):
-        raise VerificationError("doctor probe did not report the isolated Pico config path")
+        raise VerificationError("doctor probe did not report the isolated mycoder config path")
     return report
 
 
@@ -878,7 +878,7 @@ def _validate_package_probe(completed: subprocess.CompletedProcess[str], plan: I
     package = Path(result.get("package", "")).resolve()
     tui = Path(result.get("tui", "")).resolve()
     if root not in package.parents:
-        raise VerificationError(f"{plan.name} imported Pico's internal package outside its environment: {package}")
+        raise VerificationError(f"{plan.name} imported mycoder's internal package outside its environment: {package}")
     if root not in tui.parents or tui.name != "entry.js":
         raise VerificationError(f"{plan.name} resolved the TUI outside its installed wheel: {tui}")
     public_commands = set(result.get("public_commands", []))
@@ -895,9 +895,9 @@ def _validate_package_probe(completed: subprocess.CompletedProcess[str], plan: I
     return result
 
 
-def _validate_pico_module_probe(completed: subprocess.CompletedProcess[str], plan: InstallPlan) -> None:
-    if completed.returncode != 0 or "Pico v" not in completed.stdout:
-        raise VerificationError(f"{plan.name} cannot run the Pico module entrypoint")
+def _validate_mycoder_module_probe(completed: subprocess.CompletedProcess[str], plan: InstallPlan) -> None:
+    if completed.returncode != 0 or "mycoder v" not in completed.stdout:
+        raise VerificationError(f"{plan.name} cannot run the mycoder module entrypoint")
 
 
 def _validate_product_paths(
@@ -910,9 +910,9 @@ def _validate_product_paths(
     slug = re.sub(r"[^A-Za-z0-9._-]+", "-", resolved.name).strip(".-") or "workspace"
     digest = hashlib.sha256(str(resolved).encode("utf-8")).hexdigest()[:12]
     expected = {
-        "product_home": probe_home / ".pico",
-        "workspace_state": probe_home / ".pico" / "projects" / f"{slug}-{digest}",
-        "plugin_user": probe_home / ".pico" / "plugins",
+        "product_home": probe_home / ".mycoder",
+        "workspace_state": probe_home / ".mycoder" / "projects" / f"{slug}-{digest}",
+        "plugin_user": probe_home / ".mycoder" / "plugins",
     }
     mismatches = {
         name: {"expected": str(path), "actual": report.get(name)}
@@ -924,20 +924,20 @@ def _validate_product_paths(
             "expected": None,
             "actual": report.get("plugin_project"),
         }
-    if report.get("plugin_entrypoints") != "pico.plugins":
+    if report.get("plugin_entrypoints") != "mycoder.plugins":
         mismatches["plugin_entrypoints"] = {
-            "expected": "pico.plugins",
+            "expected": "mycoder.plugins",
             "actual": report.get("plugin_entrypoints"),
         }
     if mismatches:
-        raise VerificationError(f"installed Pico state roots drifted: {mismatches}")
+        raise VerificationError(f"installed mycoder state roots drifted: {mismatches}")
 
 
 def _gateway_probe_config() -> dict:
     return {
         "agents": {
             "defaults": {
-                "model": "ollama/pico-distribution-probe",
+                "model": "ollama/mycoder-distribution-probe",
                 "provider": "ollama",
             }
         },
@@ -1115,7 +1115,7 @@ def _probe_installed_gateway(
         str(port),
     ]
     child_env = dict(env)
-    child_env["PICO_TRACING"] = "0"
+    child_env["mycoder_TRACING"] = "0"
     stdout_path = root / "stdout.log"
     stderr_path = root / "stderr.log"
     started = time.monotonic()
@@ -1310,15 +1310,15 @@ def _install_environment(
     import_report = _validate_import_probe(import_completed, plan)
 
     package_code = (
-        "import json,pico,sys,typer; "
-        "from pico.cli._plugin_stack import plugin_discovery_sources; "
-        "from pico.cli.commands import app; "
-        "from pico.cli.tui_commands import resolve_dist_entry; "
-        "from pico.product import get_product_home,get_project_state_dir; "
+        "import json,mycoder,sys,typer; "
+        "from mycoder.cli._plugin_stack import plugin_discovery_sources; "
+        "from mycoder.cli.commands import app; "
+        "from mycoder.cli.tui_commands import resolve_dist_entry; "
+        "from mycoder.product import get_product_home,get_project_state_dir; "
         "root=typer.main.get_command(app); "
         "entry=resolve_dist_entry(); "
         "sources=plugin_discovery_sources(); "
-        "print(json.dumps({'package': pico.__file__, 'tui': str(entry) if entry else '', "
+        "print(json.dumps({'package': mycoder.__file__, 'tui': str(entry) if entry else '', "
         "'public_commands': sorted(name for name, command in root.commands.items() if not command.hidden), "
         "'registered_commands': sorted(root.commands), "
         "'product_home': str(get_product_home()), "
@@ -1341,14 +1341,14 @@ def _install_environment(
         probe_home=probe_home,
         probe_cwd=probe_cwd,
     )
-    pico_module = _run(
-        [str(python), "-I", "-m", "pico", "--version"],
+    mycoder_module = _run(
+        [str(python), "-I", "-m", "mycoder", "--version"],
         cwd=probe_cwd,
         env=probe_env,
         log_dir=log_dir,
         records=records,
     )
-    _validate_pico_module_probe(pico_module, plan)
+    _validate_mycoder_module_probe(mycoder_module, plan)
     _run(
         [str(executable), "--help"],
         cwd=probe_cwd,
@@ -1366,7 +1366,7 @@ def _install_environment(
     )
     doctor_report = _validate_doctor_probe(
         doctor,
-        probe_home / ".pico" / "config.json",
+        probe_home / ".mycoder" / "config.json",
     )
     _run(
         [str(executable), "plugins", "--verbose"],
@@ -1489,7 +1489,7 @@ def _write_report(output_root: Path, report: dict) -> Path:
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Build and verify an isolated Pico distribution.")
+    parser = argparse.ArgumentParser(description="Build and verify an isolated mycoder distribution.")
     parser.add_argument("--output-root", required=True, type=Path)
     parser.add_argument("--entrypoint", required=True)
     parser.add_argument("--extras", required=True)

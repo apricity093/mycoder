@@ -11,7 +11,7 @@ the shared Runtime Assembly and retained one Call Record per physical attempt.
 ## Question
 
 How much does DeepSeek's automatic disk context cache reduce the estimated API
-cost of a verified successful Pico Agent task when the request prefix remains
+cost of a verified successful mycoder Agent task when the request prefix remains
 stable?
 
 DeepSeek ignores Anthropic `cache_control` markers. TokenWise therefore does
@@ -28,7 +28,7 @@ automatic cache remains enabled in both arms.
 | Policy | Request behavior | Role |
 | --- | --- | --- |
 | `prefix_disrupted` | Change the leading system and Tool Schema bytes before every Provider call | Negative control |
-| `prefix_stable` | Preserve Pico's ordinary request prefix | Treatment |
+| `prefix_stable` | Preserve mycoder's ordinary request prefix | Treatment |
 
 The disrupted arm is an experimental counterfactual, not an earlier product
 version and not a deployable configuration. Each Trial uses a separate
@@ -98,14 +98,14 @@ chain.
 
 ## Evidence boundary
 
-The result proves that Pico's stable request prefixes benefit from DeepSeek's
+The result proves that mycoder's stable request prefixes benefit from DeepSeek's
 automatic cache under the frozen workload and that TokenWise reconstructs
-DeepSeek cache usage and estimated cost. It does not prove that Pico created
+DeepSeek cache usage and estimated cost. It does not prove that mycoder created
 DeepSeek's cache, that every production workload will achieve a 75.19% hit
 rate, or that the estimate has been reconciled against a Provider invoice.
 
 The current report is retained outside Git under
-`.pico/evidence/call-efficiency-cost/1df7029-formal/`. Its SHA-256 is
+`.mycoder/evidence/call-efficiency-cost/1df7029-formal/`. Its SHA-256 is
 `b905ec833231236a53959cf78b05c89ca9b72b4066055aa5b6e3c327df3e4337`.
 Raw manifests, immutable inputs, and standalone report artifacts are intentionally
 not published in this repository.
@@ -117,10 +117,10 @@ historical report digest, recalculates every Trial from the embedded frozen
 price snapshot, and runs the original reducer again:
 
 ```bash
-uv run python -m benchmarks.picobench.packs.tokenwise_cost.replay \
-  --source-report .pico/evidence/tokenwise-cost-deepseek-rebased/report.json \
+uv run python -m benchmarks.mycoderbench.packs.tokenwise_cost.replay \
+  --source-report .mycoder/evidence/tokenwise-cost-deepseek-rebased/report.json \
   --expected-source-digest fcde99b98c8bc46d0852015d7a92c01a0de6a4e4216f773045375f2f06e75aec \
-  --output .pico/evidence/call-efficiency-replay/report.json
+  --output .mycoder/evidence/call-efficiency-replay/report.json
 ```
 
 `--expected-source-digest` is the external lineage binding. Obtain it from a
@@ -138,23 +138,23 @@ CallEfficiency receipts, applies a task-clustered paired bootstrap interval,
 and rebuilds the result offline. Paid modes remain behind an explicit flag:
 
 ```bash
-uv run python -m benchmarks.picobench.tokenwise_cost_campaign \
+uv run python -m benchmarks.mycoderbench.tokenwise_cost_campaign \
   --mode preflight \
-  --output-root .pico/evidence/call-efficiency-cost-current \
+  --output-root .mycoder/evidence/call-efficiency-cost-current \
   --execute-paid-campaign
 
-uv run python -m benchmarks.picobench.tokenwise_cost_campaign \
+uv run python -m benchmarks.mycoderbench.tokenwise_cost_campaign \
   --mode formal \
-  --output-root .pico/evidence/call-efficiency-cost-current \
+  --output-root .mycoder/evidence/call-efficiency-cost-current \
   --execute-paid-campaign
 
-uv run python -m benchmarks.picobench.tokenwise_cost_campaign \
+uv run python -m benchmarks.mycoderbench.tokenwise_cost_campaign \
   --mode verify \
-  --output-root .pico/evidence/call-efficiency-cost-current
+  --output-root .mycoder/evidence/call-efficiency-cost-current
 ```
 
 The runner reads `DEEPSEEK_API_KEY`, then falls back to
-`providers.deepseek.apiKey` in Pico's config. It never writes credentials into
+`providers.deepseek.apiKey` in mycoder's config. It never writes credentials into
 artifacts. It stops before a new call at either 1,200 Provider calls or USD 2
 of observed estimated spend.
 

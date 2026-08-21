@@ -9,10 +9,10 @@ from pathlib import Path
 
 import pytest
 
-from pico.cli._plugin_stack import MynaSetupError, build_plugin_registry, maybe_build_memory_backend
-from pico.config.pico import MemoryConfig, PicoConfig, PluginsConfig
-from pico.memory_engine import MemoryBackend
-from pico.plugin import (
+from mycoder.cli._plugin_stack import MynaSetupError, build_plugin_registry, maybe_build_memory_backend
+from mycoder.config.mycoder import MemoryConfig, mycoderConfig, PluginsConfig
+from mycoder.memory_engine import MemoryBackend
+from mycoder.plugin import (
     Contributes,
     DiscoveredPlugin,
     MemoryBackendContribution,
@@ -24,8 +24,8 @@ from pico.plugin import (
 )
 
 
-def _config(memory_backend: str | None = "myna") -> PicoConfig:
-    return PicoConfig(
+def _config(memory_backend: str | None = "myna") -> mycoderConfig:
+    return mycoderConfig(
         memory=MemoryConfig(backend=memory_backend),
         plugins=PluginsConfig(),
     )
@@ -34,7 +34,7 @@ def _config(memory_backend: str | None = "myna") -> PicoConfig:
 def _registry(
     *,
     plugin_id: str = "myna-memory",
-    factory_ref: str = "myna.integrations.pico:make_backend",
+    factory_ref: str = "myna.integrations.mycoder:make_backend",
     start_error: Exception | None = None,
 ):
     module_name = factory_ref.partition(":")[0]
@@ -67,7 +67,7 @@ def _registry(
                 manifest=PluginManifest(
                     id=plugin_id,
                     version="0.1.1rc3",
-                    pico=">=0.1,<0.2",
+                    mycoder=">=0.1,<0.2",
                     enabled_by_default=True,
                     contributes=Contributes(
                         memory_backends=[MemoryBackendContribution(name="myna", factory=factory_ref)]
@@ -121,7 +121,7 @@ def test_retired_backend_fails_without_rewrite(
     config_path.write_text(json.dumps(data), encoding="utf-8")
     config = _config(retired)
     monkeypatch.setattr(
-        "pico.cli._plugin_stack.build_plugin_registry",
+        "mycoder.cli._plugin_stack.build_plugin_registry",
         lambda _config: pytest.fail("retired backend must be rejected before plugin discovery"),
     )
 
@@ -138,7 +138,7 @@ def test_retired_backend_fails_without_rewrite(
     ("plugin_id", "factory_ref"),
     [
         ("other-memory", "_test_myna_backend:make_backend"),
-        ("myna-memory", "myna.integrations.pico.backend:make_backend"),
+        ("myna-memory", "myna.integrations.mycoder.backend:make_backend"),
     ],
 )
 def test_myna_backend_requires_frozen_public_manifest_identity(
@@ -158,12 +158,12 @@ def test_myna_manifest_identity_is_validated_before_factory_import(
 ) -> None:
     plugin_dir = tmp_path / "plugins" / "myna-memory"
     plugin_dir.mkdir(parents=True)
-    (plugin_dir / "pico-plugin.toml").write_text(
+    (plugin_dir / "mycoder-plugin.toml").write_text(
         """
 [plugin]
 id = "myna-memory"
 version = "0.1.1rc3"
-pico = ">=0.1,<0.2"
+mycoder = ">=0.1,<0.2"
 enabled_by_default = true
 
 [[plugin.contributes.memory_backends]]
@@ -173,7 +173,7 @@ factory = "_must_not_import:make_backend"
         encoding="utf-8",
     )
     monkeypatch.setattr(
-        "pico.cli._plugin_stack.plugin_discovery_sources",
+        "mycoder.cli._plugin_stack.plugin_discovery_sources",
         lambda: {
             "bundled_dir": None,
             "user_dir": tmp_path / "plugins",

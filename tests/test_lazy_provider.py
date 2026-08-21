@@ -6,8 +6,8 @@ import time
 
 import pytest
 
-from pico.providers.base import GenerationSettings
-from pico.providers.lazy import LazyProvider
+from mycoder.providers.base import GenerationSettings
+from mycoder.providers.lazy import LazyProvider
 
 
 class _FakeProvider:

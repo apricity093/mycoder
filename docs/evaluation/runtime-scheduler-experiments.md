@@ -8,11 +8,11 @@ The results are scheduler evidence, not a production service-level objective.
 Run the frozen defaults from a clean checkout:
 
 ```bash
-make picobench-runtime-scheduler
+make mycoderbench-runtime-scheduler
 ```
 
 The command writes immutable evidence under
-`.pico/evidence/picobench-runtime-scheduler/`. Generated evidence remains
+`.mycoder/evidence/mycoderbench-runtime-scheduler/`. Generated evidence remains
 outside Git. A result is claim-eligible only when every correctness Gate passes
 and the commit, dependency lock, environment identity, and clean worktree stay
 stable for the full run.
@@ -21,7 +21,7 @@ stable for the full run.
 
 The control is one strict global FIFO with a fixed worker limit and
 per-session serialization. If the queue head belongs to an already-running
-session, later sessions wait. The treatment is Pico's session Lane scheduler
+session, later sessions wait. The treatment is mycoder's session Lane scheduler
 with the same USER concurrency limit. Both arms receive the same ordered trace:
 a long hot-session burst interleaved with short foreground Turns from other
 sessions.
@@ -83,23 +83,23 @@ Live execution is a separately approved paid action. First freeze the clean
 commit, exact manifest, maximum request attempts, and CNY hard cap:
 
 ```bash
-make picobench-runtime-live-plan
+make mycoderbench-runtime-live-plan
 ```
 
 Then pass the exact approved manifest digest and amount:
 
 ```bash
-PICO_LIVE_PERF_APPROVAL_DIGEST=<digest> \
-PICO_LIVE_PERF_APPROVED_CNY=<amount> \
-make picobench-runtime-live-run
+mycoder_LIVE_PERF_APPROVAL_DIGEST=<digest> \
+mycoder_LIVE_PERF_APPROVED_CNY=<amount> \
+make mycoderbench-runtime-live-run
 ```
 
 Rebuild the summaries and confidence interval from the retained raw Turn
 records without calling the Provider:
 
 ```bash
-PICO_LIVE_PERF_EVIDENCE=<run-artifact.json> \
-make picobench-runtime-live-verify
+mycoder_LIVE_PERF_EVIDENCE=<run-artifact.json> \
+make mycoderbench-runtime-live-verify
 ```
 
 ## Formal live campaign result

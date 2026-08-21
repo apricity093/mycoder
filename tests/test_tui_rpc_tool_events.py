@@ -18,10 +18,10 @@ from typing import Any
 
 import pytest
 
-from pico.agent.loop import AgentLoop
-from pico.agent.tools.base import Tool
-from pico.agent.tools.message import MessageTool
-from pico.providers.base import LLMProvider, LLMResponse, ToolCallRequest
+from mycoder.agent.loop import AgentLoop
+from mycoder.agent.tools.base import Tool
+from mycoder.agent.tools.message import MessageTool
+from mycoder.providers.base import LLMProvider, LLMResponse, ToolCallRequest
 
 
 @pytest.fixture

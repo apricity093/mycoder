@@ -16,10 +16,10 @@ from typing import Any
 
 import pytest
 
-from pico.agent.loop import AgentLoop
-from pico.providers.base import LLMResponse
-from pico.spine.message import ChatType, Media, Source
-from pico.spine.turn import Origin, TurnRequest
+from mycoder.agent.loop import AgentLoop
+from mycoder.providers.base import LLMResponse
+from mycoder.spine.message import ChatType, Media, Source
+from mycoder.spine.turn import Origin, TurnRequest
 
 # ---------------------------------------------------------------------------
 
@@ -261,7 +261,7 @@ class TestLegacyCompat:
         end-to-end. After Phase B-3 the ``self.memory`` facade is gone;
         we now assert against the direct subsystem fields AgentLoop
         holds (``memory_consolidator`` + ``context.skills``)."""
-        from pico.memory_engine.consolidate.consolidator import (
+        from mycoder.memory_engine.consolidate.consolidator import (
             MemoryConsolidator,
         )
 

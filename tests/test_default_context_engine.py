@@ -18,20 +18,20 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from pico.agent.context import ContextBuilder
-from pico.agent.loop import AgentLoop
-from pico.config.pico import ContextConfig
-from pico.context_engine import ContextAssembler, ContextEngine, TurnContext
-from pico.context_engine.segments import (
+from mycoder.agent.context import ContextBuilder
+from mycoder.agent.loop import AgentLoop
+from mycoder.config.mycoder import ContextConfig
+from mycoder.context_engine import ContextAssembler, ContextEngine, TurnContext
+from mycoder.context_engine.segments import (
     ActiveSkillsSegmentBuilder,
     BootstrapSegmentBuilder,
     IdentitySegmentBuilder,
     MemorySegmentBuilder,
     SkillsSegmentBuilder,
 )
-from pico.context_engine.segments.curator import CuratorSegmentBuilder
-from pico.memory_engine import Memory, TokenBudget
-from pico.memory_engine.skill_forge import RouterHit, SkillForgeRouter
+from mycoder.context_engine.segments.curator import CuratorSegmentBuilder
+from mycoder.memory_engine import Memory, TokenBudget
+from mycoder.memory_engine.skill_forge import RouterHit, SkillForgeRouter
 
 # ---------------------------------------------------------------------------
 

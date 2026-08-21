@@ -1,4 +1,4 @@
-"""Tests for pico.token_wise.usage_tracker.UsageTracker."""
+"""Tests for mycoder.token_wise.usage_tracker.UsageTracker."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from pico.token_wise.base import UsageSnapshot
-from pico.token_wise.usage_tracker import UsageTracker
+from mycoder.token_wise.base import UsageSnapshot
+from mycoder.token_wise.usage_tracker import UsageTracker
 
 
 def _snap(model="anthropic/claude-sonnet-4-5", session_key="sess1", **kwargs) -> UsageSnapshot:

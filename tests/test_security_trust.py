@@ -1,10 +1,10 @@
-"""Tests for pico.security.trust.wrap_untrusted."""
+"""Tests for mycoder.security.trust.wrap_untrusted."""
 
 from __future__ import annotations
 
 import re
 
-from pico.security.trust import wrap_untrusted
+from mycoder.security.trust import wrap_untrusted
 
 
 def _nonce(out: str) -> str:

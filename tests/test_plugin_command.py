@@ -1,4 +1,4 @@
-"""``pico plugins`` reports the installed Myna Plugin without starting it."""
+"""``mycoder plugins`` reports the installed Myna Plugin without starting it."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from typing import Any
 import pytest
 from typer.testing import CliRunner
 
-from pico.plugin import (
+from mycoder.plugin import (
     Contributes,
     DiscoveredPlugin,
     MemoryBackendContribution,
@@ -23,20 +23,20 @@ from pico.plugin import (
 
 @pytest.fixture(autouse=True)
 def _installed_myna(monkeypatch: pytest.MonkeyPatch):
-    module = types.ModuleType("myna.integrations.pico.backend")
+    module = types.ModuleType("myna.integrations.mycoder.backend")
     module.make_backend = lambda context: context
     monkeypatch.setitem(sys.modules, module.__name__, module)
     discovered = DiscoveredPlugin(
         manifest=PluginManifest(
             id="myna-memory",
             version="0.1.1rc3",
-            pico=">=0.1,<0.2",
+            mycoder=">=0.1,<0.2",
             enabled_by_default=True,
             contributes=Contributes(
                 memory_backends=[
                     MemoryBackendContribution(
                         name="myna",
-                        factory="myna.integrations.pico:make_backend",
+                        factory="myna.integrations.mycoder:make_backend",
                     )
                 ]
             ),
@@ -44,7 +44,7 @@ def _installed_myna(monkeypatch: pytest.MonkeyPatch):
         source=Source.ENTRY_POINTS,
         location=None,
     )
-    monkeypatch.setattr("pico.plugin.discover.PluginDiscovery.discover", lambda _self: [discovered])
+    monkeypatch.setattr("mycoder.plugin.discover.PluginDiscovery.discover", lambda _self: [discovered])
 
 
 def _make_runner_args(tmp_path: Path, config: dict[str, Any]) -> list[str]:
@@ -54,7 +54,7 @@ def _make_runner_args(tmp_path: Path, config: dict[str, Any]) -> list[str]:
 
 
 def _invoke(args: list[str], tmp_path: Path):
-    from pico.cli.commands import app
+    from mycoder.cli.commands import app
 
     fake_home = tmp_path / "home"
     fake_home.mkdir(parents=True, exist_ok=True)
@@ -137,4 +137,4 @@ def test_verbose_shows_myna_factory(tmp_path: Path) -> None:
     result = _invoke(args, tmp_path)
 
     assert result.exit_code == 0, result.stdout
-    assert "myna.integrations.pico:make_backend" in result.stdout
+    assert "myna.integrations.mycoder:make_backend" in result.stdout

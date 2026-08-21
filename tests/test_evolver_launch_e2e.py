@@ -16,11 +16,11 @@ from pathlib import Path
 import pytest
 import yaml
 
-from pico.evolver.launch import runner as runner_mod
-from pico.evolver.launch.contract import BenchBundle
-from pico.evolver.launch.state import RunMeta
-from pico.evolver.tree import git_ops
-from pico.utils.portable_lock import file_lock
+from mycoder.evolver.launch import runner as runner_mod
+from mycoder.evolver.launch.contract import BenchBundle
+from mycoder.evolver.launch.state import RunMeta
+from mycoder.evolver.tree import git_ops
+from mycoder.utils.portable_lock import file_lock
 
 
 @pytest.fixture(autouse=True)
@@ -87,11 +87,11 @@ def fake_bench(monkeypatch):
     }
 
     def build(ctx) -> BenchBundle:
-        from pico.evolver.analysis.stability_bucket import StabilityBucket, TaskStability
-        from pico.evolver.orchestrator.loop import EvolutionOrchestrator
-        from pico.evolver.orchestrator.scoring import EvalBackend, TaskEval
-        from pico.evolver.scheduler.anchor_selection import simple_anchor
-        from pico.evolver.tree.node import HarnessNode
+        from mycoder.evolver.analysis.stability_bucket import StabilityBucket, TaskStability
+        from mycoder.evolver.orchestrator.loop import EvolutionOrchestrator
+        from mycoder.evolver.orchestrator.scoring import EvalBackend, TaskEval
+        from mycoder.evolver.scheduler.anchor_selection import simple_anchor
+        from mycoder.evolver.tree.node import HarnessNode
 
         work = Path(ctx.spec.work_dir)
         van = work / "runs" / "vanilla"

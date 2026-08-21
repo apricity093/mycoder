@@ -12,10 +12,10 @@ from pathlib import Path
 
 import pytest
 
-from pico.agent.loop import AgentLoop
-from pico.providers.base import LLMProvider, LLMResponse, ToolCallRequest
-from pico.spine.message import ChatType, Source
-from pico.spine.turn import Origin, TurnRequest
+from mycoder.agent.loop import AgentLoop
+from mycoder.providers.base import LLMProvider, LLMResponse, ToolCallRequest
+from mycoder.spine.message import ChatType, Source
+from mycoder.spine.turn import Origin, TurnRequest
 
 _PLACEHOLDER = "[earlier tool output elided to fit the context window]"
 

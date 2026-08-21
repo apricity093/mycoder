@@ -1,6 +1,6 @@
-"""Tests for pico.channels.media — traversal-safe, collision-safe writes."""
+"""Tests for mycoder.channels.media — traversal-safe, collision-safe writes."""
 
-import pico.channels.media as media
+import mycoder.channels.media as media
 
 
 def test_safe_name():

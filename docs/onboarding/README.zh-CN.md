@@ -1,42 +1,42 @@
-# Pico 首次使用
+# mycoder 首次使用
 
-这份指南只完成一个闭环：在你选定的 Git 仓库里安装 Pico、配置 Provider，并收到
+这份指南只完成一个闭环：在你选定的 Git 仓库里安装 mycoder、配置 Provider，并收到
 第一条真实回复。
 
 ## 1. 准备环境
 
-Pico 需要 Python 3.12。原生 TUI 使用 Node.js 22；系统缺少合适版本时，安装器
+mycoder 需要 Python 3.12。原生 TUI 使用 Node.js 22；系统缺少合适版本时，安装器
 会下载私有 Node Runtime。
 
 仓库处于 Private 阶段时，先确认当前机器已经配置 Gitee 访问凭证：
 
 ```bash
-git clone https://gitee.com/htxoffical/pico-harness.git
-cd pico-harness
+git clone https://gitee.com/htxoffical/mycoder-harness.git
+cd mycoder-harness
 ./install.sh
 ```
 
 Windows PowerShell：
 
 ```powershell
-git clone https://gitee.com/htxoffical/pico-harness.git
-Set-Location pico-harness
+git clone https://gitee.com/htxoffical/mycoder-harness.git
+Set-Location mycoder-harness
 .\install.ps1
 ```
 
-安装器会从 Gitee Release 解析 Pico wheel。Private Release 需要
-`PICO_GITEE_TOKEN`；如果维护者提供了固定并经过校验的 wheel，也可以设置
-`PICO_WHEEL_URL`。
+安装器会从 Gitee Release 解析 mycoder wheel。Private Release 需要
+`mycoder_GITEE_TOKEN`；如果维护者提供了固定并经过校验的 wheel，也可以设置
+`mycoder_WHEEL_URL`。
 
 不要从来路不明的地址安装 wheel，也不要把 Token 写进仓库、命令截图或日志。
 
 ## 2. 在目标仓库中启动向导
 
-先进入 Pico 实际要工作的 Git 仓库：
+先进入 mycoder 实际要工作的 Git 仓库：
 
 ```bash
 cd /path/to/your-project
-pico onboard --skip-memory
+mycoder onboard --skip-memory
 ```
 
 当前发布不包含外部 Memory 实现，因此首次配置必须显式使用 `--skip-memory`。
@@ -66,7 +66,7 @@ Provider 预检失败时，不要仅凭配置文件已经写入就继续宣称�
 ### 第三步：选择运行位置
 
 根据当前环境选择直接在 Host 运行，或者使用已经准备好的 Sandbox。向导完成后，
-`pico doctor --json` 会显示当前选择。
+`mycoder doctor --json` 会显示当前选择。
 
 ### 第四步：配置消息渠道
 
@@ -78,7 +78,7 @@ Provider 预检失败时，不要仅凭配置文件已经写入就继续宣称�
 自动化场景可以使用：
 
 ```bash
-pico onboard \
+mycoder onboard \
   --non-interactive \
   --provider openai \
   --api-key "$OPENAI_API_KEY" \
@@ -98,40 +98,40 @@ pico onboard \
 先检查静态状态：
 
 ```bash
-pico --version
-pico plugins
-pico channels list
-pico doctor --json
+mycoder --version
+mycoder plugins
+mycoder channels list
+mycoder doctor --json
 ```
 
 验收结果应满足：
 
-- `pico --version` 能返回已安装版本。
-- `pico doctor --json` 输出合法 JSON。
+- `mycoder --version` 能返回已安装版本。
+- `mycoder doctor --json` 输出合法 JSON。
 - Memory 明确处于关闭状态，不应选择一个未安装的 Backend。
 - 输出中没有 API Key、App Secret 或 Token。
 
 用户允许一次真实 Provider 调用时，再运行：
 
 ```bash
-pico doctor --probe
-pico run -m "用三句话说明这个仓库做什么"
+mycoder doctor --probe
+mycoder run -m "用三句话说明这个仓库做什么"
 ```
 
-`doctor --probe` 与 `pico run` 都真实经过 Provider。只执行其中一个即可证明模型回复；
+`doctor --probe` 与 `mycoder run` 都真实经过 Provider。只执行其中一个即可证明模型回复；
 两者同时运行会产生两次调用。
 
 ## 5. 启动方式
 
 ```bash
-pico
-pico run -m "总结当前仓库"
-pico gateway --workspace "$PWD" --verbose
+mycoder
+mycoder run -m "总结当前仓库"
+mycoder gateway --workspace "$PWD" --verbose
 ```
 
-- `pico` 启动原生 TUI。
-- `pico run` 执行一次 CLI Turn。
-- `pico gateway` 为当前 Workspace 服务已经启用的消息渠道。
+- `mycoder` 启动原生 TUI。
+- `mycoder run` 执行一次 CLI Turn。
+- `mycoder gateway` 为当前 Workspace 服务已经启用的消息渠道。
 
 ## 6. 继续配置
 

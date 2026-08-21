@@ -15,14 +15,14 @@ from pathlib import Path
 import httpx
 import pytest
 
-from pico.agent.loop import AgentLoop
-from pico.call_efficiency import CallEfficiency, CallEfficiencyProvider
-from pico.providers.base import LLMProvider, LLMResponse, StreamDelta
-from pico.spine.message import ChatType, Source
-from pico.spine.turn import Origin, TurnRequest
-from pico.token_wise import pricing
-from pico.token_wise.base import TokenStrategy
-from pico.token_wise.registry import StrategyRegistry
+from mycoder.agent.loop import AgentLoop
+from mycoder.call_efficiency import CallEfficiency, CallEfficiencyProvider
+from mycoder.providers.base import LLMProvider, LLMResponse, StreamDelta
+from mycoder.spine.message import ChatType, Source
+from mycoder.spine.turn import Origin, TurnRequest
+from mycoder.token_wise import pricing
+from mycoder.token_wise.base import TokenStrategy
+from mycoder.token_wise.registry import StrategyRegistry
 
 _REAL_FETCH = pricing._fetch_openrouter_models
 

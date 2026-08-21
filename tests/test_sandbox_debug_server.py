@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from pico.sandbox.debug_server import (
+from mycoder.sandbox.debug_server import (
     SandboxDebugServer,
     SandboxDebugServerError,
 )

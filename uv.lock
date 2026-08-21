@@ -1231,7 +1231,7 @@ wheels = [
 ]
 
 [[package]]
-name = "pico-harness"
+name = "mycoder-harness"
 version = "0.1.7"
 source = { editable = "." }
 dependencies = [
@@ -1323,7 +1323,7 @@ requires-dist = [
     { name = "oauth-cli-kit", marker = "extra == 'tools'", specifier = ">=0.1.6,<1.0.0" },
     { name = "orjson", specifier = ">=3.11.6,<4.0" },
     { name = "packaging", specifier = ">=24.0,<26.0" },
-    { name = "pico-harness", extras = ["channel-feishu", "channel-qq", "channel-wecom"], marker = "extra == 'channels'", editable = "." },
+    { name = "mycoder-harness", extras = ["channel-feishu", "channel-qq", "channel-wecom"], marker = "extra == 'channels'", editable = "." },
     { name = "pillow", specifier = ">=12.3,<13.0" },
     { name = "portalocker", specifier = ">=3.2.0" },
     { name = "prompt-toolkit", specifier = ">=3.0.0" },

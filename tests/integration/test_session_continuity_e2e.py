@@ -33,7 +33,7 @@ def _probe(workspace: Path, action: str, *args: str) -> dict:
 def test_session_lifecycle_survives_processes_and_isolates_forks(
     tmp_path: Path,
 ) -> None:
-    product_home = tmp_path / "pico-home"
+    product_home = tmp_path / "mycoder-home"
     workspace = product_home / "workspace"
     seeded = _probe(workspace, "seed")
     diverged = _probe(
@@ -75,13 +75,13 @@ def test_session_lifecycle_survives_processes_and_isolates_forks(
         [
             sys.executable,
             "-m",
-            "pico.cli.commands",
+            "mycoder.cli.commands",
             "sessions",
             "resume",
             seeded["parent_key"].partition(":")[2],
         ],
         cwd=_REPO_ROOT,
-        env={**os.environ, "PICO_HOME": str(product_home)},
+        env={**os.environ, "mycoder_HOME": str(product_home)},
         capture_output=True,
         text=True,
         check=False,

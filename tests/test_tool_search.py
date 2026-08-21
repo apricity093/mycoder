@@ -5,11 +5,11 @@ from typing import Any
 
 import pytest
 
-from pico.agent.tools.base import Tool
-from pico.agent.tools.execution import ToolExecutionContext
-from pico.agent.tools.registry import ToolRegistry
-from pico.agent.tools.tool_index import ToolIndex, _schema_text
-from pico.agent.tools.tool_search import (
+from mycoder.agent.tools.base import Tool
+from mycoder.agent.tools.execution import ToolExecutionContext
+from mycoder.agent.tools.registry import ToolRegistry
+from mycoder.agent.tools.tool_index import ToolIndex, _schema_text
+from mycoder.agent.tools.tool_search import (
     DEFAULT_ALWAYS_VISIBLE,
     META_TOOL_NAMES,
     TOOL_CALL_NAME,
@@ -18,7 +18,7 @@ from pico.agent.tools.tool_search import (
     ToolSearchStrategy,
     ToolSearchTool,
 )
-from pico.config.schema import ToolSearchConfig
+from mycoder.config.schema import ToolSearchConfig
 
 
 class _FakeTool(Tool):
@@ -407,8 +407,8 @@ async def test_strategy_passthrough_when_meta_tools_absent() -> None:
 
 
 def test_registry_register_first_runs_before_others() -> None:
-    from pico.token_wise.base import TokenStrategy
-    from pico.token_wise.registry import StrategyRegistry
+    from mycoder.token_wise.base import TokenStrategy
+    from mycoder.token_wise.registry import StrategyRegistry
 
     class _Noop(TokenStrategy):
         def __init__(self, tag: str) -> None:

@@ -26,7 +26,7 @@ def test_release_dist_target_uses_fail_closed_distribution_verifier(tmp_path: Pa
     result = subprocess.run(
         ["make", "-n", "release-dist"],
         cwd=REPO_ROOT,
-        env={**os.environ, "PICO_RELEASE_OUTPUT": str(tmp_path / "release")},
+        env={**os.environ, "mycoder_RELEASE_OUTPUT": str(tmp_path / "release")},
         capture_output=True,
         text=True,
         check=False,
@@ -43,15 +43,15 @@ def _write_wheel(
     remove_files: set[str] | None = None,
 ) -> Path:
     files = {
-        "pico/__init__.py": "",
-        "pico/templates/AGENTS.md": "# Agents",
-        "pico/templates/SOUL.md": "# Soul",
-        "pico/tracing/viewer/server.js": "",
-        "pico/tracing/viewer/ui/app.js": "",
-        "pico/ui-tui/dist/entry.js": "",
-        "pico_harness-0.1.7.dist-info/METADATA": (
+        "mycoder/__init__.py": "",
+        "mycoder/templates/AGENTS.md": "# Agents",
+        "mycoder/templates/SOUL.md": "# Soul",
+        "mycoder/tracing/viewer/server.js": "",
+        "mycoder/tracing/viewer/ui/app.js": "",
+        "mycoder/ui-tui/dist/entry.js": "",
+        "mycoder_harness-0.1.7.dist-info/METADATA": (
             "Metadata-Version: 2.4\n"
-            "Name: pico-harness\n"
+            "Name: mycoder-harness\n"
             "Version: 0.1.7\n"
             "Provides-Extra: channel-feishu\n"
             "Provides-Extra: channel-qq\n"
@@ -59,14 +59,14 @@ def _write_wheel(
             "Provides-Extra: channels\n"
             "Provides-Extra: sandbox\n"
         ),
-        "pico_harness-0.1.7.dist-info/entry_points.txt": "[console_scripts]\npico = pico.cli.commands:run\n",
-        "pico_harness-0.1.7.dist-info/licenses/LICENSE": "Apache-2.0",
-        "pico_harness-0.1.7.dist-info/licenses/LICENSES/MIT-hermes-agent.txt": "MIT",
-        "pico_harness-0.1.7.dist-info/licenses/LICENSES/MIT-ink.txt": "MIT",
-        "pico_harness-0.1.7.dist-info/licenses/LICENSES/MIT-nanobot.txt": "MIT",
-        "pico_harness-0.1.7.dist-info/licenses/LICENSES/README.md": "# Third-party licenses",
-        "pico_harness-0.1.7.dist-info/licenses/NOTICES.md": "# Notices",
-        "pico_harness-0.1.7.dist-info/RECORD": "",
+        "mycoder_harness-0.1.7.dist-info/entry_points.txt": "[console_scripts]\nmycoder = mycoder.cli.commands:run\n",
+        "mycoder_harness-0.1.7.dist-info/licenses/LICENSE": "Apache-2.0",
+        "mycoder_harness-0.1.7.dist-info/licenses/LICENSES/MIT-hermes-agent.txt": "MIT",
+        "mycoder_harness-0.1.7.dist-info/licenses/LICENSES/MIT-ink.txt": "MIT",
+        "mycoder_harness-0.1.7.dist-info/licenses/LICENSES/MIT-nanobot.txt": "MIT",
+        "mycoder_harness-0.1.7.dist-info/licenses/LICENSES/README.md": "# Third-party licenses",
+        "mycoder_harness-0.1.7.dist-info/licenses/NOTICES.md": "# Notices",
+        "mycoder_harness-0.1.7.dist-info/RECORD": "",
     }
     files.update(extra_files or {})
     for name in remove_files or set():
@@ -151,7 +151,7 @@ def test_rejects_nonempty_output_root_without_deleting_contents(tmp_path: Path) 
             "--output-root",
             str(output_root),
             "--entrypoint",
-            "pico",
+            "mycoder",
             "--extras",
             "base",
         ],
@@ -177,7 +177,7 @@ def test_rejects_output_root_inside_checkout() -> None:
             "--output-root",
             str(output_root),
             "--entrypoint",
-            "pico",
+            "mycoder",
             "--extras",
             "base",
         ],
@@ -194,29 +194,29 @@ def test_rejects_output_root_inside_checkout() -> None:
 
 def test_wheel_manifest_rejects_node_modules(tmp_path: Path) -> None:
     wheel = _write_wheel(
-        tmp_path / "pico_harness-0.1.7-py3-none-any.whl",
-        {"pico/node_modules/typescript/package.json": "{}"},
+        tmp_path / "mycoder_harness-0.1.7-py3-none-any.whl",
+        {"mycoder/node_modules/typescript/package.json": "{}"},
     )
 
     with pytest.raises(verify_distribution.VerificationError, match="node_modules"):
         snapshot = verify_distribution._wheel_snapshot(wheel)
-        verify_distribution._validate_wheel(snapshot, "pico")
+        verify_distribution._validate_wheel(snapshot, "mycoder")
 
 
 @pytest.mark.parametrize(
     "artifact",
     [
-        "pico/package.json",
-        "pico/package-lock.json",
-        "pico/.npmrc",
-        "pico/npm-debug.log",
-        "pico/reports/distribution.html",
+        "mycoder/package.json",
+        "mycoder/package-lock.json",
+        "mycoder/.npmrc",
+        "mycoder/npm-debug.log",
+        "mycoder/reports/distribution.html",
         "ui-tui/src/entry.tsx",
-        "pico/generated/tool.ts",
-        "pico/distribution-report.json",
-        "pico/verification-report.html",
-        "pico/htmlcov/index.html",
-        "pico/coverage.xml",
+        "mycoder/generated/tool.ts",
+        "mycoder/distribution-report.json",
+        "mycoder/verification-report.html",
+        "mycoder/htmlcov/index.html",
+        "mycoder/coverage.xml",
     ],
 )
 def test_wheel_manifest_rejects_local_build_and_report_artifacts(
@@ -224,7 +224,7 @@ def test_wheel_manifest_rejects_local_build_and_report_artifacts(
     artifact: str,
 ) -> None:
     wheel = _write_wheel(
-        tmp_path / "pico_harness-0.1.7-py3-none-any.whl",
+        tmp_path / "mycoder_harness-0.1.7-py3-none-any.whl",
         {artifact: ""},
     )
 
@@ -234,160 +234,160 @@ def test_wheel_manifest_rejects_local_build_and_report_artifacts(
     ):
         verify_distribution._validate_wheel(
             verify_distribution._wheel_snapshot(wheel),
-            "pico",
+            "mycoder",
         )
 
 
 def test_wheel_manifest_requires_complete_attribution_set(tmp_path: Path) -> None:
     wheel = _write_wheel(
-        tmp_path / "pico_harness-0.1.7-py3-none-any.whl",
-        remove_files={"pico_harness-0.1.7.dist-info/licenses/NOTICES.md"},
+        tmp_path / "mycoder_harness-0.1.7-py3-none-any.whl",
+        remove_files={"mycoder_harness-0.1.7.dist-info/licenses/NOTICES.md"},
     )
 
     with pytest.raises(verify_distribution.VerificationError, match="required attribution"):
         verify_distribution._validate_wheel(
             verify_distribution._wheel_snapshot(wheel),
-            "pico",
+            "mycoder",
         )
 
 
 @pytest.mark.parametrize(
     "runtime_file",
     [
-        "pico/bridge/package.json",
-        "pico/channels/adapters/whatsapp/channel.py",
-        "pico/channels/adapters/telegram/channel.py",
-        "pico/channels/adapters/slack/channel.py",
-        "pico/channels/adapters/discord/channel.py",
-        "pico/channels/adapters/matrix/channel.py",
-        "pico/channels/adapters/mochat/channel.py",
-        "pico/channels/adapters/dingtalk/channel.py",
-        "pico/channels/adapters/email/channel.py",
-        "pico/channels/adapters/weixin/channel.py",
+        "mycoder/bridge/package.json",
+        "mycoder/channels/adapters/whatsapp/channel.py",
+        "mycoder/channels/adapters/telegram/channel.py",
+        "mycoder/channels/adapters/slack/channel.py",
+        "mycoder/channels/adapters/discord/channel.py",
+        "mycoder/channels/adapters/matrix/channel.py",
+        "mycoder/channels/adapters/mochat/channel.py",
+        "mycoder/channels/adapters/dingtalk/channel.py",
+        "mycoder/channels/adapters/email/channel.py",
+        "mycoder/channels/adapters/weixin/channel.py",
     ],
 )
 def test_wheel_manifest_rejects_removed_channel_runtime(tmp_path: Path, runtime_file: str) -> None:
     wheel = _write_wheel(
-        tmp_path / "pico_harness-0.1.7-py3-none-any.whl",
+        tmp_path / "mycoder_harness-0.1.7-py3-none-any.whl",
         {runtime_file: ""},
     )
 
     with pytest.raises(verify_distribution.VerificationError, match="removed Channel runtime"):
         snapshot = verify_distribution._wheel_snapshot(wheel)
-        verify_distribution._validate_wheel(snapshot, "pico")
+        verify_distribution._validate_wheel(snapshot, "mycoder")
 
 
 def test_wheel_manifest_rejects_removed_media_generation_runtime(tmp_path: Path) -> None:
     wheel = _write_wheel(
-        tmp_path / "pico_harness-0.1.7-py3-none-any.whl",
-        {"pico/agent/tools/media_gen.py": ""},
+        tmp_path / "mycoder_harness-0.1.7-py3-none-any.whl",
+        {"mycoder/agent/tools/media_gen.py": ""},
     )
 
     with pytest.raises(verify_distribution.VerificationError, match="removed media generation runtime"):
-        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "pico")
+        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "mycoder")
 
 
 @pytest.mark.parametrize(
     "runtime_file",
     [
-        "pico/skill_hub/client.py",
-        "pico/agent/tools/skill_hub.py",
-        "pico/memory_engine/skill_forge/hub_source.py",
+        "mycoder/skill_hub/client.py",
+        "mycoder/agent/tools/skill_hub.py",
+        "mycoder/memory_engine/skill_forge/hub_source.py",
     ],
 )
 def test_wheel_manifest_rejects_removed_skill_hub_runtime(tmp_path: Path, runtime_file: str) -> None:
     wheel = _write_wheel(
-        tmp_path / "pico_harness-0.1.7-py3-none-any.whl",
+        tmp_path / "mycoder_harness-0.1.7-py3-none-any.whl",
         {runtime_file: ""},
     )
 
     with pytest.raises(verify_distribution.VerificationError, match="removed Skill Hub runtime"):
-        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "pico")
+        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "mycoder")
 
 
 @pytest.mark.parametrize(
     "runtime_file",
     [
-        "pico/agent/tools/deep_research.py",
-        "pico/cli/deep_research_commands.py",
-        "pico/config/update_tools.py",
+        "mycoder/agent/tools/deep_research.py",
+        "mycoder/cli/deep_research_commands.py",
+        "mycoder/config/update_tools.py",
     ],
 )
 def test_wheel_manifest_rejects_removed_deep_research_runtime(tmp_path: Path, runtime_file: str) -> None:
     wheel = _write_wheel(
-        tmp_path / "pico_harness-0.1.7-py3-none-any.whl",
+        tmp_path / "mycoder_harness-0.1.7-py3-none-any.whl",
         {runtime_file: ""},
     )
 
     with pytest.raises(verify_distribution.VerificationError, match="removed Deep Research runtime"):
-        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "pico")
+        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "mycoder")
 
 
 @pytest.mark.parametrize(
     "runtime_file",
     [
-        "pico/proactive_engine/sentinel/__init__.py",
-        "pico/cli/sentinel_commands.py",
-        "pico/cli/_proactive_stack.py",
-        "pico/memory_engine/consolidate/behaviors_extractor.py",
+        "mycoder/proactive_engine/sentinel/__init__.py",
+        "mycoder/cli/sentinel_commands.py",
+        "mycoder/cli/_proactive_stack.py",
+        "mycoder/memory_engine/consolidate/behaviors_extractor.py",
     ],
 )
 def test_wheel_manifest_rejects_removed_sentinel_runtime(tmp_path: Path, runtime_file: str) -> None:
     wheel = _write_wheel(
-        tmp_path / "pico_harness-0.1.7-py3-none-any.whl",
+        tmp_path / "mycoder_harness-0.1.7-py3-none-any.whl",
         {runtime_file: ""},
     )
 
     with pytest.raises(verify_distribution.VerificationError, match="removed Sentinel runtime"):
-        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "pico")
+        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "mycoder")
 
 
 @pytest.mark.parametrize(
     "runtime_file",
     [
-        "pico/proactive_engine/schedulers/heartbeat/service.py",
-        "pico/proactive_engine/system_events.py",
-        "pico/proactive_engine/wake.py",
-        "pico/templates/HEARTBEAT.md",
+        "mycoder/proactive_engine/schedulers/heartbeat/service.py",
+        "mycoder/proactive_engine/system_events.py",
+        "mycoder/proactive_engine/wake.py",
+        "mycoder/templates/HEARTBEAT.md",
     ],
 )
 def test_wheel_manifest_rejects_removed_heartbeat_runtime(tmp_path: Path, runtime_file: str) -> None:
     wheel = _write_wheel(
-        tmp_path / "pico_harness-0.1.7-py3-none-any.whl",
+        tmp_path / "mycoder_harness-0.1.7-py3-none-any.whl",
         {runtime_file: ""},
     )
 
     with pytest.raises(verify_distribution.VerificationError, match="removed Heartbeat runtime"):
-        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "pico")
+        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "mycoder")
 
 
 def test_wheel_manifest_rejects_removed_cli_runtime(tmp_path: Path) -> None:
     wheel = _write_wheel(
-        tmp_path / "pico_harness-0.1.7-py3-none-any.whl",
-        {"pico/cli/upgrade_commands.py": ""},
+        tmp_path / "mycoder_harness-0.1.7-py3-none-any.whl",
+        {"mycoder/cli/upgrade_commands.py": ""},
     )
 
     with pytest.raises(verify_distribution.VerificationError, match="removed CLI runtime"):
-        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "pico")
+        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "mycoder")
 
 
 @pytest.mark.parametrize(
     "runtime_file",
     [
-        "pico_harness-0.1.7/bridge/package.json",
-        "pico_harness-0.1.7/pico/channels/adapters/whatsapp/channel.py",
-        "pico_harness-0.1.7/pico/channels/adapters/telegram/channel.py",
-        "pico_harness-0.1.7/pico/channels/adapters/slack/channel.py",
-        "pico_harness-0.1.7/pico/channels/adapters/discord/channel.py",
-        "pico_harness-0.1.7/pico/channels/adapters/matrix/channel.py",
-        "pico_harness-0.1.7/pico/channels/adapters/mochat/channel.py",
-        "pico_harness-0.1.7/pico/channels/adapters/dingtalk/channel.py",
-        "pico_harness-0.1.7/pico/channels/adapters/email/channel.py",
-        "pico_harness-0.1.7/pico/channels/adapters/weixin/channel.py",
+        "mycoder_harness-0.1.7/bridge/package.json",
+        "mycoder_harness-0.1.7/mycoder/channels/adapters/whatsapp/channel.py",
+        "mycoder_harness-0.1.7/mycoder/channels/adapters/telegram/channel.py",
+        "mycoder_harness-0.1.7/mycoder/channels/adapters/slack/channel.py",
+        "mycoder_harness-0.1.7/mycoder/channels/adapters/discord/channel.py",
+        "mycoder_harness-0.1.7/mycoder/channels/adapters/matrix/channel.py",
+        "mycoder_harness-0.1.7/mycoder/channels/adapters/mochat/channel.py",
+        "mycoder_harness-0.1.7/mycoder/channels/adapters/dingtalk/channel.py",
+        "mycoder_harness-0.1.7/mycoder/channels/adapters/email/channel.py",
+        "mycoder_harness-0.1.7/mycoder/channels/adapters/weixin/channel.py",
     ],
 )
 def test_sdist_manifest_rejects_removed_channel_runtime(tmp_path: Path, runtime_file: str) -> None:
-    sdist = _write_sdist(tmp_path / "pico_harness-0.1.7.tar.gz", {runtime_file: ""})
+    sdist = _write_sdist(tmp_path / "mycoder_harness-0.1.7.tar.gz", {runtime_file: ""})
 
     with pytest.raises(verify_distribution.VerificationError, match="sdist contains removed Channel runtime"):
         verify_distribution._validate_sdist(sdist)
@@ -395,8 +395,8 @@ def test_sdist_manifest_rejects_removed_channel_runtime(tmp_path: Path, runtime_
 
 def test_sdist_manifest_rejects_removed_media_generation_runtime(tmp_path: Path) -> None:
     sdist = _write_sdist(
-        tmp_path / "pico_harness-0.1.7.tar.gz",
-        {"pico_harness-0.1.7/pico/agent/tools/media_gen.py": ""},
+        tmp_path / "mycoder_harness-0.1.7.tar.gz",
+        {"mycoder_harness-0.1.7/mycoder/agent/tools/media_gen.py": ""},
     )
 
     with pytest.raises(verify_distribution.VerificationError, match="removed media generation runtime"):
@@ -406,13 +406,13 @@ def test_sdist_manifest_rejects_removed_media_generation_runtime(tmp_path: Path)
 @pytest.mark.parametrize(
     "runtime_file",
     [
-        "pico_harness-0.1.7/pico/skill_hub/client.py",
-        "pico_harness-0.1.7/pico/agent/tools/skill_hub.py",
-        "pico_harness-0.1.7/pico/memory_engine/skill_forge/hub_source.py",
+        "mycoder_harness-0.1.7/mycoder/skill_hub/client.py",
+        "mycoder_harness-0.1.7/mycoder/agent/tools/skill_hub.py",
+        "mycoder_harness-0.1.7/mycoder/memory_engine/skill_forge/hub_source.py",
     ],
 )
 def test_sdist_manifest_rejects_removed_skill_hub_runtime(tmp_path: Path, runtime_file: str) -> None:
-    sdist = _write_sdist(tmp_path / "pico_harness-0.1.7.tar.gz", {runtime_file: ""})
+    sdist = _write_sdist(tmp_path / "mycoder_harness-0.1.7.tar.gz", {runtime_file: ""})
 
     with pytest.raises(verify_distribution.VerificationError, match="removed Skill Hub runtime"):
         verify_distribution._validate_sdist(sdist)
@@ -421,13 +421,13 @@ def test_sdist_manifest_rejects_removed_skill_hub_runtime(tmp_path: Path, runtim
 @pytest.mark.parametrize(
     "runtime_file",
     [
-        "pico_harness-0.1.7/pico/agent/tools/deep_research.py",
-        "pico_harness-0.1.7/pico/cli/deep_research_commands.py",
-        "pico_harness-0.1.7/pico/config/update_tools.py",
+        "mycoder_harness-0.1.7/mycoder/agent/tools/deep_research.py",
+        "mycoder_harness-0.1.7/mycoder/cli/deep_research_commands.py",
+        "mycoder_harness-0.1.7/mycoder/config/update_tools.py",
     ],
 )
 def test_sdist_manifest_rejects_removed_deep_research_runtime(tmp_path: Path, runtime_file: str) -> None:
-    sdist = _write_sdist(tmp_path / "pico_harness-0.1.7.tar.gz", {runtime_file: ""})
+    sdist = _write_sdist(tmp_path / "mycoder_harness-0.1.7.tar.gz", {runtime_file: ""})
 
     with pytest.raises(verify_distribution.VerificationError, match="removed Deep Research runtime"):
         verify_distribution._validate_sdist(sdist)
@@ -436,14 +436,14 @@ def test_sdist_manifest_rejects_removed_deep_research_runtime(tmp_path: Path, ru
 @pytest.mark.parametrize(
     "runtime_file",
     [
-        "pico_harness-0.1.7/pico/proactive_engine/sentinel/__init__.py",
-        "pico_harness-0.1.7/pico/cli/sentinel_commands.py",
-        "pico_harness-0.1.7/pico/cli/_proactive_stack.py",
-        "pico_harness-0.1.7/pico/memory_engine/consolidate/behaviors_extractor.py",
+        "mycoder_harness-0.1.7/mycoder/proactive_engine/sentinel/__init__.py",
+        "mycoder_harness-0.1.7/mycoder/cli/sentinel_commands.py",
+        "mycoder_harness-0.1.7/mycoder/cli/_proactive_stack.py",
+        "mycoder_harness-0.1.7/mycoder/memory_engine/consolidate/behaviors_extractor.py",
     ],
 )
 def test_sdist_manifest_rejects_removed_sentinel_runtime(tmp_path: Path, runtime_file: str) -> None:
-    sdist = _write_sdist(tmp_path / "pico_harness-0.1.7.tar.gz", {runtime_file: ""})
+    sdist = _write_sdist(tmp_path / "mycoder_harness-0.1.7.tar.gz", {runtime_file: ""})
 
     with pytest.raises(verify_distribution.VerificationError, match="removed Sentinel runtime"):
         verify_distribution._validate_sdist(sdist)
@@ -452,14 +452,14 @@ def test_sdist_manifest_rejects_removed_sentinel_runtime(tmp_path: Path, runtime
 @pytest.mark.parametrize(
     "runtime_file",
     [
-        "pico_harness-0.1.7/pico/proactive_engine/schedulers/heartbeat/service.py",
-        "pico_harness-0.1.7/pico/proactive_engine/system_events.py",
-        "pico_harness-0.1.7/pico/proactive_engine/wake.py",
-        "pico_harness-0.1.7/pico/templates/HEARTBEAT.md",
+        "mycoder_harness-0.1.7/mycoder/proactive_engine/schedulers/heartbeat/service.py",
+        "mycoder_harness-0.1.7/mycoder/proactive_engine/system_events.py",
+        "mycoder_harness-0.1.7/mycoder/proactive_engine/wake.py",
+        "mycoder_harness-0.1.7/mycoder/templates/HEARTBEAT.md",
     ],
 )
 def test_sdist_manifest_rejects_removed_heartbeat_runtime(tmp_path: Path, runtime_file: str) -> None:
-    sdist = _write_sdist(tmp_path / "pico_harness-0.1.7.tar.gz", {runtime_file: ""})
+    sdist = _write_sdist(tmp_path / "mycoder_harness-0.1.7.tar.gz", {runtime_file: ""})
 
     with pytest.raises(verify_distribution.VerificationError, match="removed Heartbeat runtime"):
         verify_distribution._validate_sdist(sdist)
@@ -467,8 +467,8 @@ def test_sdist_manifest_rejects_removed_heartbeat_runtime(tmp_path: Path, runtim
 
 def test_sdist_manifest_rejects_removed_cli_runtime(tmp_path: Path) -> None:
     sdist = _write_sdist(
-        tmp_path / "pico_harness-0.1.7.tar.gz",
-        {"pico_harness-0.1.7/pico/cli/upgrade_commands.py": ""},
+        tmp_path / "mycoder_harness-0.1.7.tar.gz",
+        {"mycoder_harness-0.1.7/mycoder/cli/upgrade_commands.py": ""},
     )
 
     with pytest.raises(verify_distribution.VerificationError, match="sdist contains removed CLI runtime"):
@@ -477,24 +477,24 @@ def test_sdist_manifest_rejects_removed_cli_runtime(tmp_path: Path) -> None:
 
 def test_wheel_metadata_rejects_removed_channel_extra(tmp_path: Path) -> None:
     wheel = _write_wheel(
-        tmp_path / "pico_harness-0.1.7-py3-none-any.whl",
+        tmp_path / "mycoder_harness-0.1.7-py3-none-any.whl",
         {
-            "pico_harness-0.1.7.dist-info/METADATA": (
-                "Metadata-Version: 2.4\nName: pico-harness\nVersion: 0.1.7\nProvides-Extra: channel-telegram\n"
+            "mycoder_harness-0.1.7.dist-info/METADATA": (
+                "Metadata-Version: 2.4\nName: mycoder-harness\nVersion: 0.1.7\nProvides-Extra: channel-telegram\n"
             )
         },
     )
 
     with pytest.raises(verify_distribution.VerificationError, match="removed Channel extra"):
-        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "pico")
+        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "mycoder")
 
 
 def test_wheel_metadata_requires_exact_retained_channel_extras(tmp_path: Path) -> None:
     wheel = _write_wheel(
-        tmp_path / "pico_harness-0.1.7-py3-none-any.whl",
+        tmp_path / "mycoder_harness-0.1.7-py3-none-any.whl",
         {
-            "pico_harness-0.1.7.dist-info/METADATA": (
-                "Metadata-Version: 2.4\nName: pico-harness\nVersion: 0.1.7\n"
+            "mycoder_harness-0.1.7.dist-info/METADATA": (
+                "Metadata-Version: 2.4\nName: mycoder-harness\nVersion: 0.1.7\n"
                 "Provides-Extra: channel-feishu\n"
                 "Provides-Extra: channel-qq\n"
                 "Provides-Extra: channel-wecom\n"
@@ -504,15 +504,15 @@ def test_wheel_metadata_requires_exact_retained_channel_extras(tmp_path: Path) -
     )
 
     with pytest.raises(verify_distribution.VerificationError, match="exactly the retained Channel extras"):
-        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "pico")
+        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "mycoder")
 
 
 def test_wheel_metadata_rejects_removed_channel_dependency(tmp_path: Path) -> None:
     wheel = _write_wheel(
-        tmp_path / "pico_harness-0.1.7-py3-none-any.whl",
+        tmp_path / "mycoder_harness-0.1.7-py3-none-any.whl",
         {
-            "pico_harness-0.1.7.dist-info/METADATA": (
-                "Metadata-Version: 2.4\nName: pico-harness\nVersion: 0.1.7\n"
+            "mycoder_harness-0.1.7.dist-info/METADATA": (
+                "Metadata-Version: 2.4\nName: mycoder-harness\nVersion: 0.1.7\n"
                 "Provides-Extra: channel-feishu\n"
                 "Provides-Extra: channel-qq\n"
                 "Provides-Extra: channel-wecom\n"
@@ -522,26 +522,26 @@ def test_wheel_metadata_rejects_removed_channel_dependency(tmp_path: Path) -> No
     )
 
     with pytest.raises(verify_distribution.VerificationError, match="removed Channel package"):
-        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "pico")
+        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "mycoder")
 
 
 def test_wheel_rejects_bundled_everos_runtime(tmp_path: Path) -> None:
     wheel = _write_wheel(
-        tmp_path / "pico_harness-0.1.7-py3-none-any.whl",
-        {"pico/plugin/memory/everos/backend.py": ""},
+        tmp_path / "mycoder_harness-0.1.7-py3-none-any.whl",
+        {"mycoder/plugin/memory/everos/backend.py": ""},
     )
 
     with pytest.raises(verify_distribution.VerificationError, match="removed EverOS runtime"):
-        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "pico")
+        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "mycoder")
 
 
 def test_wheel_rejects_direct_everos_dependency(tmp_path: Path) -> None:
     wheel = _write_wheel(
-        tmp_path / "pico_harness-0.1.7-py3-none-any.whl",
+        tmp_path / "mycoder_harness-0.1.7-py3-none-any.whl",
         {
-            "pico_harness-0.1.7.dist-info/METADATA": (
+            "mycoder_harness-0.1.7.dist-info/METADATA": (
                 "Metadata-Version: 2.4\n"
-                "Name: pico-harness\n"
+                "Name: mycoder-harness\n"
                 "Version: 0.1.7\n"
                 "Provides-Extra: channel-feishu\n"
                 "Provides-Extra: channel-qq\n"
@@ -552,14 +552,14 @@ def test_wheel_rejects_direct_everos_dependency(tmp_path: Path) -> None:
     )
 
     with pytest.raises(verify_distribution.VerificationError, match="depends directly on removed package"):
-        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "pico")
+        verify_distribution._validate_wheel(verify_distribution._wheel_snapshot(wheel), "mycoder")
 
 
 @pytest.mark.parametrize(
     ("extra_files", "remove_files"),
     [
-        ({"pico/ui-tui/src/app.ts": ""}, set()),
-        ({}, {"pico/ui-tui/dist/entry.js"}),
+        ({"mycoder/ui-tui/src/app.ts": ""}, set()),
+        ({}, {"mycoder/ui-tui/dist/entry.js"}),
     ],
 )
 def test_wheel_manifest_requires_exactly_one_tui_bundle(
@@ -568,18 +568,18 @@ def test_wheel_manifest_requires_exactly_one_tui_bundle(
     remove_files: set[str],
 ) -> None:
     wheel = _write_wheel(
-        tmp_path / "pico_harness-0.1.7-py3-none-any.whl",
+        tmp_path / "mycoder_harness-0.1.7-py3-none-any.whl",
         extra_files,
         remove_files,
     )
 
     with pytest.raises(verify_distribution.VerificationError, match="exactly one TUI bundle"):
         snapshot = verify_distribution._wheel_snapshot(wheel)
-        verify_distribution._validate_wheel(snapshot, "pico")
+        verify_distribution._validate_wheel(snapshot, "mycoder")
 
 
 def test_base_and_extras_use_distinct_environment_roots(tmp_path: Path) -> None:
-    wheel = _write_wheel(tmp_path / "pico_harness-0.1.7-py3-none-any.whl")
+    wheel = _write_wheel(tmp_path / "mycoder_harness-0.1.7-py3-none-any.whl")
     snapshot = verify_distribution._wheel_snapshot(wheel)
 
     plans = verify_distribution._build_install_plans(
@@ -625,7 +625,7 @@ def test_install_plans_require_all_six_canonical_targets(
     tmp_path: Path,
     targets: tuple[str, ...],
 ) -> None:
-    wheel = _write_wheel(tmp_path / "pico_harness-0.1.7-py3-none-any.whl")
+    wheel = _write_wheel(tmp_path / "mycoder_harness-0.1.7-py3-none-any.whl")
 
     with pytest.raises(
         verify_distribution.VerificationError,
@@ -647,8 +647,8 @@ def test_probe_environment_isolates_home_pythonpath_and_credentials(
     monkeypatch.setenv("PYTHONPATH", "/leaked/checkout")
     monkeypatch.setenv("DEEPSEEK_API_KEY", "secret")
     monkeypatch.setenv("LARK_APP_SECRET", "secret")
-    monkeypatch.setenv("ANTHROPIC_API_KEY_PICO", "secret")
-    monkeypatch.setenv("OPENAI_API_KEY_PICO", "secret")
+    monkeypatch.setenv("ANTHROPIC_API_KEY_mycoder", "secret")
+    monkeypatch.setenv("OPENAI_API_KEY_mycoder", "secret")
     monkeypatch.setenv("NPM_TOKEN", "secret")
     monkeypatch.setenv("UV_INDEX_PASSWORD", "secret")
     monkeypatch.setenv("SSH_AUTH_SOCK", "/tmp/agent.sock")
@@ -667,8 +667,8 @@ def test_probe_environment_isolates_home_pythonpath_and_credentials(
     for name in (
         "DEEPSEEK_API_KEY",
         "LARK_APP_SECRET",
-        "ANTHROPIC_API_KEY_PICO",
-        "OPENAI_API_KEY_PICO",
+        "ANTHROPIC_API_KEY_mycoder",
+        "OPENAI_API_KEY_mycoder",
         "NPM_TOKEN",
         "UV_INDEX_PASSWORD",
         "SSH_AUTH_SOCK",
@@ -763,8 +763,8 @@ def test_source_snapshot_includes_nonignored_files_without_touching_checkout(
     checkout = tmp_path / "checkout"
     checkout.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=checkout, check=True)
-    subprocess.run(["git", "config", "user.name", "Pico Test"], cwd=checkout, check=True)
-    subprocess.run(["git", "config", "user.email", "pico@example.com"], cwd=checkout, check=True)
+    subprocess.run(["git", "config", "user.name", "mycoder Test"], cwd=checkout, check=True)
+    subprocess.run(["git", "config", "user.email", "mycoder@example.com"], cwd=checkout, check=True)
     (checkout / ".gitignore").write_text(".env\nnode_modules/\ndist/\n", encoding="utf-8")
     (checkout / "tracked.txt").write_text("before\n", encoding="utf-8")
     subprocess.run(["git", "add", "."], cwd=checkout, check=True)
@@ -798,8 +798,8 @@ def test_source_state_detects_drift(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     checkout = tmp_path / "checkout"
     checkout.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=checkout, check=True)
-    subprocess.run(["git", "config", "user.name", "Pico Test"], cwd=checkout, check=True)
-    subprocess.run(["git", "config", "user.email", "pico@example.com"], cwd=checkout, check=True)
+    subprocess.run(["git", "config", "user.name", "mycoder Test"], cwd=checkout, check=True)
+    subprocess.run(["git", "config", "user.email", "mycoder@example.com"], cwd=checkout, check=True)
     source = checkout / "source.py"
     source.write_text("value = 1\n", encoding="utf-8")
     subprocess.run(["git", "add", "."], cwd=checkout, check=True)
@@ -854,20 +854,20 @@ def test_required_import_probe_executes_module_initialization(tmp_path: Path) ->
 def test_sdist_wheel_must_match_direct_wheel_resources(tmp_path: Path) -> None:
     (tmp_path / "direct").mkdir()
     direct = verify_distribution._wheel_snapshot(
-        _write_wheel(tmp_path / "direct" / "pico_harness-0.1.7-py3-none-any.whl")
+        _write_wheel(tmp_path / "direct" / "mycoder_harness-0.1.7-py3-none-any.whl")
     )
-    rebuilt_path = tmp_path / "rebuilt" / "pico_harness-0.1.7-py3-none-any.whl"
+    rebuilt_path = tmp_path / "rebuilt" / "mycoder_harness-0.1.7-py3-none-any.whl"
     rebuilt_path.parent.mkdir()
-    rebuilt = verify_distribution._wheel_snapshot(_write_wheel(rebuilt_path, {"pico/templates/SOUL.md": "changed"}))
+    rebuilt = verify_distribution._wheel_snapshot(_write_wheel(rebuilt_path, {"mycoder/templates/SOUL.md": "changed"}))
 
     with pytest.raises(verify_distribution.VerificationError, match="sdist wheel differs"):
         verify_distribution._verify_wheel_equivalence(direct, rebuilt)
 
 
 def test_unconfigured_doctor_exit_one_is_expected() -> None:
-    expected_path = Path("/isolated/home/.pico/config.json")
+    expected_path = Path("/isolated/home/.mycoder/config.json")
     completed = subprocess.CompletedProcess(
-        args=["pico", "doctor", "--json"],
+        args=["mycoder", "doctor", "--json"],
         returncode=1,
         stdout=json.dumps(
             {
@@ -886,10 +886,10 @@ def test_unconfigured_doctor_exit_one_is_expected() -> None:
 
 
 def test_package_probe_requires_contracted_cli_surface(tmp_path: Path) -> None:
-    plan = verify_distribution.InstallPlan("base", tmp_path, "pico.whl", ())
+    plan = verify_distribution.InstallPlan("base", tmp_path, "mycoder.whl", ())
     payload = {
-        "package": str(tmp_path / "lib" / "pico" / "__init__.py"),
-        "tui": str(tmp_path / "lib" / "pico" / "ui-tui" / "dist" / "entry.js"),
+        "package": str(tmp_path / "lib" / "mycoder" / "__init__.py"),
+        "tui": str(tmp_path / "lib" / "mycoder" / "ui-tui" / "dist" / "entry.js"),
         "legacy_namespace_available": False,
         "public_commands": sorted(verify_distribution._PUBLIC_CLI_COMMANDS),
         "registered_commands": sorted(verify_distribution._REGISTERED_CLI_COMMANDS),
@@ -902,10 +902,10 @@ def test_package_probe_requires_contracted_cli_surface(tmp_path: Path) -> None:
 
 
 def test_package_probe_rejects_removed_public_command(tmp_path: Path) -> None:
-    plan = verify_distribution.InstallPlan("base", tmp_path, "pico.whl", ())
+    plan = verify_distribution.InstallPlan("base", tmp_path, "mycoder.whl", ())
     payload = {
-        "package": str(tmp_path / "lib" / "pico" / "__init__.py"),
-        "tui": str(tmp_path / "lib" / "pico" / "ui-tui" / "dist" / "entry.js"),
+        "package": str(tmp_path / "lib" / "mycoder" / "__init__.py"),
+        "tui": str(tmp_path / "lib" / "mycoder" / "ui-tui" / "dist" / "entry.js"),
         "public_commands": sorted(verify_distribution._PUBLIC_CLI_COMMANDS | {"upgrade"}),
         "registered_commands": sorted(verify_distribution._REGISTERED_CLI_COMMANDS | {"upgrade"}),
     }
@@ -915,39 +915,39 @@ def test_package_probe_rejects_removed_public_command(tmp_path: Path) -> None:
         verify_distribution._validate_package_probe(completed, plan)
 
 
-def test_pico_module_probe_requires_pico_version_output(tmp_path: Path) -> None:
-    plan = verify_distribution.InstallPlan("base", tmp_path, "pico.whl", ())
+def test_mycoder_module_probe_requires_mycoder_version_output(tmp_path: Path) -> None:
+    plan = verify_distribution.InstallPlan("base", tmp_path, "mycoder.whl", ())
     healthy = subprocess.CompletedProcess(
-        args=[sys.executable, "-I", "-m", "pico", "--version"],
+        args=[sys.executable, "-I", "-m", "mycoder", "--version"],
         returncode=0,
-        stdout="Pico v0.1.7\n",
+        stdout="mycoder v0.1.7\n",
         stderr="",
     )
 
-    verify_distribution._validate_pico_module_probe(healthy, plan)
+    verify_distribution._validate_mycoder_module_probe(healthy, plan)
 
     stale = subprocess.CompletedProcess(
-        args=[sys.executable, "-I", "-m", "pico", "--version"],
+        args=[sys.executable, "-I", "-m", "mycoder", "--version"],
         returncode=0,
         stdout="Other v0.1.7\n",
         stderr="",
     )
-    with pytest.raises(verify_distribution.VerificationError, match="cannot run the Pico module entrypoint"):
-        verify_distribution._validate_pico_module_probe(stale, plan)
+    with pytest.raises(verify_distribution.VerificationError, match="cannot run the mycoder module entrypoint"):
+        verify_distribution._validate_mycoder_module_probe(stale, plan)
 
 
-def test_product_path_probe_requires_pico_roots(tmp_path: Path) -> None:
+def test_product_path_probe_requires_mycoder_roots(tmp_path: Path) -> None:
     import hashlib
 
     home = tmp_path / "home"
     cwd = tmp_path / "workspace"
     digest = hashlib.sha256(str(cwd.resolve()).encode("utf-8")).hexdigest()[:12]
     report = {
-        "product_home": str(home / ".pico"),
-        "workspace_state": str(home / ".pico" / "projects" / f"workspace-{digest}"),
-        "plugin_user": str(home / ".pico" / "plugins"),
+        "product_home": str(home / ".mycoder"),
+        "workspace_state": str(home / ".mycoder" / "projects" / f"workspace-{digest}"),
+        "plugin_user": str(home / ".mycoder" / "plugins"),
         "plugin_project": None,
-        "plugin_entrypoints": "pico.plugins",
+        "plugin_entrypoints": "mycoder.plugins",
     }
 
     verify_distribution._validate_product_paths(
@@ -964,8 +964,8 @@ def test_product_path_probe_requires_pico_roots(tmp_path: Path) -> None:
             probe_cwd=cwd,
         )
 
-    report["workspace_state"] = str(home / ".pico" / "projects" / f"workspace-{digest}")
-    report["plugin_project"] = str(cwd / ".pico" / "plugins")
+    report["workspace_state"] = str(home / ".mycoder" / "projects" / f"workspace-{digest}")
+    report["plugin_project"] = str(cwd / ".mycoder" / "plugins")
     with pytest.raises(verify_distribution.VerificationError, match="plugin_project"):
         verify_distribution._validate_product_paths(
             report,
@@ -977,9 +977,9 @@ def test_product_path_probe_requires_pico_roots(tmp_path: Path) -> None:
 def test_distribution_handoff_publishes_exact_wheel_and_base_environment(
     tmp_path: Path,
 ) -> None:
-    wheel = tmp_path / "dist" / "pico_harness-0.1.7-py3-none-any.whl"
+    wheel = tmp_path / "dist" / "mycoder_harness-0.1.7-py3-none-any.whl"
     python = tmp_path / "envs" / "base" / "bin" / "python"
-    entrypoint = tmp_path / "envs" / "base" / "bin" / "pico"
+    entrypoint = tmp_path / "envs" / "base" / "bin" / "mycoder"
     for path in (wheel, python, entrypoint):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.touch()
@@ -988,7 +988,7 @@ def test_distribution_handoff_publishes_exact_wheel_and_base_environment(
             "name": "channel-feishu",
             "root": str(tmp_path / "envs" / "channel-feishu"),
             "python": str(tmp_path / "envs" / "channel-feishu" / "bin" / "python"),
-            "entrypoint": str(tmp_path / "envs" / "channel-feishu" / "bin" / "pico"),
+            "entrypoint": str(tmp_path / "envs" / "channel-feishu" / "bin" / "mycoder"),
         },
         {
             "name": "base",
@@ -1016,7 +1016,7 @@ def test_gateway_probe_config_is_offline_and_disables_optional_runtime_paths() -
     assert config == {
         "agents": {
             "defaults": {
-                "model": "ollama/pico-distribution-probe",
+                "model": "ollama/mycoder-distribution-probe",
                 "provider": "ollama",
             }
         },
@@ -1068,7 +1068,7 @@ def test_gateway_health_rejects_contract_drift(
 
 
 def test_gateway_probe_supervises_health_and_bounded_shutdown(tmp_path: Path) -> None:
-    executable = _write_fake_gateway(tmp_path / "pico")
+    executable = _write_fake_gateway(tmp_path / "mycoder")
     records: list[dict] = []
 
     report = verify_distribution._probe_installed_gateway(
@@ -1098,7 +1098,7 @@ def test_gateway_probe_supervises_health_and_bounded_shutdown(tmp_path: Path) ->
 
 
 def test_gateway_probe_records_early_exit_and_reaps_the_process(tmp_path: Path) -> None:
-    executable = tmp_path / "pico"
+    executable = tmp_path / "mycoder"
     executable.write_text(
         f"#!{sys.executable}\nraise SystemExit(17)\n",
         encoding="utf-8",
@@ -1127,7 +1127,7 @@ def test_gateway_probe_records_early_exit_and_reaps_the_process(tmp_path: Path) 
 
 def test_gateway_probe_fails_when_health_contract_drifts(tmp_path: Path) -> None:
     executable = _write_fake_gateway(
-        tmp_path / "pico",
+        tmp_path / "mycoder",
         health_body='{"status":"starting"}',
     )
     records: list[dict] = []
@@ -1152,7 +1152,7 @@ def test_gateway_probe_fails_when_health_contract_drifts(tmp_path: Path) -> None
 
 
 def test_gateway_probe_readiness_timeout_is_recorded_and_reaped(tmp_path: Path) -> None:
-    executable = tmp_path / "pico"
+    executable = tmp_path / "mycoder"
     executable.write_text(
         f"""#!{sys.executable}
 import signal
@@ -1191,7 +1191,7 @@ while True:
 
 def test_gateway_probe_forced_cleanup_is_a_failure(tmp_path: Path) -> None:
     executable = _write_fake_gateway(
-        tmp_path / "pico",
+        tmp_path / "mycoder",
         ignore_shutdown=True,
     )
     records: list[dict] = []
@@ -1235,11 +1235,11 @@ def test_gateway_force_kill_uses_popen_on_windows(monkeypatch) -> None:
 def test_runtime_surface_probes_run_only_in_the_installed_base_environment(
     tmp_path: Path,
 ) -> None:
-    executable = _write_fake_gateway(tmp_path / "pico")
+    executable = _write_fake_gateway(tmp_path / "mycoder")
     base = verify_distribution.InstallPlan(
         "base",
         tmp_path / "envs" / "base",
-        "pico.whl",
+        "mycoder.whl",
         (),
     )
     records: list[dict] = []
@@ -1261,7 +1261,7 @@ def test_runtime_surface_probes_run_only_in_the_installed_base_environment(
     extra = verify_distribution.InstallPlan(
         "channel-feishu",
         tmp_path / "envs" / "channel-feishu",
-        "pico.whl[channel-feishu]",
+        "mycoder.whl[channel-feishu]",
         ("lark_oapi",),
     )
     extra_records: list[dict] = []
@@ -1298,18 +1298,18 @@ def test_installed_tui_probe_has_a_bounded_timeout(
     plan = verify_distribution.InstallPlan(
         "base",
         tmp_path / "envs" / "base",
-        "pico.whl",
+        "mycoder.whl",
         (),
     )
 
     verify_distribution._probe_base_runtime_surfaces(
         plan,
-        executable=tmp_path / "envs" / "base" / "bin" / "pico",
+        executable=tmp_path / "envs" / "base" / "bin" / "mycoder",
         probe_cwd=tmp_path,
         probe_env=_isolated_env(tmp_path),
         log_dir=tmp_path / "logs",
         records=[],
     )
 
-    assert captured["command"] == [str(tmp_path / "envs" / "base" / "bin" / "pico"), "--check"]
+    assert captured["command"] == [str(tmp_path / "envs" / "base" / "bin" / "mycoder"), "--check"]
     assert captured["timeout"] == 30

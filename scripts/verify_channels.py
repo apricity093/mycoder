@@ -175,7 +175,7 @@ def main() -> int:
     report = {
         "checks": checks,
         "gate": "V-C0",
-        "schema": "pico.channels.evidence.v2",
+        "schema": "mycoder.channels.evidence.v2",
         "security_gate": "V-S0",
         "status": status,
     }

@@ -1,5 +1,5 @@
 """E2E smoke: real tui-use spawns /bin/cat — verifies framework basic flow
-without depending on Pico or network."""
+without depending on mycoder or network."""
 
 from __future__ import annotations
 

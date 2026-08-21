@@ -12,23 +12,23 @@ from benchmarks.appworld.evolve.eval import (
     files_of,
     prepare_candidate_manifest,
 )
-from pico.evolver.activation import load_activation_record
-from pico.evolver.analysis.stability_bucket import StabilityBucket, TaskStability
-from pico.evolver.orchestrator.config import OrchestratorConfig, Termination
-from pico.evolver.orchestrator.gates.policy import (
+from mycoder.evolver.activation import load_activation_record
+from mycoder.evolver.analysis.stability_bucket import StabilityBucket, TaskStability
+from mycoder.evolver.orchestrator.config import OrchestratorConfig, Termination
+from mycoder.evolver.orchestrator.gates.policy import (
     CandidateOutcome,
     FrozenColdStartBaseline,
 )
-from pico.evolver.orchestrator.gates.strategies import FocusedFisherGate
-from pico.evolver.orchestrator.loop import EvolutionOrchestrator
-from pico.evolver.orchestrator.production import build_evolution_orchestrator
-from pico.evolver.orchestrator.scoring import (
+from mycoder.evolver.orchestrator.gates.strategies import FocusedFisherGate
+from mycoder.evolver.orchestrator.loop import EvolutionOrchestrator
+from mycoder.evolver.orchestrator.production import build_evolution_orchestrator
+from mycoder.evolver.orchestrator.scoring import (
     EvalBackend,
     EvaluationVerdict,
     TaskEval,
 )
-from pico.evolver.scheduler.anchor_selection import simple_anchor
-from pico.evolver.tree.node import HarnessNode, NodeStatus
+from mycoder.evolver.scheduler.anchor_selection import simple_anchor
+from mycoder.evolver.tree.node import HarnessNode, NodeStatus
 
 
 def _git(repo: Path, *args: str) -> str:
@@ -49,10 +49,10 @@ def _subject_repo(tmp_path: Path) -> tuple[Path, str]:
     _git(repo, "init", "-q")
     env = {
         **os.environ,
-        "GIT_AUTHOR_NAME": "Pico Test",
-        "GIT_AUTHOR_EMAIL": "pico-test@example.invalid",
-        "GIT_COMMITTER_NAME": "Pico Test",
-        "GIT_COMMITTER_EMAIL": "pico-test@example.invalid",
+        "GIT_AUTHOR_NAME": "mycoder Test",
+        "GIT_AUTHOR_EMAIL": "mycoder-test@example.invalid",
+        "GIT_COMMITTER_NAME": "mycoder Test",
+        "GIT_COMMITTER_EMAIL": "mycoder-test@example.invalid",
     }
     subprocess.run(["git", "add", "-A"], cwd=repo, check=True, env=env)
     subprocess.run(["git", "commit", "-qm", "fixture"], cwd=repo, check=True, env=env)

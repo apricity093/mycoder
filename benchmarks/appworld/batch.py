@@ -2,10 +2,10 @@
 
 Each ``appworld serve environment`` holds ONE world at a time, so concurrency =
 N server processes on N ports. We pin one port per worker thread and stream
-tasks through; per task we spawn the agent_cli subprocess (this Pico venv)
+tasks through; per task we spawn the agent_cli subprocess (this mycoder venv)
 pointed at that worker's port.
 
-  Pico venv     : this orchestrator + agent_cli subprocesses (pydantic v2)
+  mycoder venv     : this orchestrator + agent_cli subprocesses (pydantic v2)
   appworld venv : N env servers (pydantic v1), started here as subprocesses
 
 Usage::
@@ -29,7 +29,7 @@ import threading
 import time
 import urllib.request
 
-from pico.evolver.activation.ledger import (
+from mycoder.evolver.activation.ledger import (
     WORKSPACE_ENV,
     beacon_workspace,
     mark_beacons_enabled,

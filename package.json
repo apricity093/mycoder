@@ -1,7 +1,7 @@
 {
-  "name": "pico-repo",
+  "name": "mycoder-repo",
   "private": true,
-  "description": "Repository-level tooling for Pico.",
+  "description": "Repository-level tooling for mycoder.",
   "license": "Apache-2.0",
   "scripts": {
     "commitlint": "commitlint --config commitlint.config.cjs"

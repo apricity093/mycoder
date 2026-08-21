@@ -14,23 +14,23 @@ import inspect
 
 import pytest
 
-from pico.agent.hook import AgentHook, AgentHookContext, CompositeHook, HookDecision
-from pico.agent.loop import AgentLoop
-from pico.agent.loop.main import ProviderTurnError
-from pico.agent.tools.base import Tool
-from pico.agent.tools.execution import ToolCapability, ToolEffect
-from pico.config.schema import ToolSearchConfig
-from pico.providers.base import ErrorClassification, LLMProvider, LLMResponse, StreamDelta, ToolCallRequest
-from pico.sandbox import SandboxInitError
-from pico.spine.events import MediaOut as EvMediaOut
-from pico.spine.events import Notice as EvNotice
-from pico.spine.events import NoticeKind, ToolPhase
-from pico.spine.events import Reasoning as EvReasoning
-from pico.spine.events import StreamDelta as EvStreamDelta
-from pico.spine.events import Text as EvText
-from pico.spine.events import ToolEvent as EvToolEvent
-from pico.spine.message import ChatType, Source
-from pico.spine.turn import Origin, TurnRequest
+from mycoder.agent.hook import AgentHook, AgentHookContext, CompositeHook, HookDecision
+from mycoder.agent.loop import AgentLoop
+from mycoder.agent.loop.main import ProviderTurnError
+from mycoder.agent.tools.base import Tool
+from mycoder.agent.tools.execution import ToolCapability, ToolEffect
+from mycoder.config.schema import ToolSearchConfig
+from mycoder.providers.base import ErrorClassification, LLMProvider, LLMResponse, StreamDelta, ToolCallRequest
+from mycoder.sandbox import SandboxInitError
+from mycoder.spine.events import MediaOut as EvMediaOut
+from mycoder.spine.events import Notice as EvNotice
+from mycoder.spine.events import NoticeKind, ToolPhase
+from mycoder.spine.events import Reasoning as EvReasoning
+from mycoder.spine.events import StreamDelta as EvStreamDelta
+from mycoder.spine.events import Text as EvText
+from mycoder.spine.events import ToolEvent as EvToolEvent
+from mycoder.spine.message import ChatType, Source
+from mycoder.spine.turn import Origin, TurnRequest
 
 
 class _ShortCircuitHook(AgentHook):
@@ -179,7 +179,7 @@ async def test_help_slash_returns_command_list_at_outbound_layer(tmp_path):
 
     assert out is not None
     content, _media = out
-    assert "Pico commands" in content
+    assert "mycoder commands" in content
 
 
 async def test_hook_short_circuit_preserves_media_at_outbound_layer(tmp_path):
@@ -457,7 +457,7 @@ async def test_run_slash_emits_text_not_streamed(tmp_path):
     outcome = await loop.run_turn(_req("/help"), sink, _drain)
 
     texts = [e for e in sink.events if isinstance(e, EvText)]
-    assert len(texts) == 1 and "Pico commands" in texts[0].content
+    assert len(texts) == 1 and "mycoder commands" in texts[0].content
     assert not any(isinstance(e, EvStreamDelta) for e in sink.events)
     assert outcome.explicit_reply is True
 

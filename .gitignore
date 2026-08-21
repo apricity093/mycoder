@@ -26,7 +26,7 @@ ui-tui/coverage/
 ui-tui/.vitest-cache/
 ui-tui/packages/hermes-ink/dist/
 
-.pico/
+.mycoder/
 .skill_index/
 .cache/skill_index/
 .worktrees/
@@ -36,3 +36,5 @@ benchmarks/clawbench/results/
 benchmarks/pinchbench/benchmark.log
 benchmarks/pinchbench/results/
 benchmarks/evolver/subject/
+
+report.md

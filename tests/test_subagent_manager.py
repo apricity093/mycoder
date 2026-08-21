@@ -15,13 +15,13 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from pico.agent.subagent import manager as manager_mod
-from pico.agent.subagent.manager import SubagentManager, SubagentOutcome, SubagentStatus
-from pico.agent.tools.registry import ToolRegistry
-from pico.agent.tools.spawn import SpawnTool
-from pico.config.schema import AgentDefaults
-from pico.providers.base import LLMResponse, ToolCallRequest
-from pico.tracing import spans as _spans
+from mycoder.agent.subagent import manager as manager_mod
+from mycoder.agent.subagent.manager import SubagentManager, SubagentOutcome, SubagentStatus
+from mycoder.agent.tools.registry import ToolRegistry
+from mycoder.agent.tools.spawn import SpawnTool
+from mycoder.config.schema import AgentDefaults
+from mycoder.providers.base import LLMResponse, ToolCallRequest
+from mycoder.tracing import spans as _spans
 
 
 class _StubProvider:
@@ -44,8 +44,8 @@ class _FailingExitExecutor(_DummyExecutor):
 
 @pytest.fixture
 def trace_dir(tmp_path, monkeypatch):
-    monkeypatch.setenv("PICO_TRACING", "1")
-    monkeypatch.setenv("PICO_TRACING_DIR", str(tmp_path))
+    monkeypatch.setenv("mycoder_TRACING", "1")
+    monkeypatch.setenv("mycoder_TRACING_DIR", str(tmp_path))
     _spans._store = None
     yield tmp_path
     _spans._store = None
@@ -436,7 +436,7 @@ def test_build_subagent_prompt_does_not_start_skill_watcher(monkeypatch):
     """_build_subagent_prompt uses a transient ContextBuilder just for
     _build_runtime_context; it must not leave a skill-catalog file watcher
     running behind it (one leaked watchfiles/inotify thread per spawn)."""
-    import pico.agent.context as context_mod
+    import mycoder.agent.context as context_mod
 
     calls = []
     real_init = context_mod.ContextBuilder.__init__

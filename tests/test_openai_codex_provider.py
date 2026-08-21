@@ -7,7 +7,7 @@ trips a test.
 
 from __future__ import annotations
 
-from pico.providers.openai_codex_provider import (
+from mycoder.providers.openai_codex_provider import (
     DEFAULT_CODEX_URL,
     OpenAICodexProvider,
     _build_headers,
@@ -24,8 +24,8 @@ def test_headers_declare_experimental_responses_beta():
     assert headers["OpenAI-Beta"] == "responses=experimental"
     assert headers["Authorization"] == "Bearer tok-abc"
     assert headers["chatgpt-account-id"] == "acct-123"
-    assert headers["originator"] == "pico"
-    assert headers["User-Agent"] == "pico-harness (python)"
+    assert headers["originator"] == "mycoder"
+    assert headers["User-Agent"] == "mycoder-harness (python)"
     assert headers["accept"] == "text/event-stream"
 
 

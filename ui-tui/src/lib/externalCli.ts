@@ -5,11 +5,11 @@ export interface LaunchResult {
   error?: string
 }
 
-const resolvePicoBin = () => process.env.PICO_BIN?.trim() || 'pico'
+const resolvemycoderBin = () => process.env.mycoder_BIN?.trim() || 'mycoder'
 
-export const launchPicoCommand = (args: string[]): Promise<LaunchResult> =>
+export const launchmycoderCommand = (args: string[]): Promise<LaunchResult> =>
   new Promise(resolve => {
-    const child = spawn(resolvePicoBin(), args, { stdio: 'inherit' })
+    const child = spawn(resolvemycoderBin(), args, { stdio: 'inherit' })
 
     child.on('error', err => resolve({ code: null, error: err.message }))
     child.on('exit', code => resolve({ code }))

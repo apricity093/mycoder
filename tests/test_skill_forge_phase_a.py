@@ -16,10 +16,10 @@ from pathlib import Path
 
 import pytest
 
-from pico.memory_engine.skill_forge import LocalSkillCatalog
-from pico.memory_engine.skill_forge.catalog import _escape_xml
-from pico.memory_engine.skill_local import SkillRegistry
-from pico.memory_engine.skill_local.registry import (
+from mycoder.memory_engine.skill_forge import LocalSkillCatalog
+from mycoder.memory_engine.skill_forge.catalog import _escape_xml
+from mycoder.memory_engine.skill_local import SkillRegistry
+from mycoder.memory_engine.skill_local.registry import (
     _check_requirements,
     _missing_requirements,
     _parse_frontmatter,
@@ -82,14 +82,14 @@ def tmp_builtin(tmp_path: Path):
         builtin,
         "always_flag_nested",
         description="Always-loaded skill (nested)",
-        frontmatter_extra='metadata: {"pico":{"always":true}}',
+        frontmatter_extra='metadata: {"mycoder":{"always":true}}',
     )
 
     _write_skill(
         builtin,
         "needs_fake_bin",
         description="Needs a missing binary",
-        frontmatter_extra='metadata: {"pico":{"requires":{"bins":["this_bin_does_not_exist_xyz"]}}}',
+        frontmatter_extra='metadata: {"mycoder":{"requires":{"bins":["this_bin_does_not_exist_xyz"]}}}',
     )
 
     _write_skill(
@@ -121,8 +121,8 @@ class TestFrontmatterParsing:
         fm = _parse_frontmatter(content)
         assert fm == {"name": "foo", "description": "quoted value"}
 
-    def test_nested_metadata_pico_wins(self):
-        raw = '{"pico": {"emoji": "🔧"}, "nanobot": {"emoji": "🤖"}}'
+    def test_nested_metadata_mycoder_wins(self):
+        raw = '{"mycoder": {"emoji": "🔧"}, "nanobot": {"emoji": "🤖"}}'
         assert _parse_nested_metadata(raw) == {"emoji": "🔧"}
 
     def test_nested_metadata_fallback_order(self):
@@ -489,11 +489,11 @@ class TestRenderingHelpers:
 class TestContextBuilderIntegration:
     def test_skill_names_narrows_xml_directory(self, tmp_workspace, tmp_builtin, monkeypatch):
 
-        from pico.agent.context import ContextBuilder
+        from mycoder.agent.context import ContextBuilder
 
         cb = ContextBuilder(tmp_workspace)
 
-        from pico.memory_engine.skill_forge import LocalSkillCatalog
+        from mycoder.memory_engine.skill_forge import LocalSkillCatalog
 
         cb.skills = LocalSkillCatalog(tmp_workspace, builtin_skills_dir=tmp_builtin)
 
@@ -512,8 +512,8 @@ class TestContextBuilderIntegration:
 
     def test_empty_skill_names_falls_back_to_full_directory(self, tmp_workspace, tmp_builtin):
         """Phase A stub selector returns [] — must fall back, not strip all."""
-        from pico.agent.context import ContextBuilder
-        from pico.memory_engine.skill_forge import LocalSkillCatalog
+        from mycoder.agent.context import ContextBuilder
+        from mycoder.memory_engine.skill_forge import LocalSkillCatalog
 
         cb = ContextBuilder(tmp_workspace)
         cb.skills = LocalSkillCatalog(tmp_workspace, builtin_skills_dir=tmp_builtin)

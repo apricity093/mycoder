@@ -1,5 +1,5 @@
 """
-PinchBench Task Loader — adapted for pico.
+PinchBench Task Loader — adapted for mycoder.
 
 Reuses PinchBench's task markdown format (YAML frontmatter + sections).
 """

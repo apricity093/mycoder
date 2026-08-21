@@ -1,10 +1,10 @@
-.PHONY: help install install-deps format check check-public-tree lint lint-python lint-tui test test-python test-retained test-tui picobench-smoke picobench picobench-reproduce picobench-scorecard-estimate picobench-scorecard-ship picobench-scorecard-score picobench-runtime-scheduler picobench-runtime-tools picobench-runtime-live-plan picobench-runtime-live-run picobench-runtime-live-verify picobench-call-efficiency-plan picobench-call-efficiency-preflight picobench-call-efficiency-run picobench-call-efficiency-verify picobench-tracing-plan picobench-tracing-run picobench-tracing-verify verify-channels verify-evolver verify-turn-evidence build build-tui release-dist check-commits check-pr-title check-large-files ci clean
+.PHONY: help install install-deps format check check-public-tree lint lint-python lint-tui test test-python test-retained test-tui mycoderbench-smoke mycoderbench mycoderbench-reproduce mycoderbench-scorecard-estimate mycoderbench-scorecard-ship mycoderbench-scorecard-score mycoderbench-runtime-scheduler mycoderbench-runtime-tools mycoderbench-runtime-live-plan mycoderbench-runtime-live-run mycoderbench-runtime-live-verify mycoderbench-call-efficiency-plan mycoderbench-call-efficiency-preflight mycoderbench-call-efficiency-run mycoderbench-call-efficiency-verify mycoderbench-tracing-plan mycoderbench-tracing-run mycoderbench-tracing-verify verify-channels verify-evolver verify-turn-evidence build build-tui release-dist check-commits check-pr-title check-large-files ci clean
 
 PYTHON ?= python3
 PYTHON_LINT_TARGETS ?= scripts/check_commit_file.py scripts/check_commit_messages.py scripts/check_pr_title.py scripts/check_large_files.py scripts/commit_lint.py tests/test_commit_lint.py tests/test_large_file_check.py
 COMMIT_RANGE ?= origin/main..HEAD
-PICO_CALL_EFFICIENCY_OUTPUT ?= .pico/evidence/call-efficiency-cost-current
-PICO_TRACING_OUTPUT ?= .pico/evidence/tracing-overhead-current
+mycoder_CALL_EFFICIENCY_OUTPUT ?= .mycoder/evidence/call-efficiency-cost-current
+mycoder_TRACING_OUTPUT ?= .mycoder/evidence/tracing-overhead-current
 
 help:
 	@echo "Targets:"
@@ -18,24 +18,24 @@ help:
 	@echo "  lint-tui       TypeScript lint + RPC drift check"
 	@echo "  test           Run focused Python checks and TUI tests"
 	@echo "  test-retained  Run the deterministic Python suite without opt-in tests"
-	@echo "  picobench-smoke Run the credential-free PicoBench gate"
-	@echo "  picobench-runtime-scheduler Run deterministic scheduler A/B experiments"
-	@echo "  picobench-runtime-tools Run the Tool scheduler A/B microbenchmark"
-	@echo "  picobench-runtime-live-plan Freeze the real-Agent scheduler plan and spend ceiling"
-	@echo "  picobench-runtime-live-run Run the approved real-Agent scheduler experiment"
-	@echo "  picobench-runtime-live-verify Rebuild live scheduler metrics from raw Turn records"
-	@echo "  picobench-call-efficiency-plan Freeze the current integrated cost campaign plan"
-	@echo "  picobench-call-efficiency-preflight Verify live DeepSeek prompt-cache behavior"
-	@echo "  picobench-call-efficiency-run Run or resume the approved 72-Trial cost campaign"
-	@echo "  picobench-call-efficiency-verify Rebuild cost evidence without Provider calls"
-	@echo "  picobench-tracing-plan Print the 1,000-pair Runtime tracing plan"
-	@echo "  picobench-tracing-run Run or resume the deterministic tracing on/off campaign"
-	@echo "  picobench-tracing-verify Rebuild tracing metrics and verify raw trace receipts"
-	@echo "  picobench      Run the frozen PicoBench calibration and formal campaign"
-	@echo "  picobench-reproduce Run or reuse every Scorecard track and render one report"
-	@echo "  picobench-scorecard-estimate Print the current Scorecard worst-case budget"
-	@echo "  picobench-scorecard-ship Run the current Context and Tool/MCP Scorecard campaign"
-	@echo "  picobench-scorecard-score Compute the multidimensional diagnostic score"
+	@echo "  mycoderbench-smoke Run the credential-free mycoderBench gate"
+	@echo "  mycoderbench-runtime-scheduler Run deterministic scheduler A/B experiments"
+	@echo "  mycoderbench-runtime-tools Run the Tool scheduler A/B microbenchmark"
+	@echo "  mycoderbench-runtime-live-plan Freeze the real-Agent scheduler plan and spend ceiling"
+	@echo "  mycoderbench-runtime-live-run Run the approved real-Agent scheduler experiment"
+	@echo "  mycoderbench-runtime-live-verify Rebuild live scheduler metrics from raw Turn records"
+	@echo "  mycoderbench-call-efficiency-plan Freeze the current integrated cost campaign plan"
+	@echo "  mycoderbench-call-efficiency-preflight Verify live DeepSeek prompt-cache behavior"
+	@echo "  mycoderbench-call-efficiency-run Run or resume the approved 72-Trial cost campaign"
+	@echo "  mycoderbench-call-efficiency-verify Rebuild cost evidence without Provider calls"
+	@echo "  mycoderbench-tracing-plan Print the 1,000-pair Runtime tracing plan"
+	@echo "  mycoderbench-tracing-run Run or resume the deterministic tracing on/off campaign"
+	@echo "  mycoderbench-tracing-verify Rebuild tracing metrics and verify raw trace receipts"
+	@echo "  mycoderbench      Run the frozen mycoderBench calibration and formal campaign"
+	@echo "  mycoderbench-reproduce Run or reuse every Scorecard track and render one report"
+	@echo "  mycoderbench-scorecard-estimate Print the current Scorecard worst-case budget"
+	@echo "  mycoderbench-scorecard-ship Run the current Context and Tool/MCP Scorecard campaign"
+	@echo "  mycoderbench-scorecard-score Compute the multidimensional diagnostic score"
 	@echo "  verify-channels Run the deterministic V-C0 contract and V-S0 security Channel gates"
 	@echo "  verify-evolver Run the deterministic V-E0 Evolver gate"
 	@echo "  verify-turn-evidence Run the deterministic V-TE0 turn-correlation gate"
@@ -56,7 +56,7 @@ install: install-deps
 	npm ci --prefix ui-tui
 
 format:
-	uv run --extra dev ruff format pico scripts tests
+	uv run --extra dev ruff format mycoder scripts tests
 
 check: check-public-tree lint build test-retained test-tui
 
@@ -83,73 +83,73 @@ test-python:
 test-retained: build-tui
 	uv run --frozen --all-extras --exact pytest tests -q --strict-markers -m 'not (real_llm or llm_judge or real_vm or real_channel or external_runtime or e2e)'
 
-picobench-smoke:
-	uv run --frozen --all-extras --exact python -m benchmarks.picobench --mode smoke
+mycoderbench-smoke:
+	uv run --frozen --all-extras --exact python -m benchmarks.mycoderbench --mode smoke
 
-picobench:
-	uv run --frozen --all-extras --exact python -m benchmarks.picobench --mode ship
+mycoderbench:
+	uv run --frozen --all-extras --exact python -m benchmarks.mycoderbench --mode ship
 
-picobench-reproduce:
-	uv run --frozen --all-extras --exact python -m benchmarks.picobench.reproduce
+mycoderbench-reproduce:
+	uv run --frozen --all-extras --exact python -m benchmarks.mycoderbench.reproduce
 
-picobench-scorecard-estimate:
-	uv run --frozen --all-extras --exact python -m benchmarks.picobench.scorecard_campaign estimate
+mycoderbench-scorecard-estimate:
+	uv run --frozen --all-extras --exact python -m benchmarks.mycoderbench.scorecard_campaign estimate
 
-picobench-scorecard-ship:
-	uv run --frozen --all-extras --exact python -m benchmarks.picobench.scorecard_campaign ship \
-		$(if $(PICO_SCORECARD_RUNTIME_EVIDENCE),--runtime-evidence "$(PICO_SCORECARD_RUNTIME_EVIDENCE)",)
+mycoderbench-scorecard-ship:
+	uv run --frozen --all-extras --exact python -m benchmarks.mycoderbench.scorecard_campaign ship \
+		$(if $(mycoder_SCORECARD_RUNTIME_EVIDENCE),--runtime-evidence "$(mycoder_SCORECARD_RUNTIME_EVIDENCE)",)
 
-picobench-scorecard-score:
-	@test -n "$$PICO_SCORECARD_FORMAL_SUMMARY" || (echo "PICO_SCORECARD_FORMAL_SUMMARY is required" >&2; exit 2)
-	uv run --frozen --all-extras --exact python -m benchmarks.picobench.scorecard \
-		--formal-summary "$$PICO_SCORECARD_FORMAL_SUMMARY" \
-		$(if $(PICO_SCORECARD_RUNTIME_EVIDENCE),--runtime-evidence "$(PICO_SCORECARD_RUNTIME_EVIDENCE)",) \
-		$(if $(PICO_SCORECARD_TOKENWISE_REPORT),--tokenwise-report "$(PICO_SCORECARD_TOKENWISE_REPORT)",) \
-		$(if $(PICO_SCORECARD_PREREGISTERED),--scoring-spec-preregistered,)
+mycoderbench-scorecard-score:
+	@test -n "$$mycoder_SCORECARD_FORMAL_SUMMARY" || (echo "mycoder_SCORECARD_FORMAL_SUMMARY is required" >&2; exit 2)
+	uv run --frozen --all-extras --exact python -m benchmarks.mycoderbench.scorecard \
+		--formal-summary "$$mycoder_SCORECARD_FORMAL_SUMMARY" \
+		$(if $(mycoder_SCORECARD_RUNTIME_EVIDENCE),--runtime-evidence "$(mycoder_SCORECARD_RUNTIME_EVIDENCE)",) \
+		$(if $(mycoder_SCORECARD_TOKENWISE_REPORT),--tokenwise-report "$(mycoder_SCORECARD_TOKENWISE_REPORT)",) \
+		$(if $(mycoder_SCORECARD_PREREGISTERED),--scoring-spec-preregistered,)
 
-picobench-runtime-scheduler:
-	uv run --frozen --all-extras --exact python -m benchmarks.picobench.packs.runtime.scheduler_experiments
+mycoderbench-runtime-scheduler:
+	uv run --frozen --all-extras --exact python -m benchmarks.mycoderbench.packs.runtime.scheduler_experiments
 
-picobench-runtime-tools:
-	uv run --frozen --all-extras --exact python -m benchmarks.picobench.packs.runtime.tool_execution_experiments
+mycoderbench-runtime-tools:
+	uv run --frozen --all-extras --exact python -m benchmarks.mycoderbench.packs.runtime.tool_execution_experiments
 
-picobench-runtime-live-plan:
-	uv run --frozen --all-extras --exact python -m benchmarks.picobench.packs.runtime.live_scheduler_experiment plan
+mycoderbench-runtime-live-plan:
+	uv run --frozen --all-extras --exact python -m benchmarks.mycoderbench.packs.runtime.live_scheduler_experiment plan
 
-picobench-runtime-live-run:
-	@test -n "$$PICO_LIVE_PERF_APPROVAL_DIGEST" || (echo "PICO_LIVE_PERF_APPROVAL_DIGEST is required" >&2; exit 2)
-	@test -n "$$PICO_LIVE_PERF_APPROVED_CNY" || (echo "PICO_LIVE_PERF_APPROVED_CNY is required" >&2; exit 2)
-	uv run --frozen --all-extras --exact python -m benchmarks.picobench.packs.runtime.live_scheduler_experiment run \
-			--approval-digest "$$PICO_LIVE_PERF_APPROVAL_DIGEST" \
-			--approved-cny "$$PICO_LIVE_PERF_APPROVED_CNY"
+mycoderbench-runtime-live-run:
+	@test -n "$$mycoder_LIVE_PERF_APPROVAL_DIGEST" || (echo "mycoder_LIVE_PERF_APPROVAL_DIGEST is required" >&2; exit 2)
+	@test -n "$$mycoder_LIVE_PERF_APPROVED_CNY" || (echo "mycoder_LIVE_PERF_APPROVED_CNY is required" >&2; exit 2)
+	uv run --frozen --all-extras --exact python -m benchmarks.mycoderbench.packs.runtime.live_scheduler_experiment run \
+			--approval-digest "$$mycoder_LIVE_PERF_APPROVAL_DIGEST" \
+			--approved-cny "$$mycoder_LIVE_PERF_APPROVED_CNY"
 
-picobench-runtime-live-verify:
-	@test -n "$$PICO_LIVE_PERF_EVIDENCE" || (echo "PICO_LIVE_PERF_EVIDENCE is required" >&2; exit 2)
-	uv run --frozen --all-extras --exact python -m benchmarks.picobench.packs.runtime.live_scheduler_experiment verify \
-			--evidence "$$PICO_LIVE_PERF_EVIDENCE"
+mycoderbench-runtime-live-verify:
+	@test -n "$$mycoder_LIVE_PERF_EVIDENCE" || (echo "mycoder_LIVE_PERF_EVIDENCE is required" >&2; exit 2)
+	uv run --frozen --all-extras --exact python -m benchmarks.mycoderbench.packs.runtime.live_scheduler_experiment verify \
+			--evidence "$$mycoder_LIVE_PERF_EVIDENCE"
 
-picobench-call-efficiency-plan picobench-call-efficiency-preflight picobench-call-efficiency-run picobench-call-efficiency-verify:
-	uv run --frozen --all-extras --exact python -m benchmarks.picobench.tokenwise_cost_campaign \
-		--mode $(if $(filter picobench-call-efficiency-run,$@),formal,$(patsubst picobench-call-efficiency-%,%,$@)) \
-		--output-root "$(PICO_CALL_EFFICIENCY_OUTPUT)" \
-		$(if $(filter picobench-call-efficiency-preflight picobench-call-efficiency-run,$@),--execute-paid-campaign,)
+mycoderbench-call-efficiency-plan mycoderbench-call-efficiency-preflight mycoderbench-call-efficiency-run mycoderbench-call-efficiency-verify:
+	uv run --frozen --all-extras --exact python -m benchmarks.mycoderbench.tokenwise_cost_campaign \
+		--mode $(if $(filter mycoderbench-call-efficiency-run,$@),formal,$(patsubst mycoderbench-call-efficiency-%,%,$@)) \
+		--output-root "$(mycoder_CALL_EFFICIENCY_OUTPUT)" \
+		$(if $(filter mycoderbench-call-efficiency-preflight mycoderbench-call-efficiency-run,$@),--execute-paid-campaign,)
 
-picobench-tracing-plan picobench-tracing-run picobench-tracing-verify:
-	uv run --frozen --all-extras --exact python -m benchmarks.picobench.packs.tracing.overhead_experiment \
-		$(patsubst picobench-tracing-%,%,$@) \
-		--output-root "$(PICO_TRACING_OUTPUT)" \
-		$(if $(PICO_TRACING_COMMIT),--pico-commit "$(PICO_TRACING_COMMIT)",)
+mycoderbench-tracing-plan mycoderbench-tracing-run mycoderbench-tracing-verify:
+	uv run --frozen --all-extras --exact python -m benchmarks.mycoderbench.packs.tracing.overhead_experiment \
+		$(patsubst mycoderbench-tracing-%,%,$@) \
+		--output-root "$(mycoder_TRACING_OUTPUT)" \
+		$(if $(mycoder_TRACING_COMMIT),--mycoder-commit "$(mycoder_TRACING_COMMIT)",)
 
 test-tui:
 	npm test --prefix ui-tui
 
 verify-channels:
 	uv run --frozen --all-extras --exact python scripts/verify_channels.py \
-		--output-root .pico/evidence/channels
+		--output-root .mycoder/evidence/channels
 
 verify-turn-evidence:
 	uv run --frozen --all-extras --exact python scripts/verify_turn_evidence.py \
-		--output-root .pico/evidence/turns
+		--output-root .mycoder/evidence/turns
 
 verify-evolver:
 	uv run --frozen --all-extras --exact pytest \
@@ -166,10 +166,10 @@ build-tui:
 	npm run build --prefix ui-tui
 
 release-dist:
-	@test -n "$$PICO_RELEASE_OUTPUT" || (echo "PICO_RELEASE_OUTPUT is required and must name an empty directory outside the checkout" >&2; exit 2)
+	@test -n "$$mycoder_RELEASE_OUTPUT" || (echo "mycoder_RELEASE_OUTPUT is required and must name an empty directory outside the checkout" >&2; exit 2)
 	uv run --frozen --all-extras --exact python scripts/verify_distribution.py \
-		--output-root "$$PICO_RELEASE_OUTPUT" \
-		--entrypoint pico \
+		--output-root "$$mycoder_RELEASE_OUTPUT" \
+		--entrypoint mycoder \
 		--extras base,channel-feishu,channel-qq,channel-wecom,channels,sandbox
 
 check-commits:

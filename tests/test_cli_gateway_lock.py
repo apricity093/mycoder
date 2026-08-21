@@ -14,13 +14,13 @@ from pathlib import Path
 
 import pytest
 
-from pico.cli import _gateway_lock
-from pico.cli._gateway_lock import (
+from mycoder.cli import _gateway_lock
+from mycoder.cli._gateway_lock import (
     GatewayAlreadyRunningError,
     acquire,
     read_status,
 )
-from pico.config.loader import set_config_path
+from mycoder.config.loader import set_config_path
 
 
 @pytest.fixture

@@ -7,19 +7,19 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from pico.agent.context import ContextBuilder
-from pico.agent.loop import AgentLoop
-from pico.config.pico import (
+from mycoder.agent.context import ContextBuilder
+from mycoder.agent.loop import AgentLoop
+from mycoder.config.mycoder import (
     ContextConfig,
     MemoryConfig,
     SkillForgeConfig,
     SkillForgeRouterConfig,
 )
-from pico.context_engine import ContextAssembler, TurnContext
-from pico.context_engine.factory import build_context_engine
-from pico.context_engine.segments import MemorySegmentBuilder, SkillsSegmentBuilder
-from pico.memory_engine import TokenBudget
-from pico.memory_engine.skill_forge import LocalSkillSource
+from mycoder.context_engine import ContextAssembler, TurnContext
+from mycoder.context_engine.factory import build_context_engine
+from mycoder.context_engine.segments import MemorySegmentBuilder, SkillsSegmentBuilder
+from mycoder.memory_engine import TokenBudget
+from mycoder.memory_engine.skill_forge import LocalSkillSource
 
 # ---------------------------------------------------------------------------
 

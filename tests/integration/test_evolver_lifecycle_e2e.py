@@ -30,7 +30,7 @@ def _run(
         [
             sys.executable,
             "-m",
-            "pico.cli.commands",
+            "mycoder.cli.commands",
             "evolve",
             command,
             "--config",
@@ -63,10 +63,10 @@ def _create_subject_repo(tmp_path: Path) -> tuple[Path, str]:
 
     env = {
         **os.environ,
-        "GIT_AUTHOR_NAME": "Pico Test",
-        "GIT_AUTHOR_EMAIL": "pico-test@example.invalid",
-        "GIT_COMMITTER_NAME": "Pico Test",
-        "GIT_COMMITTER_EMAIL": "pico-test@example.invalid",
+        "GIT_AUTHOR_NAME": "mycoder Test",
+        "GIT_AUTHOR_EMAIL": "mycoder-test@example.invalid",
+        "GIT_COMMITTER_NAME": "mycoder Test",
+        "GIT_COMMITTER_EMAIL": "mycoder-test@example.invalid",
     }
     for command in (
         ["git", "init", "-q"],

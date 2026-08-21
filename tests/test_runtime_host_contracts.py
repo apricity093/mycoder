@@ -8,21 +8,21 @@ from typing import Any
 
 import pytest
 
-from pico.agent.tools.base import Tool
-from pico.channels.contract import Capabilities, Channel
-from pico.channels.intake import Intake
-from pico.cli._gateway_spine import build_gateway
-from pico.cli._repl_spine import build_repl
-from pico.cli._runtime_assembly import assemble_runtime
-from pico.config.pico import PicoConfig
-from pico.config.schema import Config
-from pico.providers.base import LLMResponse, StreamDelta, ToolCallRequest
-from pico.spine import ChatType, Origin, Source, TurnRequest
-from pico.tui_rpc.dispatcher import Dispatcher
-from pico.tui_rpc.methods import turn as turn_methods
-from pico.tui_rpc.methods.turn import register_turn_methods
-from pico.tui_rpc.spine import build_tui
-from pico.tui_rpc.subscriptions import SubscriptionEmitter
+from mycoder.agent.tools.base import Tool
+from mycoder.channels.contract import Capabilities, Channel
+from mycoder.channels.intake import Intake
+from mycoder.cli._gateway_spine import build_gateway
+from mycoder.cli._repl_spine import build_repl
+from mycoder.cli._runtime_assembly import assemble_runtime
+from mycoder.config.mycoder import mycoderConfig
+from mycoder.config.schema import Config
+from mycoder.providers.base import LLMResponse, StreamDelta, ToolCallRequest
+from mycoder.spine import ChatType, Origin, Source, TurnRequest
+from mycoder.tui_rpc.dispatcher import Dispatcher
+from mycoder.tui_rpc.methods import turn as turn_methods
+from mycoder.tui_rpc.methods.turn import register_turn_methods
+from mycoder.tui_rpc.spine import build_tui
+from mycoder.tui_rpc.subscriptions import SubscriptionEmitter
 
 
 class _ProbePluginTool(Tool):
@@ -309,17 +309,17 @@ async def test_protected_task_runs_through_cli_tui_and_gateway(
         mcp_connections.append(set(servers))
         registry.register(_ProbeMcpTool())
 
-    monkeypatch.setattr("pico.agent.tools.mcp.connect_mcp_servers", _connect_mcp)
+    monkeypatch.setattr("mycoder.agent.tools.mcp.connect_mcp_servers", _connect_mcp)
     monkeypatch.setattr(
-        "pico.cli._plugin_stack.build_plugin_registry",
+        "mycoder.cli._plugin_stack.build_plugin_registry",
         lambda _config: object(),
     )
     monkeypatch.setattr(
-        "pico.cli._plugin_stack.maybe_build_memory_backend",
+        "mycoder.cli._plugin_stack.maybe_build_memory_backend",
         lambda *args, **kwargs: None,
     )
     monkeypatch.setattr(
-        "pico.cli._plugin_stack.build_plugin_tools",
+        "mycoder.cli._plugin_stack.build_plugin_tools",
         lambda *args, **kwargs: [_ProbePluginTool()],
     )
 
@@ -343,22 +343,22 @@ async def test_protected_task_runs_through_cli_tui_and_gateway(
     for host in ("cli", "tui", "gateway"):
         workspace = tmp_path / host
         workspace.mkdir()
-        (workspace / "sentinel.txt").write_text("PICO_HOST_SENTINEL", encoding="utf-8")
+        (workspace / "sentinel.txt").write_text("mycoder_HOST_SENTINEL", encoding="utf-8")
         provider = _ScriptedProvider()
         config = Config()
         config.agents.defaults.workspace = str(workspace)
         config.agents.defaults.model = "probe/model"
         config.tools.restrict_to_workspace = True
         config.tools.mcp_servers = {"docs": object()}
-        pico_config = PicoConfig(base=config)
-        pico_config.skill_forge.enabled = False
-        pico_config.skill_forge.router.enabled = False
-        pico_config.skill_forge.rewrite_enabled = False
-        pico_config.skill_forge.llm_gate_enabled = False
-        pico_config.runtime.checkpoint.policy = "never"
+        mycoder_config = mycoderConfig(base=config)
+        mycoder_config.skill_forge.enabled = False
+        mycoder_config.skill_forge.router.enabled = False
+        mycoder_config.skill_forge.rewrite_enabled = False
+        mycoder_config.skill_forge.llm_gate_enabled = False
+        mycoder_config.runtime.checkpoint.policy = "never"
         runtime = assemble_runtime(
             config,
-            pico_config,
+            mycoder_config,
             provider=provider,
             cron_service=None,
             interactive=host != "cli",

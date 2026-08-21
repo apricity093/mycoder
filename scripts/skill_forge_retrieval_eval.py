@@ -26,15 +26,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from pico.context_engine.base import AssemblyContext
-from pico.context_engine.segments.skills import SkillsSegmentBuilder
-from pico.memory_engine.base import TokenBudget
-from pico.memory_engine.skill_forge import (
+from mycoder.context_engine.base import AssemblyContext
+from mycoder.context_engine.segments.skills import SkillsSegmentBuilder
+from mycoder.memory_engine.base import TokenBudget
+from mycoder.memory_engine.skill_forge import (
     LocalSkillSource,
     SkillForgeRouter,
 )
-from pico.memory_engine.skill_local.local_pool import LocalPool
-from pico.memory_engine.skill_local.registry import SkillRegistry
+from mycoder.memory_engine.skill_local.local_pool import LocalPool
+from mycoder.memory_engine.skill_local.registry import SkillRegistry
 
 # 模拟 OpenSpace 技能库中可能存在的真实技能。每项为（名称、描述行、正文关键词）。
 _SKILLS = [

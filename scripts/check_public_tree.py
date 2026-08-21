@@ -12,7 +12,7 @@ ALLOWED_ROOT_DIRECTORIES = {
     "LICENSES",
     "benchmarks",
     "docs",
-    "pico",
+    "mycoder",
     "scripts",
     "tests",
     "ui-tui",
@@ -20,11 +20,13 @@ ALLOWED_ROOT_DIRECTORIES = {
 ALLOWED_ROOT_FILES = {
     ".gitignore",
     ".pre-commit-config.yaml",
+    "HISTORY.md",
     "LICENSE",
     "Makefile",
     "NOTICES.md",
     "README.md",
     "README.zh-CN.md",
+    "report.md",
     "commitlint.config.cjs",
     "eslint.base.mjs",
     "hatch_build.py",
@@ -79,7 +81,7 @@ FORBIDDEN_TEST_MARKERS = {
 }
 FORBIDDEN_TEXT = {
     "github.com/" + "Hackerismydream/" + "myna": "private repository reference",
-    "github.com/" + "Hackerismydream/" + "pico": "development repository reference",
+    "github.com/" + "Hackerismydream/" + "mycoder": "development repository reference",
     "raw.githubusercontent.com/" + "Hackerismydream": "development installer reference",
     "MYNA_" + "WHEEL_URL": "unpublished Memory wheel reference",
 }

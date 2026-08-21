@@ -78,7 +78,7 @@ describe('writeActiveSessionFile', () => {
   })
 
   it('writes the actual resumed session id for the shell exit summary', () => {
-    dir = mkdtempSync(join(tmpdir(), 'pico-tui-active-'))
+    dir = mkdtempSync(join(tmpdir(), 'mycoder-tui-active-'))
     const path = join(dir, 'active.json')
 
     writeActiveSessionFile('actual_session', path)

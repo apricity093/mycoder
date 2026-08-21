@@ -56,7 +56,7 @@ import { TerminalSizeContext } from './TerminalSizeContext.js'
 
 // Platforms that support Unix-style process suspension (SIGSTOP/SIGCONT)
 const SUPPORTS_SUSPEND = false
-const PICO_HOME = process.env.PICO_HOME?.trim() || join(homedir(), '.pico')
+const mycoder_HOME = process.env.mycoder_HOME?.trim() || join(homedir(), '.mycoder')
 
 // After this many milliseconds of stdin silence, the next chunk triggers
 // a terminal mode re-assert (mouse tracking). Catches tmux detach→attach,
@@ -296,12 +296,12 @@ export default class App extends PureComponent<Props, State> {
         }
 
         // Diagnostic dump of terminal-capability detection state, guarded by
-        // PICO_TUI_DEBUG_TERMINFO=1. Useful when modifier+enter behavior
+        // mycoder_TUI_DEBUG_TERMINFO=1. Useful when modifier+enter behavior
         // regresses on a new terminal/transport stack — set the env var,
-        // launch the TUI, then inspect $PICO_HOME/logs/tui-node-diag.log.
-        if (process.env.PICO_TUI_DEBUG_TERMINFO === '1') {
+        // launch the TUI, then inspect $mycoder_HOME/logs/tui-node-diag.log.
+        if (process.env.mycoder_TUI_DEBUG_TERMINFO === '1') {
           try {
-            const diagPath = join(PICO_HOME, 'logs', 'tui-node-diag.log')
+            const diagPath = join(mycoder_HOME, 'logs', 'tui-node-diag.log')
             const line = JSON.stringify({
               ts: new Date().toISOString(),
               phase: 'raw-mode-enable',
@@ -357,9 +357,9 @@ export default class App extends PureComponent<Props, State> {
               logForDebugging('XTVERSION: no reply (terminal ignored query)')
             }
 
-            if (process.env.PICO_TUI_DEBUG_TERMINFO === '1') {
+            if (process.env.mycoder_TUI_DEBUG_TERMINFO === '1') {
               try {
-                const diagPath = join(PICO_HOME, 'logs', 'tui-node-diag.log')
+                const diagPath = join(mycoder_HOME, 'logs', 'tui-node-diag.log')
                 const line = JSON.stringify({
                   ts: new Date().toISOString(),
                   phase: 'xtversion-reply',

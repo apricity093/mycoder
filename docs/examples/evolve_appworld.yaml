@@ -3,10 +3,10 @@
 # Evolver 需要主动启用。候选晋升会记录证据和提交 SHA，但绝不会自动激活候选；
 # 激活必须经过人工评审。
 #
-#   uv run pico evolve check --config <this file>            # 验证配置
-#   uv run pico evolve run   --config <this file> --smoke   # 小型连线运行
-#   uv run pico evolve run   --config <this file>           # 真实运行
-#   uv run pico evolve status --config <this file>          # 查看进度（密封安全）
+#   uv run mycoder evolve check --config <this file>            # 验证配置
+#   uv run mycoder evolve run   --config <this file> --smoke   # 小型连线运行
+#   uv run mycoder evolve run   --config <this file>           # 真实运行
+#   uv run mycoder evolve status --config <this file>          # 查看进度（密封安全）
 #
 # 一个命令完成全部流程：缺失时建立冷启动基线、执行演化轮次、终止、解封并留存。
 # 可随时中断，同一命令会恢复执行。`finalize` 提前结束运行并解封，此操作单向。
@@ -15,12 +15,12 @@
 # /path/to/...。
 
 bench: appworld
-repo_root: /path/to/pico-harness         # 被演化的目标仓库
+repo_root: /path/to/mycoder-harness         # 被演化的目标仓库
 # base_sha: <commit-sha>                 # 根节点；省略时使用 repo_root 当前 HEAD，
                                          # 启动时解析一次并在整个运行期间固定
 work_dir: /path/to/evolution/work         # 可写且位于 repo_root 外
 
-# 完全省略 `models` 时，所有角色使用 Pico 自身配置的模型。这些是演化循环的
+# 完全省略 `models` 时，所有角色使用 mycoder 自身配置的模型。这些是演化循环的
 # 大脑，与目标智能体模型不同；后者在整个运行期间固定于 bench_config.config_path。
 models:
   driver:  {provider: claude_cli, model: claude-haiku-4-5, max_concurrency: 4}
@@ -47,7 +47,7 @@ bench_config:
   conc: 8
   base_port: 8600
   extra_args: ["--task-timeout", "400"]
-  # 省略 whitelist 时使用仓库默认值 pico/agent/、benchmarks/appworld/；启动时会
+  # 省略 whitelist 时使用仓库默认值 mycoder/agent/、benchmarks/appworld/；启动时会
   # 根据 base_sha 验证每个前缀。无效前缀会拒绝启动，而不是静默丢弃设计者改动。
 
 # 传入 --smoke 时在内置缩减后深度合并到配置：1 个 WHY、1 个候选、1 轮、K=1；

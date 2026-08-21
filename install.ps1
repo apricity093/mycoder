@@ -1,27 +1,27 @@
-# Pico 国内 Windows PowerShell 一键安装脚本。
+# mycoder 国内 Windows PowerShell 一键安装脚本。
 #
-# 远程：设置 PICO_GITEE_TOKEN 后，使用 README 中的鉴权命令。
+# 远程：设置 mycoder_GITEE_TOKEN 后，使用 README 中的鉴权命令。
 #
-# 目标：让全新 Windows 机器无需管理员权限即可运行 `pico`。脚本具备幂等性，
+# 目标：让全新 Windows 机器无需管理员权限即可运行 `mycoder`。脚本具备幂等性，
 # 会复用已有工具并只补齐缺项：
 #   1. uv            （Python 工具链与包管理器）
 #   2. Node.js >= 22 （TUI 运行时；系统缺少时私有安装）
-#   3. pico          （作为全局 uv 工具安装）
+#   3. mycoder          （作为全局 uv 工具安装）
 #
-# 私有仓库阶段设置 PICO_GITEE_TOKEN；也可用 PICO_WHEEL_URL 固定 wheel。
+# 私有仓库阶段设置 mycoder_GITEE_TOKEN；也可用 mycoder_WHEEL_URL 固定 wheel。
 
 $ErrorActionPreference = "Stop"
 
 $MinNodeMajor = 22
-$PicoHome = if ($env:PICO_HOME) { $env:PICO_HOME } else { Join-Path $HOME ".pico" }
-$NodeRuntimeDir = Join-Path $PicoHome "runtime"
-$PicoGiteeOwner = if ($env:PICO_GITEE_OWNER) { $env:PICO_GITEE_OWNER } else { "htxoffical" }
-$PicoGiteeRepo = if ($env:PICO_GITEE_REPO) { $env:PICO_GITEE_REPO } else { "pico-harness" }
-$PicoNodeMirror = if ($env:PICO_NODE_MIRROR) { $env:PICO_NODE_MIRROR.TrimEnd('/') } else { "https://mirrors.aliyun.com/nodejs-release" }
-$PicoNodeChecksumBase = if ($env:PICO_NODE_CHECKSUM_BASE) { $env:PICO_NODE_CHECKSUM_BASE.TrimEnd('/') } else { "https://nodejs.org/dist" }
-$PicoNpmRegistry = if ($env:PICO_NPM_REGISTRY) { $env:PICO_NPM_REGISTRY } else { "https://registry.npmmirror.com" }
-$PicoPyPIIndex = if ($env:PICO_PYPI_INDEX) { $env:PICO_PYPI_INDEX } else { "https://pypi.tuna.tsinghua.edu.cn/simple" }
-$PicoUvInstallUrl = if ($env:PICO_UV_INSTALL_URL) { $env:PICO_UV_INSTALL_URL } else { "https://astral.sh/uv/install.ps1" }
+$mycoderHome = if ($env:mycoder_HOME) { $env:mycoder_HOME } else { Join-Path $HOME ".mycoder" }
+$NodeRuntimeDir = Join-Path $mycoderHome "runtime"
+$mycoderGiteeOwner = if ($env:mycoder_GITEE_OWNER) { $env:mycoder_GITEE_OWNER } else { "htxoffical" }
+$mycoderGiteeRepo = if ($env:mycoder_GITEE_REPO) { $env:mycoder_GITEE_REPO } else { "mycoder-harness" }
+$mycoderNodeMirror = if ($env:mycoder_NODE_MIRROR) { $env:mycoder_NODE_MIRROR.TrimEnd('/') } else { "https://mirrors.aliyun.com/nodejs-release" }
+$mycoderNodeChecksumBase = if ($env:mycoder_NODE_CHECKSUM_BASE) { $env:mycoder_NODE_CHECKSUM_BASE.TrimEnd('/') } else { "https://nodejs.org/dist" }
+$mycoderNpmRegistry = if ($env:mycoder_NPM_REGISTRY) { $env:mycoder_NPM_REGISTRY } else { "https://registry.npmmirror.com" }
+$mycoderPyPIIndex = if ($env:mycoder_PYPI_INDEX) { $env:mycoder_PYPI_INDEX } else { "https://pypi.tuna.tsinghua.edu.cn/simple" }
+$mycoderUvInstallUrl = if ($env:mycoder_UV_INSTALL_URL) { $env:mycoder_UV_INSTALL_URL } else { "https://astral.sh/uv/install.ps1" }
 
 function Write-Info([string]$Message) {
     Write-Host ">" $Message -ForegroundColor Cyan
@@ -72,7 +72,7 @@ function Ensure-Uv {
     }
 
     Write-Info "uv not found; installing..."
-    Invoke-Expression (Invoke-RestMethod $PicoUvInstallUrl)
+    Invoke-Expression (Invoke-RestMethod $mycoderUvInstallUrl)
     $uv = Find-Uv
     if (-not $uv) {
         Fail "uv was installed but is still not available. Check PATH (expected ~/.local/bin)."
@@ -125,7 +125,7 @@ function Find-PrivateNode {
 
 function Get-LatestNodeV22 {
     try {
-        $index = Invoke-RestMethod "$PicoNodeMirror/index.json"
+        $index = Invoke-RestMethod "$mycoderNodeMirror/index.json"
         $entry = $index | Where-Object { $_.version -like "v22.*" } | Select-Object -First 1
         if ($entry -and $entry.version) { return $entry.version }
     } catch {
@@ -143,7 +143,7 @@ function Ensure-Node {
 
     $privateNode = Find-PrivateNode
     if ($privateNode) {
-        Write-Ok "Existing Pico private Node found ($privateNode)"
+        Write-Ok "Existing mycoder private Node found ($privateNode)"
         Add-ProcessPath (Split-Path $privateNode -Parent)
         return $privateNode
     }
@@ -152,8 +152,8 @@ function Ensure-Node {
     $arch = Get-NodeArch
     $version = Get-LatestNodeV22
     $pkg = "node-$version-win-$arch"
-    $url = "$PicoNodeMirror/$version/$pkg.zip"
-    $tmp = Join-Path ([IO.Path]::GetTempPath()) ("pico-node-" + [guid]::NewGuid().ToString("N"))
+    $url = "$mycoderNodeMirror/$version/$pkg.zip"
+    $tmp = Join-Path ([IO.Path]::GetTempPath()) ("mycoder-node-" + [guid]::NewGuid().ToString("N"))
     $zipPath = Join-Path $tmp "node.zip"
 
     New-Item -ItemType Directory -Path $tmp -Force | Out-Null
@@ -164,7 +164,7 @@ function Ensure-Node {
         Invoke-WebRequest $url -OutFile $zipPath
 
         try {
-            $sums = (Invoke-WebRequest "$PicoNodeChecksumBase/$version/SHASUMS256.txt").Content
+            $sums = (Invoke-WebRequest "$mycoderNodeChecksumBase/$version/SHASUMS256.txt").Content
         } catch {
             Fail "Could not fetch Node SHASUMS256.txt: $_"
         }
@@ -197,29 +197,29 @@ function Ensure-Node {
     }
 }
 
-function Resolve-PicoReleaseAssets {
-    if ($env:PICO_WHEEL_URL) {
-        return $env:PICO_WHEEL_URL
+function Resolve-mycoderReleaseAssets {
+    if ($env:mycoder_WHEEL_URL) {
+        return $env:mycoder_WHEEL_URL
     }
-    Write-Info "Resolving the latest Pico release from Gitee..."
+    Write-Info "Resolving the latest mycoder release from Gitee..."
     $headers = @{}
-    if ($env:PICO_GITEE_TOKEN) {
-        $headers["Authorization"] = "Bearer $env:PICO_GITEE_TOKEN"
+    if ($env:mycoder_GITEE_TOKEN) {
+        $headers["Authorization"] = "Bearer $env:mycoder_GITEE_TOKEN"
     }
-    $releaseApi = "https://gitee.com/api/v5/repos/$PicoGiteeOwner/$PicoGiteeRepo/releases/latest"
+    $releaseApi = "https://gitee.com/api/v5/repos/$mycoderGiteeOwner/$mycoderGiteeRepo/releases/latest"
     $release = Invoke-RestMethod $releaseApi -Headers $headers
-    $picoAsset = $release.assets | Where-Object { $_.browser_download_url -match "/pico_harness-[^/]+\.whl$" } | Select-Object -First 1
-    if (-not $picoAsset) {
-        Fail "Could not resolve the latest Pico wheel from Gitee. For a private repository, set PICO_GITEE_TOKEN; alternatively set PICO_WHEEL_URL."
+    $mycoderAsset = $release.assets | Where-Object { $_.browser_download_url -match "/mycoder_harness-[^/]+\.whl$" } | Select-Object -First 1
+    if (-not $mycoderAsset) {
+        Fail "Could not resolve the latest mycoder wheel from Gitee. For a private repository, set mycoder_GITEE_TOKEN; alternatively set mycoder_WHEEL_URL."
     }
-    return $picoAsset.browser_download_url
+    return $mycoderAsset.browser_download_url
 }
 
-function Install-Pico([string]$UvPath, [string]$NodePath) {
+function Install-mycoder([string]$UvPath, [string]$NodePath) {
     $scriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
     $pyproject = Join-Path $scriptDir "pyproject.toml"
-    if ((Test-Path $pyproject) -and (Select-String -Path $pyproject -Pattern '^name = "pico-harness"' -Quiet)) {
-        Write-Info "Detected local Pico source checkout; installing editable: $scriptDir"
+    if ((Test-Path $pyproject) -and (Select-String -Path $pyproject -Pattern '^name = "mycoder-harness"' -Quiet)) {
+        Write-Info "Detected local mycoder source checkout; installing editable: $scriptDir"
         $entry = Join-Path $scriptDir "ui-tui\dist\entry.js"
         if (-not (Test-Path $entry)) {
             $nodeDir = Split-Path $NodePath -Parent
@@ -229,7 +229,7 @@ function Install-Pico([string]$UvPath, [string]$NodePath) {
                 Write-Info "Building TUI bundle (ui-tui/dist/entry.js)..."
                 Push-Location (Join-Path $scriptDir "ui-tui")
                 try {
-                    & $npm.Source ci --registry $PicoNpmRegistry
+                    & $npm.Source ci --registry $mycoderNpmRegistry
                     & $npm.Source run build
                 } finally {
                     Pop-Location
@@ -239,44 +239,44 @@ function Install-Pico([string]$UvPath, [string]$NodePath) {
             }
         }
         $previousIndex = $env:UV_DEFAULT_INDEX
-        $env:UV_DEFAULT_INDEX = $PicoPyPIIndex
+        $env:UV_DEFAULT_INDEX = $mycoderPyPIIndex
         try {
             & $UvPath tool install --force -e "$scriptDir[channels]"
             if ($LASTEXITCODE -ne 0) { throw "channel extras install failed" }
         } catch {
-            Write-Warn "Channel dependencies failed to install; installed base pico only. Some channels stay unavailable (see: pico channels list)."
+            Write-Warn "Channel dependencies failed to install; installed base mycoder only. Some channels stay unavailable (see: mycoder channels list)."
             & $UvPath tool install --force -e "$scriptDir"
-            if ($LASTEXITCODE -ne 0) { Fail "Pico install failed." }
+            if ($LASTEXITCODE -ne 0) { Fail "mycoder install failed." }
         } finally {
             $env:UV_DEFAULT_INDEX = $previousIndex
         }
     } else {
-        $wheelUrl = Resolve-PicoReleaseAssets
+        $wheelUrl = Resolve-mycoderReleaseAssets
         $wheelSource = $wheelUrl
         $wheelTemp = $null
-        if ($env:PICO_GITEE_TOKEN -and $wheelUrl.StartsWith("https://gitee.com/")) {
+        if ($env:mycoder_GITEE_TOKEN -and $wheelUrl.StartsWith("https://gitee.com/")) {
             $wheelName = [IO.Path]::GetFileName(([uri]$wheelUrl).AbsolutePath)
             if (-not $wheelName.EndsWith(".whl")) {
                 Fail "Resolved Gitee asset is not a wheel: $wheelName"
             }
-            $wheelTemp = Join-Path ([IO.Path]::GetTempPath()) ("pico-wheel-" + [guid]::NewGuid().ToString("N"))
+            $wheelTemp = Join-Path ([IO.Path]::GetTempPath()) ("mycoder-wheel-" + [guid]::NewGuid().ToString("N"))
             New-Item -ItemType Directory -Path $wheelTemp -Force | Out-Null
             $wheelPath = Join-Path $wheelTemp $wheelName
-            $headers = @{ "Authorization" = "Bearer $env:PICO_GITEE_TOKEN" }
+            $headers = @{ "Authorization" = "Bearer $env:mycoder_GITEE_TOKEN" }
             Write-Info "Downloading private Gitee release wheel..."
             Invoke-WebRequest $wheelUrl -Headers $headers -OutFile $wheelPath
             $wheelSource = $wheelPath
         }
         Write-Info "  installing $wheelSource"
         $previousIndex = $env:UV_DEFAULT_INDEX
-        $env:UV_DEFAULT_INDEX = $PicoPyPIIndex
+        $env:UV_DEFAULT_INDEX = $mycoderPyPIIndex
         try {
-            & $UvPath tool install --force "pico-harness[channels] @ $wheelSource"
+            & $UvPath tool install --force "mycoder-harness[channels] @ $wheelSource"
             if ($LASTEXITCODE -ne 0) { throw "channel extras install failed" }
         } catch {
-            Write-Warn "Channel dependencies failed to install; installed base pico only. Some channels stay unavailable (see: pico channels list)."
+            Write-Warn "Channel dependencies failed to install; installed base mycoder only. Some channels stay unavailable (see: mycoder channels list)."
             & $UvPath tool install --force $wheelSource
-            if ($LASTEXITCODE -ne 0) { Fail "Pico install failed." }
+            if ($LASTEXITCODE -ne 0) { Fail "mycoder install failed." }
         } finally {
             $env:UV_DEFAULT_INDEX = $previousIndex
             if ($wheelTemp -and (Test-Path $wheelTemp)) {
@@ -285,13 +285,13 @@ function Install-Pico([string]$UvPath, [string]$NodePath) {
         }
     }
     & $UvPath tool update-shell | Out-Null
-    Write-Ok "Pico installed"
+    Write-Ok "mycoder installed"
 }
 
 function Main {
     $uv = Ensure-Uv
     $node = Ensure-Node
-    Install-Pico $uv $node
+    Install-mycoder $uv $node
 
     $toolBin = Join-Path $HOME ".local\bin"
     Add-ProcessPath $toolBin
@@ -299,12 +299,12 @@ function Main {
     Write-Host ""
     Write-Ok "All set. Open a new PowerShell window, enter a Git repository, then run:"
     Write-Host ""
-    Write-Host "    pico onboard --skip-memory    # configure Provider and first Turn"
-    Write-Host "    pico            # enter the TUI"
-    Write-Host "    pico run -m `"hello`""
+    Write-Host "    mycoder onboard --skip-memory    # configure Provider and first Turn"
+    Write-Host "    mycoder            # enter the TUI"
+    Write-Host "    mycoder run -m `"hello`""
     Write-Host ""
     if (($env:PATH -split ';') -notcontains $toolBin) {
-        Write-Warn "Current PATH does not include $toolBin. Restart PowerShell if 'pico' is not found."
+        Write-Warn "Current PATH does not include $toolBin. Restart PowerShell if 'mycoder' is not found."
     }
 }
 

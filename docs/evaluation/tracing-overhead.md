@@ -3,7 +3,7 @@
 > **Status: formal run completed on 2026-08-13.** Generated evidence remains
 > outside Git; this page records its candidate binding and digests.
 
-This PicoBench track measures the local Runtime tax of Pico's in-tree Tracing.
+This mycoderBench track measures the local Runtime tax of mycoder's in-tree Tracing.
 It does not test an external Provider or claim production latency.
 
 ## Treatment and workload
@@ -11,8 +11,8 @@ It does not test an external Provider or claim production latency.
 The campaign runs 20 balanced blocks of 50 paired Turns, for 1,000 pairs and
 2,000 total Turns. Every Turn crosses the shared Runtime Assembly and Agent
 Loop, makes two deterministic local Provider calls, executes `trace_lookup`
-once, and returns `TRACE_OK`. The sole treatment axis is `PICO_TRACING=0` versus
-`PICO_TRACING=1`.
+once, and returns `TRACE_OK`. The sole treatment axis is `mycoder_TRACING=0` versus
+`mycoder_TRACING=1`.
 
 Each enabled Turn must retain exactly one terminal `session.turn` trace joined
 to two `llm.call` spans and one `tool.call` span. The disabled arm must emit no
@@ -28,7 +28,7 @@ arm-balance, and disabled-no-output Gates to pass. There is no preregistered
 "good overhead" threshold; the result is an estimated operational cost, not an
 optimization claim.
 
-The immutable manifest binds the Pico commit, Python and platform identity,
+The immutable manifest binds the mycoder commit, Python and platform identity,
 workload, Pair count, and bootstrap settings. Per-block receipts retain raw
 Turn latency and terminal outcomes plus SHA-256 receipts for every trace file.
 The offline verifier rebuilds `raw-outcomes.jsonl`, `aggregate.json`,
@@ -57,11 +57,11 @@ Raw manifests and inventories are intentionally not published in this repository
 ## Operator commands
 
 ```bash
-make picobench-tracing-plan
-make picobench-tracing-run
-make picobench-tracing-verify
+make mycoderbench-tracing-plan
+make mycoderbench-tracing-run
+make mycoderbench-tracing-verify
 ```
 
-Set `PICO_TRACING_OUTPUT` to use a new evidence root. After the repository moves
-past the measured candidate, set `PICO_TRACING_COMMIT` to the full commit bound
+Set `mycoder_TRACING_OUTPUT` to use a new evidence root. After the repository moves
+past the measured candidate, set `mycoder_TRACING_COMMIT` to the full commit bound
 by the retained manifest before running the offline verifier.

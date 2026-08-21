@@ -11,8 +11,8 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import Any
 
-from pico.agent.loop import AgentLoop
-from pico.providers.base import LLMResponse, StreamDelta
+from mycoder.agent.loop import AgentLoop
+from mycoder.providers.base import LLMResponse, StreamDelta
 
 
 class _FakeProvider:

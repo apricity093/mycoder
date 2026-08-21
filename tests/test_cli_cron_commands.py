@@ -1,4 +1,4 @@
-"""Tests for the ``pico cron`` CLI subapp."""
+"""Tests for the ``mycoder cron`` CLI subapp."""
 
 from __future__ import annotations
 
@@ -9,9 +9,9 @@ import pytest
 import typer
 from typer.testing import CliRunner
 
-from pico.cli.cron_commands import cron_app
-from pico.proactive_engine.schedulers.cron.service import CronService
-from pico.proactive_engine.schedulers.cron.types import CronSchedule
+from mycoder.cli.cron_commands import cron_app
+from mycoder.proactive_engine.schedulers.cron.service import CronService
+from mycoder.proactive_engine.schedulers.cron.types import CronSchedule
 
 
 @pytest.fixture
@@ -21,11 +21,11 @@ def runner() -> CliRunner:
 
 @pytest.fixture
 def fake_cron_dir(tmp_path: Path, monkeypatch) -> Path:
-    """Redirect ~/.pico/cron/ to a tmp dir for the test."""
+    """Redirect ~/.mycoder/cron/ to a tmp dir for the test."""
     cron_dir = tmp_path / "cron"
     cron_dir.mkdir(parents=True)
     monkeypatch.setattr(
-        "pico.cli.cron_commands.get_cron_dir",
+        "mycoder.cli.cron_commands.get_cron_dir",
         lambda: cron_dir,
     )
     return cron_dir
@@ -327,7 +327,7 @@ def test_run_warns_when_active_claim_present(
     fcntl race is non-trivial."""
     from time import time as _time
 
-    from pico.proactive_engine.schedulers.cron.types import CronSchedule as _Sched
+    from mycoder.proactive_engine.schedulers.cron.types import CronSchedule as _Sched
 
     svc = CronService(fake_cron_dir / "jobs.json")
     j = svc.add_job(
@@ -359,7 +359,7 @@ def test_run_one_shot_at_with_delete_warns_about_removal(
     """For an at+delete_after_run=True job (the default for one-shots),
     the warning must use the word REMOVE so user is aware the reminder
     will vanish."""
-    from pico.proactive_engine.schedulers.cron.types import CronSchedule as _Sched
+    from mycoder.proactive_engine.schedulers.cron.types import CronSchedule as _Sched
 
     svc = CronService(fake_cron_dir / "jobs.json")
     j = svc.add_job(
@@ -384,7 +384,7 @@ def test_run_one_shot_at_without_delete_warns_about_disable(
     runner,
     fake_cron_dir,
 ):
-    from pico.proactive_engine.schedulers.cron.types import CronSchedule as _Sched
+    from mycoder.proactive_engine.schedulers.cron.types import CronSchedule as _Sched
 
     svc = CronService(fake_cron_dir / "jobs.json")
     j = svc.add_job(
@@ -647,7 +647,7 @@ def test_add_invalid_tz(runner, fake_cron_dir, monkeypatch):
     assert "Unknown timezone" in r.stdout
 
 
-from pico.cli.cron_commands import _parse_duration
+from mycoder.cli.cron_commands import _parse_duration
 
 
 @pytest.mark.parametrize(
@@ -698,11 +698,11 @@ def isolated_config(tmp_path: Path, monkeypatch) -> Path:
     yet — ``load_config`` happily synthesizes defaults from absent files)."""
     config_path = tmp_path / "config.json"
     monkeypatch.setattr(
-        "pico.config.loader.get_config_path",
+        "mycoder.config.loader.get_config_path",
         lambda: config_path,
     )
     monkeypatch.setattr(
-        "pico.config.update.get_config_path",
+        "mycoder.config.update.get_config_path",
         lambda: config_path,
     )
     return config_path

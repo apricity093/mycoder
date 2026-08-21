@@ -1,4 +1,4 @@
-"""Contract checks for the public Pico installers."""
+"""Contract checks for the public mycoder installers."""
 
 from pathlib import Path
 
@@ -12,34 +12,34 @@ def test_installer_uses_gitee_release_without_private_memory_repository(name: st
     source = (ROOT / name).read_text(encoding="utf-8")
 
     assert "gitee.com/api/v5/repos" in source
-    assert "PICO_GITEE_REPO" in source
+    assert "mycoder_GITEE_REPO" in source
     assert "releases/latest" in source
-    assert "PICO_WHEEL_URL" in source
-    assert "PICO_GITEE_TOKEN" in source
-    assert "PICO_NPM_REGISTRY" in source
-    assert "PICO_NODE_CHECKSUM_BASE" in source
-    assert "PICO_PYPI_INDEX" in source
+    assert "mycoder_WHEEL_URL" in source
+    assert "mycoder_GITEE_TOKEN" in source
+    assert "mycoder_NPM_REGISTRY" in source
+    assert "mycoder_NODE_CHECKSUM_BASE" in source
+    assert "mycoder_PYPI_INDEX" in source
     assert "github.com" not in source.lower()
     assert "myna" not in source.lower()
     assert "--with-executables-from" not in source
-    assert "pico onboard --skip-memory" in source
+    assert "mycoder onboard --skip-memory" in source
 
 
 def test_posix_installer_downloads_private_wheel_before_uv_install() -> None:
     source = (ROOT / "install.sh").read_text(encoding="utf-8")
 
     assert "gitee_curl" in source
-    assert '-H "Authorization: Bearer $PICO_GITEE_TOKEN"' not in source
+    assert '-H "Authorization: Bearer $mycoder_GITEE_TOKEN"' not in source
     assert '"$wheel_url" -o "$wheel_path"' in source
-    assert 'uv tool install --force "pico-harness[channels] @ $wheel_source"' in source
+    assert 'uv tool install --force "mycoder-harness[channels] @ $wheel_source"' in source
 
 
 def test_powershell_installer_downloads_private_wheel_before_uv_install() -> None:
     source = (ROOT / "install.ps1").read_text(encoding="utf-8")
 
-    assert '"Authorization"] = "Bearer $env:PICO_GITEE_TOKEN"' in source
+    assert '"Authorization"] = "Bearer $env:mycoder_GITEE_TOKEN"' in source
     assert "Invoke-WebRequest $wheelUrl -Headers $headers -OutFile $wheelPath" in source
-    assert '"pico-harness[channels] @ $wheelSource"' in source
+    assert '"mycoder-harness[channels] @ $wheelSource"' in source
 
 
 @pytest.mark.parametrize("name", ["install.sh", "install.ps1"])

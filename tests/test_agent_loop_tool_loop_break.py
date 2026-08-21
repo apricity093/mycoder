@@ -12,12 +12,12 @@ from pathlib import Path
 
 import pytest
 
-from pico.agent.loop import AgentLoop
-from pico.agent.loop.main import _is_hard_tool_failure
-from pico.agent.tools.base import ToolResult
-from pico.providers.base import LLMProvider, LLMResponse, ToolCallRequest
-from pico.spine.message import ChatType, Source
-from pico.spine.turn import Origin, TurnRequest
+from mycoder.agent.loop import AgentLoop
+from mycoder.agent.loop.main import _is_hard_tool_failure
+from mycoder.agent.tools.base import ToolResult
+from mycoder.providers.base import LLMProvider, LLMResponse, ToolCallRequest
+from mycoder.spine.message import ChatType, Source
+from mycoder.spine.turn import Origin, TurnRequest
 
 
 @pytest.fixture

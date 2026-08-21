@@ -54,7 +54,7 @@ class TestSmokeSubcommand:
             r"(?!).*",
             "--wait-timeout",
             "5",
-            "uv run pico --check",
+            "uv run mycoder --check",
         )
 
         assert result.returncode in (0, 1), (

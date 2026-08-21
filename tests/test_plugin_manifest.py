@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from pico.plugin import (
+from mycoder.plugin import (
     Contributes,
     MemoryBackendContribution,
     PluginManifest,
@@ -193,7 +193,7 @@ class TestFlagsAndSchema:
 
 class TestFromTomlPath:
     def test_reads_file(self, tmp_path: Path) -> None:
-        path = tmp_path / "pico-plugin.toml"
+        path = tmp_path / "mycoder-plugin.toml"
         path.write_text(
             textwrap.dedent("""
             [plugin]

@@ -9,7 +9,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from pico.plugin import (
+from mycoder.plugin import (
     DiscoveredPlugin,
     PluginCompatibilityError,
     PluginDiscovery,
@@ -19,7 +19,7 @@ from pico.plugin import (
 
 
 def _write_manifest(root: Path, plugin_id: str, *, extra: str = "") -> Path:
-    """Drop a minimal valid manifest at ``root/<plugin_id>/pico-plugin.toml``."""
+    """Drop a minimal valid manifest at ``root/<plugin_id>/mycoder-plugin.toml``."""
     sub = root / plugin_id
     sub.mkdir(parents=True, exist_ok=True)
     body = textwrap.dedent(f"""
@@ -28,7 +28,7 @@ def _write_manifest(root: Path, plugin_id: str, *, extra: str = "") -> Path:
         version = "0.1.0"
         {extra}
     """)
-    path = sub / "pico-plugin.toml"
+    path = sub / "mycoder-plugin.toml"
     path.write_text(body, encoding="utf-8")
     return path
 
@@ -55,7 +55,7 @@ class TestSingleSource:
         assert out[0].manifest.id == "foo"
         assert out[0].source == Source.BUNDLED
         assert out[0].location is not None
-        assert out[0].location.name == "pico-plugin.toml"
+        assert out[0].location.name == "mycoder-plugin.toml"
 
     def test_finds_multiple_manifests_sorted_by_id(self, tmp_path: Path) -> None:
         for pid in ("zeta", "alpha", "mid"):
@@ -77,7 +77,7 @@ class TestSingleSource:
     ) -> None:
         sub = tmp_path / "broken"
         sub.mkdir()
-        (sub / "pico-plugin.toml").write_text(
+        (sub / "mycoder-plugin.toml").write_text(
             "not valid toml [[[",
             encoding="utf-8",
         )
@@ -88,16 +88,16 @@ class TestSingleSource:
         assert [p.manifest.id for p in out] == ["ok"]
 
     def test_incompatible_manifest_fails_closed(self, tmp_path: Path) -> None:
-        _write_manifest(tmp_path, "future", extra='pico = ">=0.2,<0.3"')
+        _write_manifest(tmp_path, "future", extra='mycoder = ">=0.2,<0.3"')
 
-        with pytest.raises(PluginCompatibilityError, match=r"requires Pico >=0.2,<0.3.*installed Pico is 0.1.7"):
-            PluginDiscovery(bundled_dir=tmp_path, pico_version="0.1.7").discover()
+        with pytest.raises(PluginCompatibilityError, match=r"requires mycoder >=0.2,<0.3.*installed mycoder is 0.1.7"):
+            PluginDiscovery(bundled_dir=tmp_path, mycoder_version="0.1.7").discover()
 
 
 class TestEntryPointIdentity:
     @staticmethod
     def _entry_point(tmp_path: Path, *, plugin_id: str = "myna-memory", version: str = "0.1.1rc3"):
-        relative = PurePosixPath("myna/integrations/pico/pico-plugin.toml")
+        relative = PurePosixPath("myna/integrations/mycoder/mycoder-plugin.toml")
         manifest = tmp_path / relative
         manifest.parent.mkdir(parents=True)
         manifest.write_text(
@@ -105,12 +105,12 @@ class TestEntryPointIdentity:
                 [plugin]
                 id = "{plugin_id}"
                 version = "{version}"
-                pico = ">=0.1,<0.2"
+                mycoder = ">=0.1,<0.2"
                 enabled_by_default = true
 
                 [[plugin.contributes.memory_backends]]
                 name = "myna"
-                factory = "myna.integrations.pico:make_backend"
+                factory = "myna.integrations.mycoder:make_backend"
             """),
             encoding="utf-8",
         )
@@ -122,7 +122,7 @@ class TestEntryPointIdentity:
         )
         return SimpleNamespace(
             name="myna",
-            value="myna.integrations.pico",
+            value="myna.integrations.mycoder",
             dist=distribution,
         )
 
@@ -134,11 +134,11 @@ class TestEntryPointIdentity:
         entry_point = self._entry_point(tmp_path)
         monkeypatch.setattr(metadata, "entry_points", lambda **_: (entry_point,))
 
-        discovered = PluginDiscovery(entry_points_group="pico.plugins", pico_version="0.1.7").discover()
+        discovered = PluginDiscovery(entry_points_group="mycoder.plugins", mycoder_version="0.1.7").discover()
 
         assert discovered[0].manifest.id == "myna-memory"
         assert discovered[0].manifest.version == "0.1.1rc3"
-        assert discovered[0].manifest.pico == ">=0.1,<0.2"
+        assert discovered[0].manifest.mycoder == ">=0.1,<0.2"
         assert discovered[0].manifest.contributes.memory_backends[0].name == "myna"
 
     @pytest.mark.parametrize(
@@ -160,7 +160,7 @@ class TestEntryPointIdentity:
         monkeypatch.setattr(metadata, "entry_points", lambda **_: (entry_point,))
 
         with pytest.raises(PluginIdentityError, match=message):
-            PluginDiscovery(entry_points_group="pico.plugins", pico_version="0.1.7").discover()
+            PluginDiscovery(entry_points_group="mycoder.plugins", mycoder_version="0.1.7").discover()
 
 
 # ---------------------------------------------------------------------------
@@ -227,7 +227,7 @@ class TestSubdirNameMismatch:
 
         sub = tmp_path / "wrong-dirname"
         sub.mkdir()
-        (sub / "pico-plugin.toml").write_text(
+        (sub / "mycoder-plugin.toml").write_text(
             textwrap.dedent("""
             [plugin]
             id = "correct"

@@ -2,15 +2,15 @@
 the Channel / Supports* protocols (runtime-checkable), ChannelSpec, and the
 capability-proof helper."""
 
-from pico.channels import (
+from mycoder.channels import (
     Capabilities,
     Channel,
     ChannelSpec,
     SupportsLogin,
     SupportsStreaming,
 )
-from pico.channels.contract import capability_violations
-from pico.channels.intake import Intake
+from mycoder.channels.contract import capability_violations
+from mycoder.channels.intake import Intake
 
 
 class _Min:

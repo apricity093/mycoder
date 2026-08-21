@@ -12,9 +12,9 @@ import asyncio
 
 import pytest
 
-from pico.tui_rpc import confirm_broker as cb
-from pico.tui_rpc.confirm_broker import ConfirmBroker
-from pico.tui_rpc.methods.confirm import confirm_respond, register_confirm_methods
+from mycoder.tui_rpc import confirm_broker as cb
+from mycoder.tui_rpc.confirm_broker import ConfirmBroker
+from mycoder.tui_rpc.methods.confirm import confirm_respond, register_confirm_methods
 
 
 def _frame_collector() -> tuple[list[dict], object]:
@@ -153,7 +153,7 @@ async def test_confirm_respond_handler_unknown_id_returns_not_ok() -> None:
 
 
 async def test_register_confirm_methods_adds_respond() -> None:
-    from pico.tui_rpc.dispatcher import Dispatcher
+    from mycoder.tui_rpc.dispatcher import Dispatcher
 
     _frames, send_frame = _frame_collector()
     broker = ConfirmBroker(send_frame)

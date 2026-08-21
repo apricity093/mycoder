@@ -1,14 +1,14 @@
 import asyncio
 from contextlib import nullcontext
 
-from pico.agent.spine_runner import AgentTurnRunner
-from pico.cli._repl_spine import (
+from mycoder.agent.spine_runner import AgentTurnRunner
+from mycoder.cli._repl_spine import (
     CliOutlet,
     build_repl,
     make_hub_sink,
     run_repl_loop,
 )
-from pico.spine import (
+from mycoder.spine import (
     ChatType,
     Notice,
     NoticeKind,
@@ -25,8 +25,8 @@ from pico.spine import (
     TurnStarted,
     Usage,
 )
-from pico.spine.delivery import Outlet
-from pico.spine.events import Reasoning
+from mycoder.spine.delivery import Outlet
+from mycoder.spine.events import Reasoning
 
 
 def _src(channel="cli", chat_id="c1") -> Source:

@@ -1,6 +1,6 @@
 # Public evaluation notes
 
-This directory retains only benchmark notes that support externally reviewable Pico claims:
+This directory retains only benchmark notes that support externally reviewable mycoder claims:
 
 - [Runtime scheduler experiments](runtime-scheduler-experiments.md)
 - [CallEfficiency cost experiment](tokenwise-cost.md)

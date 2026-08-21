@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import pytest
 
-from pico.agent.tools import file_search
-from pico.agent.tools.file_search import FindTool, GrepTool
+from mycoder.agent.tools import file_search
+from mycoder.agent.tools.file_search import FindTool, GrepTool
 
 
 @pytest.mark.asyncio

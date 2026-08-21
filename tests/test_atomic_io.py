@@ -1,11 +1,11 @@
-"""Tests for pico.utils.atomic_io."""
+"""Tests for mycoder.utils.atomic_io."""
 
 import multiprocessing
 from pathlib import Path
 
 import pytest
 
-from pico.utils.atomic_io import atomic_replace, locked_append, locked_delete
+from mycoder.utils.atomic_io import atomic_replace, locked_append, locked_delete
 
 WRITERS = 2
 CALLS_PER_WRITER = 50

@@ -12,17 +12,17 @@ from difflib import unified_diff
 from pathlib import Path
 
 from benchmarks.appworld.evolve.adapter import MODULE_PATH
-from pico.evolver.candidate_manifest import (
+from mycoder.evolver.candidate_manifest import (
     CandidateLabel,
     CandidateManifest,
     ManifestGateError,
     assert_manifest_gate,
     manifest_for_patch,
 )
-from pico.evolver.judge.schema import PatchWhere, PatchWhy
-from pico.evolver.tree import git_ops
-from pico.evolver.tree.git_ops import GitOpError
-from pico.evolver.tree.node import AppliedPatch, PatchComponent
+from mycoder.evolver.judge.schema import PatchWhere, PatchWhy
+from mycoder.evolver.tree import git_ops
+from mycoder.evolver.tree.git_ops import GitOpError
+from mycoder.evolver.tree.node import AppliedPatch, PatchComponent
 
 
 @dataclass

@@ -1,10 +1,10 @@
-"""Tests for ``pico.security.network`` — SSRF URL validation."""
+"""Tests for ``mycoder.security.network`` — SSRF URL validation."""
 
 from __future__ import annotations
 
 import pytest
 
-from pico.security import network as net
+from mycoder.security import network as net
 
 
 def _mock_resolve(monkeypatch: pytest.MonkeyPatch, ip: str) -> None:

@@ -22,8 +22,8 @@ import pytest
 import typer
 from typer.testing import CliRunner
 
-from pico.cli.commands import app
-from pico.config.loader import set_config_path
+from mycoder.cli.commands import app
+from mycoder.config.loader import set_config_path
 
 runner = CliRunner()
 
@@ -73,7 +73,7 @@ def test_top_level_command_help_does_not_crash(command: str) -> None:
 
 
 def test_root_help_does_not_crash() -> None:
-    """``pico --help`` should list every command without crashing."""
+    """``mycoder --help`` should list every command without crashing."""
     r = runner.invoke(app, ["--help"])
     assert r.exit_code == 0
     assert r.exception is None
@@ -114,21 +114,21 @@ def test_skills_subcommand_help_does_not_crash(subcmd: str) -> None:
 
 
 def test_status_command_body_does_not_crash(tmp_config: Path) -> None:
-    """``pico status`` reads config + prints rows without crashing."""
+    """``mycoder status`` reads config + prints rows without crashing."""
     r = runner.invoke(app, ["status"])
     assert r.exception is None, f"status crashed: {r.exception!r}"
     assert r.exit_code == 0
 
 
 def test_channels_list_body_does_not_crash(tmp_config: Path) -> None:
-    """``pico channels list`` enumerates channels without crashing."""
+    """``mycoder channels list`` enumerates channels without crashing."""
     r = runner.invoke(app, ["channels", "list"])
     assert r.exception is None
     assert r.exit_code == 0
 
 
 def test_cron_list_body_does_not_crash(tmp_config: Path) -> None:
-    """``pico cron list`` reads cron jobs without crashing."""
+    """``mycoder cron list`` reads cron jobs without crashing."""
     r = runner.invoke(app, ["cron", "list"])
     assert r.exception is None
     assert r.exit_code == 0
@@ -153,14 +153,14 @@ REGISTERED_COMMAND_NAMES = {
 
 
 def test_version_flag_matches_installed_metadata() -> None:
-    """``pico --version`` reports the installed distribution version, not a
+    """``mycoder --version`` reports the installed distribution version, not a
     hand-written literal, so it can never drift from ``pyproject.toml``."""
     from importlib.metadata import version as pkg_version
 
     r = runner.invoke(app, ["--version"])
     assert r.exception is None
     assert r.exit_code == 0
-    assert f"Pico v{pkg_version('pico-harness')}" in r.stdout
+    assert f"mycoder v{pkg_version('mycoder-harness')}" in r.stdout
 
 
 def test_cli_import_does_not_pull_litellm() -> None:
@@ -173,7 +173,7 @@ def test_cli_import_does_not_pull_litellm() -> None:
     import sys
 
     r = subprocess.run(
-        [sys.executable, "-c", "import pico.cli.commands, sys; assert 'litellm' not in sys.modules"],
+        [sys.executable, "-c", "import mycoder.cli.commands, sys; assert 'litellm' not in sys.modules"],
         capture_output=True,
         text=True,
     )
@@ -181,7 +181,7 @@ def test_cli_import_does_not_pull_litellm() -> None:
 
 
 def test_no_logs_subcommand_registered() -> None:
-    """There is no ``pico logs`` command; adding one must break this test."""
+    """There is no ``mycoder logs`` command; adding one must break this test."""
     assert "logs" not in _registered_command_names()
 
 

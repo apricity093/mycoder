@@ -13,11 +13,11 @@ from pathlib import Path
 
 import pytest
 
-from pico.agent.loop import AgentLoop
-from pico.config.schema import ToolSearchConfig
-from pico.providers.base import LLMProvider, LLMResponse
-from pico.token_wise.base import TokenStrategy
-from pico.token_wise.registry import StrategyRegistry
+from mycoder.agent.loop import AgentLoop
+from mycoder.config.schema import ToolSearchConfig
+from mycoder.providers.base import LLMProvider, LLMResponse
+from mycoder.token_wise.base import TokenStrategy
+from mycoder.token_wise.registry import StrategyRegistry
 
 
 class _StubProvider(LLMProvider):
